@@ -25,5 +25,11 @@ void PhysicsObject::Render(PhysicsProgram& program)
 void PhysicsObject::AddForceAtPosition(Vector2 force, Vector2 point)
 {
 	this->force += force;
-	//this->torque += 
+	this->torque += Cross(point - collider->GetGlobalCentrePoint(), force);
+}
+
+//z value of cross product in 3D with a and b (x and y values equal 0)
+float Cross(Vector2 a, Vector2 b) 
+{
+	return a.x * b.y - a.y * b.x;
 }

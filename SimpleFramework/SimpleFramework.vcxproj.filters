@@ -53,7 +53,9 @@
     <ClCompile Include="Collider.cpp">
       <Filter>Game\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="CollisionManager.cpp" />
+    <ClCompile Include="CollisionManager.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -125,7 +127,9 @@
     <ClInclude Include="Collider.h">
       <Filter>Game\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="CollisionManager.h" />
+    <ClInclude Include="CollisionManager.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Engine">

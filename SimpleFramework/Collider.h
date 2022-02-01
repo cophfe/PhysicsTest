@@ -32,6 +32,7 @@ public:
 	virtual void CalculateGlobal() = 0;
 	virtual void CalculateAABB() = 0;
 
+	Vector2 GetGlobalCentrePoint() { globalCentrePoint; }
 	AABB& GetAABB() { return aABB; };
 protected:
 	PhysicsObject* attached;
