@@ -2,6 +2,9 @@
 
 void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 {
+	if (pObjects.size() < 2)
+		return;
+
 	collisions.clear();
 
 	for (int i = 0; i < pObjects.size() - 1; i++)
@@ -77,10 +80,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 	switch (manifold.type) 
 	{
 	case COLLISION_TYPE::CIRCLECIRCLE:
-		break;
-	case COLLISION_TYPE::POLYGONCIRCLE:
-		break;
-	case COLLISION_TYPE::POLYGONPOLYGON:
+		auto a = manifold.a->collider;
 		break;
 	}
 
@@ -89,6 +89,103 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 
 void CollisionManager::GetCollisionType(CollisionManifold& manifold)
 {
+	//use a pairing function
+	int a = (int)manifold.a->collider->shapes[0]->GetType();
+	int b = (int)manifold.b->collider->shapes[0]->GetType();
+	// a + 2b works like a cheap pairing function (only works for the inputs that SHAPE_TYPE are)
+	// it only works with inputs that are powers of each other (e.g 4^0, 4^1, 4^2), 
+	// and the number that is being put to the power of also needs to be greater than number of inputs - 1 otherwise at risk of duplicates
+	
+	// a + 2b
+	int pair = a + 2*b;
+	
+	PhysicsObject* t;
+	//need to switch around the pairs so that the collision type gives the correct enum
+	switch (pair) {
+	case 3:		// Circle - Circle
+		manifold.type = COLLISION_TYPE::CIRCLECIRCLE;
+		break;
+
+	case 9:		// Circle - Polygon
+		manifold.type = COLLISION_TYPE::CIRCLEPOLYGON;
+		break;
+	
+	case 33:	// Circle - Capsule
+		manifold.type = COLLISION_TYPE::CIRCLECAPSULE;
+		break;
+	
+	case 129:	// Circle - Line
+		manifold.type = COLLISION_TYPE::CIRCLELINE;
+		break;
+
+	case 6:		// Polygon - Circle
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CIRCLEPOLYGON;
+		break;
+	
+	case 12:	// Polygon - Polygon
+		manifold.type = COLLISION_TYPE::POLYGONPOLYGON;
+		break;
+	
+	case 36:	// Polygon - Capsule
+		manifold.type = COLLISION_TYPE::POLYGONCAPSULE;
+		break;
+	
+	case 132:	// Polygon - Line
+		manifold.type = COLLISION_TYPE::POLYGONLINE;
+		break;
+
+	case 18:	// Capsule - Circle
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CIRCLECAPSULE;
+		break;
+
+	case 24:	// Capsule - Polygon
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::POLYGONCAPSULE;
+		break;
+	
+	case 48:	// Capsule - Capsule
+		manifold.type = COLLISION_TYPE::CAPSULECAPSULE;
+		break;
+	
+	case 144:	// Capsule - Line
+		manifold.type = COLLISION_TYPE::CAPSULELINE;
+		break;
+
+	case 66:	// Line - Circle
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CIRCLELINE;
+		break;
+	
+	case 72:	// Line - Polygon
+		 t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::POLYGONLINE;
+		break;
+	
+	case 96:	// Line - Capsule
+		 t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CAPSULELINE;
+		break;
+	
+	default:
+	case 192:	// Line - Line
+		manifold.type = COLLISION_TYPE::INVALID;
+		break;
+	
+	}
 }
 
 bool CollisionManager::CheckAABBCollision(AABB& a, AABB& b)

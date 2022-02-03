@@ -11,13 +11,15 @@ public:
 	Vector2 min;
 };
 
-enum class SHAPE_TYPE {
-	CIRCLE,
-	POLYGON,
-	CAPSULE,
-	LINE,
-	COUNT
+enum class SHAPE_TYPE : unsigned char {
+	CIRCLE = 1,
+	POLYGON = 4,
+	CAPSULE = 16,
+	LINE = 64,
+	COUNT = 4
 };
+
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // BASE CLASS

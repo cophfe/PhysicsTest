@@ -35,7 +35,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 
 		if (heldShape == nullptr) 
 		{
-			heldShape = PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);//new CircleShape(shapeRadius, Vector2(0,0));
+			heldShape = new CircleShape(shapeRadius, Vector2(0,0)); //PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);
 		}
 	}
 }
@@ -48,7 +48,7 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 		auto* collider = new Collider(heldShape);
 		PhysicsData data = PhysicsData(
 			startingPosition,
-			GetAngleOfVector2(glm::normalize(startingPosition - program.GetCursorPos())),
+			GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition )),
 			true,
 			true);
 

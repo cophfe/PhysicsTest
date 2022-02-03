@@ -13,10 +13,10 @@
 //I assume it is okay to use a tutorial and an additional library for rendering stuff because this is a physics assingment
 
 struct CharacterData {
-	unsigned int textureID;
 	Vector2Int size;
-	Vector2Int bearing;
-	unsigned int advance;
+	Vector2Int bearing; //bitmap_left && bitmap_top
+	Vector2Int advance;
+	float xOffset;
 };
 
 struct TextData 
@@ -45,7 +45,7 @@ private:
 	//stores the data for each character needed for rendering
 	//index converted to char is letter
 	std::map<char, CharacterData> charData;
-	std::vector<TextData> textInfo;
+	std::vector<TextData> textData;
 
 	//vertex array object, vertex buffer object
 	unsigned int VAO, VBO;
@@ -54,6 +54,10 @@ private:
 	int textColourUniform;
 	int projectionUniform;
 
+	//the character strip's total width
+	unsigned int textureWidth;
+	unsigned int textureHeight;
+	unsigned int textureID;
 	//quad vertex array
 	float vertices[6][4];
 };

@@ -1,6 +1,7 @@
 #pragma once
 #include "GameBase.h"
 #include "PhysicsObject.h"
+#include "CollisionManager.h"
 #include "PlayerInput.h"
 #include <forward_list>
 
@@ -22,5 +23,6 @@ public:
 private:
 	std::vector<PhysicsObject> pObjects;
 	PlayerInput playerInput;
+	CollisionManager collisionManager;
 };
 

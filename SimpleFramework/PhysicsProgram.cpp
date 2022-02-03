@@ -3,7 +3,7 @@
 
 PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
 {
-	text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(0.5, 0.8f, 0.2f));
+	text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(1.0f, 0.6f, 0.0f));
 }
 
 void PhysicsProgram::Update()
@@ -15,6 +15,8 @@ void PhysicsProgram::Update()
 	{
 		pObject.Update(*this);
 	}
+
+	collisionManager.ResolveCollisions(pObjects);
 
 	//player input also
 	playerInput.Update();
