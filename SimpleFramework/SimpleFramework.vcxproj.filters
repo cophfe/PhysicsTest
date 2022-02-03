@@ -56,6 +56,15 @@
     <ClCompile Include="CollisionManager.cpp">
       <Filter>Game</Filter>
     </ClCompile>
+    <ClCompile Include="Shape.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="TextRenderer.cpp">
+      <Filter>Engine\MyAdditions</Filter>
+    </ClCompile>
+    <ClCompile Include="PlayerInput.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -130,6 +139,15 @@
     <ClInclude Include="CollisionManager.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="Shape.h">
+      <Filter>Game\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="TextRenderer.h">
+      <Filter>Engine\MyAdditions</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerInput.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Engine">
@@ -152,6 +170,9 @@
     </Filter>
     <Filter Include="Game\Physics">
       <UniqueIdentifier>{7ea66624-1751-4ea2-8c2d-70353369fcf0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Engine\MyAdditions">
+      <UniqueIdentifier>{7b0df856-4bcc-49c5-b05b-1b3f99c46f87}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

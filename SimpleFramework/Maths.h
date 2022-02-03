@@ -9,4 +9,10 @@
 #include "gtx/norm.hpp"
 
 typedef glm::vec2 Vector2;
+typedef glm::vec3 Vector3;
+typedef glm::ivec2 Vector2Int;
 typedef glm::mat2x2 Matrix2x2;
+typedef glm::mat4 Matrix4x4;
+
+
+//copied from glm 

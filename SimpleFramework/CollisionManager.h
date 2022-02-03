@@ -6,7 +6,11 @@ enum class COLLISION_TYPE
 {
 	CIRCLECIRCLE,
 	POLYGONCIRCLE,
-	POLYGONPOLYGON
+	POLYGONPOLYGON,
+	LINECIRCLE,
+	LINELINE,
+	POLYGONLINE,
+
 };
 
 struct CollisionManifold
@@ -32,7 +36,9 @@ private:
 	
 	void ResolveCollision(CollisionManifold& manifold);
 	bool EvaluateCollision(CollisionManifold& manifold);
+	void GetCollisionType(CollisionManifold& manifold);
 
 	std::vector< CollisionManifold> collisions;
+	
 };
 

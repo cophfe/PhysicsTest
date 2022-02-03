@@ -6,6 +6,9 @@
 void WindowResizeCallback(GLFWwindow* window, int width, int height)
 {
 	glViewport(0, 0, width, height);
+
+	GameBase* programPointer = (GameBase*)glfwGetWindowUserPointer(window);	
+	programPointer->OnWindowResize(width, height);
 }
 
 void MouseButtonCallback(GLFWwindow* window, int button, int action, int mods)

@@ -1,133 +1,165 @@
 #include "Collider.h"
 #include "PhysicsProgram.h"
+#include "CollisionManager.h"
 #include "PhysicsObject.h"
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // POLYGON COLLIDER
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-PolygonCollider::PolygonCollider(Vector2* vertices, int vertexCount, Vector2 centrePoint, PhysicsObject *attached)
+//PolygonCollider::PolygonCollider(Vector2* vertices, int vertexCount, Vector2 centrePoint, PhysicsObject *attached)
+//{
+//	points = vertices;
+//	//memcpy(points, vertices, sizeof(Vector2) * vertexCount);
+//	pointCount = vertexCount;
+//	this->centrePoint = centrePoint;
+//	globalPoints = new Vector2[pointCount];
+//	this->attached = attached;
+//	CalculateGlobal();
+//}
+//void PolygonCollider::RenderShape(PhysicsProgram& program)
+//{
+//	program.GetLineRenderer().DrawRawShape((float*)globalPoints, pointCount);
+//}
+//
+//void PolygonCollider::CalculateGlobal()
+//{
+//	Matrix2x2 &mat = attached->GetScaleRotationMatrix();
+//	globalCentrePoint = centrePoint * mat;
+//
+//	for (size_t i = 0; i < pointCount; i++)
+//	{
+//		globalPoints[i] = points[i] * mat + globalCentrePoint;
+//	}
+//}
+//
+//
+//
+//
+////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//// CIRCLE COLLIDER
+////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//CircleCollider::CircleCollider(float radius, Vector2 centrePoint, PhysicsObject* attached)
+//{
+//	this->radius = radius;
+//	this->centrePoint = centrePoint;
+//	this->attached = attached;
+//
+//	CalculateGlobal();
+//}
+//
+//void CircleCollider::RenderShape(PhysicsProgram& program)
+//{
+//	program.GetLineRenderer().DrawCircle(attached->GetPosition() + centrePoint, radius);
+//}
+//
+//void CircleCollider::CalculateGlobal()
+//{
+//	Matrix2x2& mat = attached->GetScaleRotationMatrix();
+//	globalCentrePoint = centrePoint * mat;
+//	globalRadius = radius * attached->GetScale();
+//
+//}
+
+Collider::Collider(Shape* shape, float density, PhysicsObject* attached)
 {
-	points = vertices;
-	//memcpy(points, vertices, sizeof(Vector2) * vertexCount);
-	pointCount = vertexCount;
-	this->centrePoint = centrePoint;
-	globalPoints = new Vector2[pointCount];
-	this->attached = attached;
-	CalculateGlobal();
-}
-void PolygonCollider::RenderShape(PhysicsProgram& program)
-{
-	program.GetLineRenderer().DrawRawShape((float*)globalPoints, pointCount);
 }
 
-float PolygonCollider::CalculateArea()
+Collider::Collider(Shape** shapes, int shapeCount, float density, PhysicsObject* attached)
 {
-	//needs to be multipled by scale.x, scale.y & density
-	float area = 0;
+}
 
-	for (size_t i = 0; i < pointCount - 1; i++)
+float Collider::CalculateInertia()
+{
+	return 0.0f;
+}
+
+float Collider::CalculateMass()
+{
+	float mass = 0;
+	for (size_t i = 0; i < shapeCount; i++)
 	{
-		area += centrePoint.x* (points[i].y - points[i + 1].y) + points[i].x * (points[i + 1].y - centrePoint.y) + points[i + 1].x * (centrePoint.y - points[i].y);
+		mass += shapes[i]->CalculateArea() * density;
 	}
-	area += centrePoint.x* (points[pointCount - 1].y - points[0].y) + points[pointCount - 1].x * (points[0].y - centrePoint.y) + points[0].x * (centrePoint.y - points[pointCount - 1].y);
-	area *= 0.5f;
-
-	return area;
+	return mass;
 }
 
-void PolygonCollider::CalculateGlobal()
+void Collider::CalculateAABB(Transform& transform)
 {
-	Matrix2x2 &mat = attached->GetTransform();
-	globalCentrePoint = centrePoint * mat;
-
-	for (size_t i = 0; i < pointCount; i++)
+	switch (shapeCount) {
+	case 0:
+		return;
+	case 1:
+		aABB = shapes[0]->CalculateAABB(transform);
+		return;
+	default:
 	{
-		globalPoints[i] = points[i] * mat + globalCentrePoint;
+		AABB* aabbs = new AABB[shapeCount];
+		aabbs[0] = shapes[0]->CalculateAABB(transform);
+		aABB = aabbs[0];
+
+		for (size_t i = 1; i < shapeCount; i++)
+		{
+			aabbs[i] = shapes[i]->CalculateAABB(transform);
+
+			if (aabbs[i].max.x > aABB.max.x)
+				aABB.max.x = aabbs[i].max.x;
+			if (aabbs[i].min.x < aABB.min.x)
+				aABB.min.x = aabbs[i].min.x;
+			if (aabbs[i].max.y > aABB.max.y)
+				aABB.max.y = aabbs[i].max.y;
+			if (aabbs[i].min.y > aABB.min.y)
+				aABB.min.y = aabbs[i].min.y;
+		}
 	}
-}
-
-void PolygonCollider::CalculateAABB()
-{
-	float xMax = points[0].x;
-	float xMin = points[0].x;
-
-	float yMax = points[0].y;
-	float yMin = points[0].y;
+	}
 	
-	for (size_t i = 1; i < pointCount; i++)
+}
+
+Collider::~Collider()
+{
+	for (size_t i = 0; i < shapeCount; i++)
 	{
-		if (points[i].x > xMax)
-			xMax = points[i].x;
+		delete shapes[i];
+		shapes[i] = nullptr;
+	}
+	delete[] shapes;
+	shapes = nullptr;
+}
 
-		if (points[i].y > yMax)
-			yMax = points[i].y;
+Collider::Collider(Collider& other)
+{
+	aABB = other.aABB;
+	shapeCount = other.shapeCount;
+	attached = other.attached;
+	density = other.density;
 
-		if (points[i].x < xMin)
-			xMin = points[i].x;
+	shapes = new Shape*[shapeCount];
+	for (size_t i = 0; i < shapeCount; i++)
+	{
+		shapes[i] = other.shapes[i]->Clone();
+	}
+}
 
-		if (points[i].y < yMin)
-			yMin = points[i].y;
+Collider& Collider::operator=(Collider& other)
+{
+	for (size_t i = 0; i < shapeCount; i++)
+	{
+		delete shapes[i];
+	}
+	delete[] shapes;
+
+	aABB = other.aABB;
+	shapeCount = other.shapeCount;
+	attached = other.attached;
+	density = other.density;
+
+	shapes = new Shape * [shapeCount];
+	for (size_t i = 0; i < shapeCount; i++)
+	{
+		shapes[i] = other.shapes[i]->Clone();
 	}
 
-	aABB.max.x = xMax;
-	aABB.max.y = yMax;
-
-	aABB.min.x = xMin;
-	aABB.min.y = yMin;
-}
-
-PolygonCollider&& PolygonCollider::GetRegularPolygonCollider(float radius, int pointCount, PhysicsObject* attached)
-{
-	Vector2 *points = new Vector2[pointCount];
-
-	float iPointCount = 1.0f / pointCount;
-	for (size_t i = 0; i < pointCount; i++)
-	{
-		points[i] = Vector2(radius * cos(i * iPointCount), radius * sin(i * iPointCount));
-	}
-
-	return PolygonCollider(points, pointCount, Vector2(0, 0), attached);
+	return *this;
 }
 
 
-
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// CIRCLE COLLIDER
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-CircleCollider::CircleCollider(float radius, Vector2 centrePoint, PhysicsObject* attached)
-{
-	this->radius = radius;
-	this->centrePoint = centrePoint;
-	this->attached = attached;
-
-	CalculateGlobal();
-}
-
-void CircleCollider::RenderShape(PhysicsProgram& program)
-{
-	program.GetLineRenderer().DrawCircle(attached->GetPosition() + centrePoint, radius);
-}
-
-float CircleCollider::CalculateArea()
-{
-	return radius * radius * glm::pi<float>();
-}
-
-void CircleCollider::CalculateGlobal()
-{
-	Matrix2x2& mat = attached->GetTransform();
-	globalCentrePoint = centrePoint * mat;
-	globalRadius = radius * attached->GetScale();
-
-}
-
-void CircleCollider::CalculateAABB()
-{
-	aABB.max.x = globalCentrePoint.x + globalRadius;
-	aABB.max.y = globalCentrePoint.y + globalRadius;
-
-	aABB.min.x = globalCentrePoint.x - globalRadius;
-	aABB.min.y = globalCentrePoint.y - globalRadius;
-}

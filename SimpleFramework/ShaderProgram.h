@@ -16,6 +16,9 @@ private:
 	bool loadedSuccessfully = false;
 
 public:
+
+	GLuint GetShaderProgram() { return shaderProgram; }
+
 	ShaderProgram() {}
 	ShaderProgram(std::string vertexFilename, std::string fragmentFilename);
 

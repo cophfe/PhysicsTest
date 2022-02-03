@@ -22,7 +22,7 @@ GameBase::GameBase()
 	}
 	//Can choose resolution here.
 	window = glfwCreateWindow(1280, 720, "Physics Testbed", nullptr, nullptr);
-	glfwSetWindowPos(window, 1950, 30);
+	//glfwSetWindowPos(window, 1950, 30);
 
 	//This is the somewhat hacky oldschool way of making callbacks work without everything having to be global. Look
 	//at the way the function callbacks work to get an idea of what's going on.
@@ -50,7 +50,6 @@ GameBase::GameBase()
 	}
 	glfwSwapInterval(1);
 
-
 	ImGui::CreateContext();
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
@@ -62,6 +61,8 @@ GameBase::GameBase()
 	lines.Initialise();
 
 	glClearColor(0, 0, 0, 1);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	grid.Initialise();
 	for (float i = (float)-gridLimits; i <= (float)gridLimits; i++)
@@ -73,6 +74,10 @@ GameBase::GameBase()
 	grid.DrawLineSegment({ 0,0 }, { 1, 0 }, { 1, 0, 0 });
 	grid.DrawLineSegment({ 0,0 }, { 0, 1 }, { 0, 1, 0 });
 	grid.Compile();
+
+	//text now
+	textShader = ShaderProgram("Text.vsd", "Text.fsd");
+	text.Initialise("arial.ttf", textShader);
 }
 
 GameBase::~GameBase()
@@ -133,13 +138,15 @@ void GameBase::Update()
 
 void GameBase::Render()
 {
-
 	glClear(GL_COLOR_BUFFER_BIT);
+	simpleShader.UseShader();
 	glm::mat4 orthoMat = GetCameraTransform();
 	simpleShader.SetUniform("vpMatrix", orthoMat);
 	grid.Draw();	//Grid lines don't change so we just draw them.
 	lines.UpdateFrame();	//Other lines potentially change every frame, so we have to compile/draw/clear them.
-
+	
+	//draw text
+	text.Draw(textShader);
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -161,6 +168,11 @@ void GameBase::OnMouseClick(int mouseButton)
 void GameBase::OnMouseRelease(int mouseButton)
 {
 	//Override this function if you need to respond to mouse button releases.
+}
+
+void GameBase::OnWindowResize(int width, int height)
+{
+	text.UpdateWindowMatrix(textShader, width, height);
 }
 
 void GameBase::Zoom(float zoomFactor)

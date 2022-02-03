@@ -20,7 +20,7 @@ void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 				//broad phase
 				//this checks if the AABBs are colliding
 
-				if (CheckAABBCollision(pObjects[i].GetCollider()->GetAABB(), pObjects[i].GetCollider()->GetAABB()))
+				if (CheckAABBCollision(pObjects[i].collider->aABB, pObjects[i].collider->aABB))
 				{
 					//in this case we need to check if collision is valid, and if so, resolve it
 					//we add it to collisions for this frame
@@ -72,18 +72,7 @@ void CollisionManager::ResolveCollision(CollisionManifold& manifold)
 bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 {
 	//set up manifold
-	manifold.type = (COLLISION_TYPE)((char)manifold.a->GetCollider()->GetType() + (char)manifold.b->GetCollider()->GetType());
-
-	if (manifold.type == COLLISION_TYPE::POLYGONCIRCLE)
-	{
-		//make sure polygon is first
-		if (manifold.a->GetCollider()->GetType() == COLLIDER_TYPE::CIRCLE)
-		{
-			auto circle = manifold.a;
-			manifold.a = manifold.b;
-			manifold.b = circle;
-		}
-	}
+	GetCollisionType(manifold);
 
 	switch (manifold.type) 
 	{
@@ -96,6 +85,10 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 	}
 
 	return false;
+}
+
+void CollisionManager::GetCollisionType(CollisionManifold& manifold)
+{
 }
 
 bool CollisionManager::CheckAABBCollision(AABB& a, AABB& b)

@@ -101,13 +101,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)imgui;$(SolutionDir)GLFW;$(SolutionDir)glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)imgui;$(SolutionDir)GLFW;$(SolutionDir)glm;$(SolutionDir)FreeType</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)enet;$(SolutionDir)GLFW</AdditionalLibraryDirectories>
-      <AdditionalDependencies>enet64.lib;glfw3.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)enet;$(SolutionDir)GLFW;$(SolutionDir)FreeType</AdditionalLibraryDirectories>
+      <AdditionalDependencies>enet64.lib;glfw3.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;freetype.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -134,14 +134,14 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)imgui;$(SolutionDir)GLFW;$(SolutionDir)glm</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)imgui;$(SolutionDir)GLFW;$(SolutionDir)glm;$(SolutionDir)FreeType</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(SolutionDir)enet;$(SolutionDir)GLFW</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(SolutionDir)enet;$(SolutionDir)GLFW;$(SolutionDir)FreeType</AdditionalLibraryDirectories>
       <AdditionalDependencies>enet64.lib;glfw3.lib;ws2_32.lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -162,8 +162,11 @@
     <ClCompile Include="GLFWCallbacks.cpp" />
     <ClCompile Include="LineRenderer.cpp" />
     <ClCompile Include="PhysicsProgram.cpp" />
+    <ClCompile Include="PlayerInput.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="GameBase.cpp" />
+    <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="TextRenderer.cpp" />
     <ClCompile Include="Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -188,8 +191,11 @@
     <ClInclude Include="LineRenderer.h" />
     <ClInclude Include="Maths.h" />
     <ClInclude Include="PhysicsProgram.h" />
+    <ClInclude Include="PlayerInput.h" />
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="GameBase.h" />
+    <ClInclude Include="Shape.h" />
+    <ClInclude Include="TextRenderer.h" />
     <ClInclude Include="Utilities.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

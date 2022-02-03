@@ -3,6 +3,7 @@
 
 PhysicsProgram::PhysicsProgram() : GameBase()
 {
+	text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(0.5, 0.8f, 0.2f));
 }
 
 void PhysicsProgram::Update()
@@ -14,10 +15,13 @@ void PhysicsProgram::Update()
 	{
 		pObject.Update(*this);
 	}
+
+	//player input also
 }
 
 void PhysicsProgram::Render()
 {
+	
 
 	if (leftButtonDown)
 	{
@@ -35,20 +39,25 @@ void PhysicsProgram::Render()
 		lines.DrawCircle(cursorPos, 0.2f, { 0, 0, 1 });
 	}
 
-	//Your drawing code goes here!
-
 	for (auto pObject : pObjects)
 	{
 		pObject.Render(*this);
 	}
 
+
 	//This call puts all the lines you've set up on screen - don't delete it or things won't work.
+	//uses simple shader to draw lines and grid
 	GameBase::Render();
 }
 
 void PhysicsProgram::OnMouseClick(int mouseButton)
 {
+	playerInput.OnMouseClick(mouseButton);
+}
 
+void PhysicsProgram::OnMouseRelease(int mouseButton)
+{
+	playerInput.OnMouseRelease(mouseButton);
 }
 
 void PhysicsProgram::AddPhysicsObject(PhysicsObject&& pObject)

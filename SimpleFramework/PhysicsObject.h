@@ -2,14 +2,18 @@
 #include "Maths.h"
 #include "Collider.h"
 class PhysicsProgram;
+class CollisionManager;
+
+enum class PHYSICS_OBJECT_TYPE {
+	KINEMATIC,
+	DYNAMIC
+};
 
 struct PhysicsData 
 {
-	glm::vec2 initialPosition;
-	glm::vec2 initialScale = glm::vec2(1.0f, 1.0f);
+	glm::vec2 position;
+	glm::vec2 scale = glm::vec2(1.0f, 1.0f);
 	float rotation;
-	glm::vec2 initialVelocity;
-	float initialAngularVelocity;
 
 	float bounciness = 0.4f;
 	float drag;
@@ -19,6 +23,27 @@ struct PhysicsData
 	//will automatically calculate mass and moment of inertia if equal to -1
 	float mass = -1;
 	float momentOfInertia = -1;
+};
+
+class Transform {
+public:
+	Vector2 position;
+	float rotation;
+
+	void UpdateData() {
+		s = sin(rotation);
+		c = cos(rotation);
+	}
+	
+	inline Vector2 TransformPoint(const Vector2& point) 
+	{
+		return Vector2(point.x * c - point.y * s, point.y * c + point.x * s);
+	}
+
+private:
+	//ehh its basically a matrix
+	float s;
+	float c;
 };
 
 class PhysicsObject
@@ -32,9 +57,8 @@ public:
 
 	//getters
 	inline Collider*	GetCollider()				{ return collider; }
-	inline Vector2		GetPosition()				{ return position; }
-	inline float		GetRotation()				{ return rotation; }
-	inline float		GetScale()					{ return scale; }
+	inline Vector2		GetPosition()				{ return transform.position; }
+	inline float		GetRotation()				{ return transform.rotation; }
 	
 	inline Vector2		GetVelocity()				{ return velocity; }
 	inline float		GetAngularVelocity()		{ return angularVelocity; }
@@ -45,15 +69,14 @@ public:
 	inline float		GetDrag()					{ return drag; }
 	inline float		GetAngularDrag()			{ return angularDrag; }
 	inline float		GetMass()					{ return 1.0f / iMass; }
-	inline float		GetMomentOfInertia()		{ return 1.0f / iMomentOfInertia; }
+	inline float		GetInertia()				{ return 1.0f / iMomentOfInertia; }
 	inline float		GetInverseMass()			{ return iMass; }
-	inline float		GetInverseMomentOfInertia()	{ return iMomentOfInertia; }
+	inline float		GetInverseInertia()			{ return iMomentOfInertia; }
 
-	inline Matrix2x2&	GetTransform()				{ return transform;}
+	inline Matrix2x2&	GetScaleRotationMatrix()	{ return scaleRotationMatrix;}
 	//setters
-	inline void	SetPosition(Vector2 pos)			{ position = pos; }
-	inline void	SetRotation(float rot)				{ rotation = rot;}
-	inline void	SetScale(float scale)				{ this->scale = scale;}
+	inline void	SetPosition(Vector2 pos)			{ transform.position = pos; }
+	inline void	SetRotation(float rot)				{ transform.rotation = rot;}
 
 	inline void	SetVelocity(Vector2 vel)			{ velocity = vel;}
 	inline void	SetAngularVelocity(float aVel)		{ angularVelocity = aVel; }
@@ -67,23 +90,34 @@ public:
 	inline void	SetMomentOfInertia(float mOI)		{ iMomentOfInertia = 1.0f/mOI; }
 
 	//adders?
+	inline void AddPosition(Vector2 position)		{ transform.position += position; }
 	inline void AddForce(Vector2 force)				{ this->force += force; }
+	inline void AddTorque(float torque)				{ this->torque += torque; }
 	inline void AddVelocity(Vector2 velocity)		{ this->velocity += velocity; }
+	inline void AddAngularVelocity(float velocity)	{ angularVelocity += velocity; }
 	inline void AddImpulse(Vector2 impulse)			{ velocity += impulse * iMass; }
+	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iMomentOfInertia; }
 	void AddForceAtPosition(Vector2 force, Vector2 point);
+	void AddImpulseAtPosition(Vector2 force, Vector2 point);
+
+	//rule of 5
+	~PhysicsObject(); //destructor
+	PhysicsObject(const PhysicsObject& other); //copy constructor
+	PhysicsObject(PhysicsObject&& other); //move constructor
+	PhysicsObject& operator= (const PhysicsObject& other); //copy assignment
+	PhysicsObject& operator= (PhysicsObject&& other); //move assignment
 
 protected:
-	//collider connected to physicsObject
+	friend CollisionManager;
+
 	//is ptr so it can be null
 	Collider* collider = nullptr;
 
 	//position values
 	//should be no problem with vec2 scale since there are no child objects
-	Vector2 position;
-	float scale;
-	float rotation;
+	Transform transform;
 
-	Matrix2x2 transform;
+	Matrix2x2 scaleRotationMatrix;
 
 	//movement values
 	Vector2 velocity;
@@ -98,5 +132,7 @@ protected:
 	float iMass;
 	float iMomentOfInertia;
 
+	//(just in case something is not moving, so no movement calculations have to be done)
+	bool sleeping;
 };
 
