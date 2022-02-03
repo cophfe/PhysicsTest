@@ -60,12 +60,27 @@
 //
 //}
 
-Collider::Collider(Shape* shape, float density, PhysicsObject* attached)
+Collider::Collider(Shape* shape, float density)
 {
+	shapes = new Shape *[1];
+	shapes[0] = shape;
+	shapeCount = 1;
+	this->density = density;
 }
 
-Collider::Collider(Shape** shapes, int shapeCount, float density, PhysicsObject* attached)
+Collider::Collider(Shape** shapes, int shapeCount, float density)
 {
+	this->shapes = shapes;
+	this->shapeCount = shapeCount;
+	this->density = density;
+}
+
+void Collider::RenderShape(PhysicsProgram& program)
+{
+	for (size_t i = 0; i < shapeCount; i++)
+	{
+		shapes[i]->RenderShape(attached->transform, program);
+	}
 }
 
 float Collider::CalculateInertia()

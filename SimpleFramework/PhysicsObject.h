@@ -11,18 +11,21 @@ enum class PHYSICS_OBJECT_TYPE {
 
 struct PhysicsData 
 {
-	glm::vec2 position;
-	glm::vec2 scale = glm::vec2(1.0f, 1.0f);
+	Vector2 position;
+	Vector2 scale = Vector2(1.0f, 1.0f);
 	float rotation;
 
 	float bounciness = 0.4f;
 	float drag;
 	float angularDrag;
-	bool isKinematic = true;
+	bool isDynamic = false;
 	bool isRotatable = true;
 	//will automatically calculate mass and moment of inertia if equal to -1
 	float mass = -1;
-	float momentOfInertia = -1;
+
+	PhysicsData() = default;
+	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.4f, float drag = 0, float angularDrag = 0, float mass = -1)
+		: position(position), rotation(rotation), isDynamic(isDynamic), isRotatable(isRotatable), bounciness(bounciness), drag(drag), angularDrag(angularDrag), mass(mass) {}
 };
 
 class Transform {
@@ -37,7 +40,13 @@ public:
 	
 	inline Vector2 TransformPoint(const Vector2& point) 
 	{
-		return Vector2(point.x * c - point.y * s, point.y * c + point.x * s);
+		return Vector2(point.x * c - point.y * s + position.x, point.y * c + point.x * s + position.y);
+	}
+
+	Transform() = default;
+	Transform(Vector2 position, float rotation) : position(position), rotation(rotation)
+	{
+		UpdateData();
 	}
 
 private:
@@ -73,7 +82,6 @@ public:
 	inline float		GetInverseMass()			{ return iMass; }
 	inline float		GetInverseInertia()			{ return iMomentOfInertia; }
 
-	inline Matrix2x2&	GetScaleRotationMatrix()	{ return scaleRotationMatrix;}
 	//setters
 	inline void	SetPosition(Vector2 pos)			{ transform.position = pos; }
 	inline void	SetRotation(float rot)				{ transform.rotation = rot;}
@@ -107,8 +115,10 @@ public:
 	PhysicsObject& operator= (const PhysicsObject& other); //copy assignment
 	PhysicsObject& operator= (PhysicsObject&& other); //move assignment
 
+	static float gravity;
 protected:
 	friend CollisionManager;
+	friend Collider;
 
 	//is ptr so it can be null
 	Collider* collider = nullptr;
@@ -117,13 +127,11 @@ protected:
 	//should be no problem with vec2 scale since there are no child objects
 	Transform transform;
 
-	Matrix2x2 scaleRotationMatrix;
-
 	//movement values
-	Vector2 velocity;
-	float angularVelocity;
-	Vector2 force;
-	float torque;
+	Vector2 velocity = Vector2(0,0);
+	float angularVelocity = 0;
+	Vector2 force = Vector2(0,0);
+	float torque = 0;
 
 	//movement constants
 	float bounciness;
@@ -133,6 +141,7 @@ protected:
 	float iMomentOfInertia;
 
 	//(just in case something is not moving, so no movement calculations have to be done)
-	bool sleeping;
+	bool sleeping = false;
+
 };
 

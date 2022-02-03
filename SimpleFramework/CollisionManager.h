@@ -38,7 +38,7 @@ private:
 	bool EvaluateCollision(CollisionManifold& manifold);
 	void GetCollisionType(CollisionManifold& manifold);
 
-	std::vector< CollisionManifold> collisions;
+	std::vector<CollisionManifold> collisions;
 	
 };
 

@@ -13,13 +13,14 @@ public:
 	void OnMouseClick(int mouseButton);
 	void OnMouseRelease(int mouseButton);
 	
-	void AddPhysicsObject(PhysicsObject&& pObject);
+	PhysicsObject& AddPhysicsObject(PhysicsObject&& pObject);
 
 	//get
 	inline const float GetDeltaTime() { return deltaTime; }
 	inline LineRenderer& GetLineRenderer() { return lines; }
+	inline Vector2 GetCursorPos() { return cursorPos; }
 private:
-	std::forward_list<PhysicsObject> pObjects;
+	std::vector<PhysicsObject> pObjects;
 	PlayerInput playerInput;
 };
 

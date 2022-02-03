@@ -15,7 +15,8 @@ enum class SHAPE_TYPE {
 	CIRCLE,
 	POLYGON,
 	CAPSULE,
-	LINE
+	LINE,
+	COUNT
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -26,6 +27,7 @@ class Shape
 public:
 	virtual float CalculateArea() = 0;
 	virtual void RenderShape(PhysicsProgram& program, Transform& transform) = 0;
+	virtual void RenderShape(Transform transform, PhysicsProgram& program);
 	virtual AABB CalculateAABB(Transform& transform) = 0;
 	virtual SHAPE_TYPE GetType() = 0;
 	virtual Shape* Clone() = 0;
@@ -46,7 +48,7 @@ public:
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
-	PolygonShape&& GetRegularPolygonCollider(float radius, int pointCount);
+	static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
 private:
 	Vector2 points[max_vertices];
 	Vector2 normals[max_vertices];

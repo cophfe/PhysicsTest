@@ -2,9 +2,51 @@
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
 
-PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider)
-{
+float PhysicsObject::gravity = 8;
 
+PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
+{
+	
+
+	if (!data.isDynamic)
+	{
+		iMass = 0;
+		iMomentOfInertia = 0;
+	}
+	else if (!data.isRotatable)
+	{
+		iMomentOfInertia = 0;
+	}
+	else if (data.mass == -1) 
+	{
+		if (collider != nullptr) {
+			float mass = collider->CalculateMass();
+			if (mass == 0)
+				iMass = 0;
+			else
+				iMass = 1 / mass;
+
+			float inertia = collider->CalculateInertia();
+			if (inertia == 0)
+				iMomentOfInertia = 0;
+			else
+				iMomentOfInertia = 1 / inertia;
+		}
+		else {
+			iMass = 0;
+			iMomentOfInertia = 0;
+		}
+	}
+	
+	this->collider = collider;
+	if (collider != nullptr)
+	{
+		collider->SetAttached(this);
+	}
+	
+
+
+	
 }
 
 void PhysicsObject::Update(PhysicsProgram& program)
@@ -12,7 +54,8 @@ void PhysicsObject::Update(PhysicsProgram& program)
 	transform.position += velocity * program.GetDeltaTime();
 	
 	//(apply drag)
-	velocity += force / iMass * program.GetDeltaTime();
+	velocity += force * iMass * program.GetDeltaTime();
+	velocity.y -= gravity * program.GetDeltaTime();
 
 	transform.rotation += angularVelocity * program.GetDeltaTime();
 	//(apply angular drag)
@@ -21,6 +64,9 @@ void PhysicsObject::Update(PhysicsProgram& program)
 	//clear force stuff
 	force = Vector2(0, 0);
 	torque = 0;
+
+	//update transform
+	transform.UpdateData();
 }
 
 void PhysicsObject::Render(PhysicsProgram& program)
@@ -42,6 +88,10 @@ void PhysicsObject::AddForceAtPosition(Vector2 force, Vector2 point)
 	this->torque += Cross(point - transform.position, force);
 }
 
+void PhysicsObject::AddImpulseAtPosition(Vector2 force, Vector2 point)
+{
+}
+
 PhysicsObject::~PhysicsObject()
 {
 	delete collider;
@@ -50,12 +100,10 @@ PhysicsObject::~PhysicsObject()
 
 PhysicsObject::PhysicsObject(const PhysicsObject& other)
 {
-	//get memory
-	collider = (Collider*)(new char[sizeof(Collider)]);
-	*collider = *other.collider;
+	collider = new Collider(*other.collider);
+	collider->SetAttached(this);
 
 	transform = other.transform;
-	scaleRotationMatrix = other.scaleRotationMatrix;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;
 	force = other.force;
@@ -71,10 +119,11 @@ PhysicsObject::PhysicsObject(const PhysicsObject& other)
 PhysicsObject::PhysicsObject(PhysicsObject&& other)
 {
 	collider = other.collider;
+	collider->SetAttached(this);
+
 	other.collider = nullptr;
 
 	transform = other.transform;
-	scaleRotationMatrix = other.scaleRotationMatrix;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;
 	force = other.force;
@@ -89,11 +138,11 @@ PhysicsObject::PhysicsObject(PhysicsObject&& other)
 
 PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
 {
-	collider = (Collider*)(new char[sizeof(Collider)]);
-	*collider = *other.collider;
+	delete collider;
+	collider = new Collider(*other.collider);
+	collider->SetAttached(this);
 
 	transform = other.transform;
-	scaleRotationMatrix = other.scaleRotationMatrix;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;
 	force = other.force;
@@ -108,14 +157,15 @@ PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
 	return *this;
 }
 
-PhysicsObject& PhysicsObject::operator=(PhysicsObject&& other)
+PhysicsObject& PhysicsObject::operator=(PhysicsObject&& other) 
 {
 	delete collider;
 	collider = other.collider;
+	collider->SetAttached(this);
+
 	other.collider = nullptr;
 
 	transform = other.transform;
-	scaleRotationMatrix = other.scaleRotationMatrix;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;
 	force = other.force;

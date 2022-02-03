@@ -44,7 +44,7 @@ private:
 	void DrawText(TextData& data);
 	//stores the data for each character needed for rendering
 	//index converted to char is letter
-	std::vector<CharacterData> charData;
+	std::map<char, CharacterData> charData;
 	std::vector<TextData> textInfo;
 
 	//vertex array object, vertex buffer object

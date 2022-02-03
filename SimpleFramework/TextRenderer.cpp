@@ -26,12 +26,12 @@ void TextRenderer::Initialise(const char* font, ShaderProgram& shader)
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	
 
-	//load every char from 0 to 128
-	charData.reserve(128);
+	//load every char from 32 to 12
 	//currently makes them seperate textures, should probably modify it to blit it onto the same texture.
 	//(once I figure out how to do that, is probably hard since would have to optimise for minimal space)
 
-	for (unsigned char c = 0; c < 128; c++)
+	//skip first 32 and last
+	for (unsigned char c = 32; c < 127; c++)
 	{
 		//creates a grayscale bitmap in face->glyph->bitmap
 		if (FT_Load_Char(face, c, FT_LOAD_RENDER)) //error returns non 0 int
@@ -61,12 +61,14 @@ void TextRenderer::Initialise(const char* font, ShaderProgram& shader)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		charData.emplace_back(CharacterData{ 
+		auto data = CharacterData{
 			texture,
 			Vector2Int(face->glyph->bitmap.width, face->glyph->bitmap.rows),
 			Vector2Int(face->glyph->bitmap_left, face->glyph->bitmap_top),
-			(unsigned int)face->glyph->advance.x 
-			});
+			(unsigned int)face->glyph->advance.x};
+
+		charData.insert(std::make_pair(c, data));
+
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 	
@@ -162,12 +164,13 @@ void TextRenderer::DrawText(TextData& data)
 	//go through all characters
 	for (char c : data.text) 
 	{
+		auto& glyph = charData[c];
 		//need to make sure character is in the correct place
-		float xPos = x + charData[c].bearing.x * data.scale;
+		float xPos = x + glyph.bearing.x * data.scale;
 		//some characters are offset downward by an amount equal to height - bearing.y
-		float yPos = data.minXY.y - (charData[c].size.y - charData[c].bearing.y) * data.scale;
-		float width = charData[c].size.x * data.scale;
-		float height = charData[c].size.y * data.scale;
+		float yPos = data.minXY.y - (glyph.size.y - glyph.bearing.y) * data.scale;
+		float width = glyph.size.x * data.scale;
+		float height = glyph.size.y * data.scale;
 		
 		//set up vertex buffer, to be copied into VBO
 		vertices[0][0] = xPos;				vertices[0][1] = yPos + height;
@@ -178,7 +181,7 @@ void TextRenderer::DrawText(TextData& data)
 		vertices[5][0] = xPos + width;		vertices[5][1] = yPos + height;
 
 		//set active texture to the char texture
-		glBindTexture(GL_TEXTURE_2D, charData[c].textureID);
+		glBindTexture(GL_TEXTURE_2D, glyph.textureID);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
@@ -187,7 +190,7 @@ void TextRenderer::DrawText(TextData& data)
 		//actually render
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 		//now advance x (for some reason advance is stored in 1/64th of a pixel, probably some weird ass unit)
-		x += (charData[c].advance / 64) * data.scale;
+		x += (glyph.advance / 64) * data.scale;
 	}
 
 }

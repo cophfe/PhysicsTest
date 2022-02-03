@@ -13,10 +13,10 @@ class Transform;
 class Collider
 {
 public:
-	Collider(Shape* shape, float density, PhysicsObject* attached);
-	Collider(Shape** shapes, int shapeCount, float density, PhysicsObject* attached);
+	Collider(Shape* shape, float density = 1);
+	Collider(Shape** shapes, int shapeCount, float density = 1);
 
-	virtual void RenderShape(PhysicsProgram& program) = 0;
+	virtual void RenderShape(PhysicsProgram& program);
 
 	//calculaters
 	float CalculateInertia();
@@ -31,6 +31,7 @@ private:
 	friend CollisionManager;
 	friend PhysicsObject;
 	
+	void SetAttached(PhysicsObject* attached) { this->attached = attached; }
 	PhysicsObject* attached;
 	AABB aABB;
 	float density;

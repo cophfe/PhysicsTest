@@ -36,7 +36,7 @@ void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform)
 	auto& lines = program.GetLineRenderer();
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		lines.AddPointToLine(points[i]);
+		lines.AddPointToLine(transform.TransformPoint(points[i]));
 	}
 	lines.FinishLineLoop();
 }
@@ -77,17 +77,17 @@ Shape* PolygonShape::Clone()
 	return new PolygonShape(*this);
 }
 
-PolygonShape&& PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
+PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
 {
 	Vector2* points = new Vector2[pointCount];
 
-	float iPointCount = 1.0f / pointCount;
+	float iPointCount = glm::two_pi<float>() / pointCount;
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		points[i] = Vector2(radius * cos(i * iPointCount), radius * sin(i * iPointCount));
+		points[i] = Vector2(radius * cos((i + 0.5f) * iPointCount), radius * sin((i + 0.5f) * iPointCount));
 	}
 
-	return PolygonShape(points, pointCount, Vector2(0, 0));
+	return new PolygonShape(points, pointCount, Vector2(0, 0));
 }
 
 
@@ -109,6 +109,7 @@ float CircleShape::CalculateArea()
 void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform)
 {
 	program.GetLineRenderer().DrawCircle(transform.TransformPoint(centrePoint), radius);
+	program.GetLineRenderer().DrawLineSegment(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(0, radius * 0.5f)));
 }
 
 AABB CircleShape::CalculateAABB(Transform& transform)
@@ -247,4 +248,9 @@ SHAPE_TYPE SausageShape::GetType()
 Shape* SausageShape::Clone()
 {
 	return new SausageShape(*this);
+}
+
+void Shape::RenderShape(Transform transform, PhysicsProgram& program)
+{
+	RenderShape(program, transform);
 }
