@@ -25,19 +25,38 @@ void PlayerInput::Render()
 		float angle = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
 		heldShape->RenderShape(Transform(startingPosition, angle), program);
 	}
+	else if (makingObject)
+	{
+		program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), Vector3(1, 0, 0));
+	}
 }
 
 void PlayerInput::OnMouseClick(int mouseButton)
 {
-	if (!holdingObject && mouseButton == 0) {
-		holdingObject = true;
-		startingPosition = program.GetCursorPos();
-
-		if (heldShape == nullptr) 
+	if (!makingObject && !holdingObject) {
+		switch (mouseButton)
 		{
-			heldShape = new CircleShape(shapeRadius, Vector2(0,0)); //PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);
+		case 0:
+		{
+			holdingObject = true;
+			startingPosition = program.GetCursorPos();
+
+			if (heldShape == nullptr)
+			{
+				heldShape = new CircleShape(shapeRadius, Vector2(0, 0)); //PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);
+			}
+		}
+		break;
+		case 1: 
+		{
+			makingObject = true;
+			startingPosition = program.GetCursorPos();
+
+		}
+		break;
 		}
 	}
+	
 }
 
 void PlayerInput::OnMouseRelease(int mouseButton)
@@ -55,5 +74,16 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 		heldShape = nullptr;
 
 		program.AddPhysicsObject(PhysicsObject(data, collider)).AddImpulse(3.0f * (program.GetCursorPos() - startingPosition));
+	}
+	else if (makingObject && mouseButton == 1) {
+		makingObject = false;
+		PhysicsData data = PhysicsData(
+			Vector2(0,0),
+			0,
+			false,
+			false);
+		auto* collider = new Collider(new LineShape(startingPosition, program.GetCursorPos()));
+		program.AddPhysicsObject(PhysicsObject(data, collider)).AddImpulse(3.0f * (program.GetCursorPos() - startingPosition));
+
 	}
 }

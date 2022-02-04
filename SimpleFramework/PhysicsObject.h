@@ -63,6 +63,7 @@ public:
 	
 	void Update(PhysicsProgram& program);
 	void Render(PhysicsProgram& program);
+	void GenerateAABB();
 
 	//getters
 	inline Collider*	GetCollider()				{ return collider; }
@@ -138,6 +139,7 @@ protected:
 	float drag;
 	float angularDrag;
 	float iMass;
+	//the mass moment of inertia
 	float iMomentOfInertia;
 
 	//(just in case something is not moving, so no movement calculations have to be done)

@@ -16,6 +16,7 @@ public:
 
 private:
 	bool holdingObject;
+	bool makingObject;
 	Vector2 startingPosition;
 	PhysicsProgram& program;
 

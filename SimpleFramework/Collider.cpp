@@ -91,9 +91,14 @@ float Collider::CalculateInertia()
 float Collider::CalculateMass()
 {
 	float mass = 0;
+	float inertia = 0;
 	for (size_t i = 0; i < shapeCount; i++)
 	{
-		mass += shapes[i]->CalculateArea() * density;
+		float shapeMass = 0;
+		float shapeInertia = 0; //looks like the MOI of a composite shape is the sum of the individual parts MOI
+		shapes[i]->CalculateMass(shapeMass, shapeInertia, density);
+		mass += shapeMass;
+		inertia += shapeInertia;
 	}
 	return mass;
 }
@@ -175,6 +180,18 @@ Collider& Collider::operator=(Collider& other)
 	}
 
 	return *this;
+}
+
+bool Collider::CanBeDynamic()
+{
+	//lines cannot be dynamic, because they don't have any mass and it dont make sense.
+
+	for (size_t i = 0; i < shapeCount; i++)
+	{
+		if (shapes[i]->GetType() == SHAPE_TYPE::LINE)
+			return false;
+	}
+	return true;
 }
 
 

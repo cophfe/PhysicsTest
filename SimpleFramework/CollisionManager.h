@@ -1,18 +1,15 @@
 #pragma once
 #include "PhysicsObject.h"
 #include <vector>
+#include <iostream>
 
 enum class COLLISION_TYPE
 {
 	CIRCLECIRCLE,
-	CIRCLELINE,
 	CIRCLEPOLYGON,
-	CIRCLECAPSULE,
+	CIRCLELINE,
 	POLYGONPOLYGON,
 	POLYGONLINE,
-	POLYGONCAPSULE,
-	CAPSULECAPSULE,
-	CAPSULELINE,
 	INVALID,
 	COUNT
 };
@@ -24,9 +21,10 @@ struct CollisionManifold
 
 	PhysicsObject* a;
 	PhysicsObject* b;
+	//not used rn, will be used to factor in rotation speed of objects + apply torque
+	//Vector2 collisionPoints[1];
 	Vector2 collisionNormal;
 	float penetration;
-	Vector2 hitPosition;
 	COLLISION_TYPE type;
 };
 

@@ -3,7 +3,15 @@
 
 PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
 {
-	text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(1.0f, 0.6f, 0.0f));
+	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(1.0f, 0.6f, 0.0f));
+	
+	//multiple shapes in 1 physics object aren't supported JUST yet
+	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
+	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(-gridLimits, -gridLimits), Vector2(-gridLimits, gridLimits)))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(-gridLimits, gridLimits), Vector2(gridLimits, gridLimits)))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(gridLimits, gridLimits), Vector2(gridLimits, -gridLimits)))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(gridLimits, -gridLimits), Vector2(-gridLimits, -gridLimits)))));
+
 }
 
 void PhysicsProgram::Update()

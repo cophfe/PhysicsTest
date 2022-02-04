@@ -2,12 +2,10 @@
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
 
-float PhysicsObject::gravity = 8;
+float PhysicsObject::gravity = 2;
 
 PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
 {
-	
-
 	if (!data.isDynamic)
 	{
 		iMass = 0;
@@ -42,6 +40,11 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 	if (collider != nullptr)
 	{
 		collider->SetAttached(this);
+		if (!collider->CanBeDynamic()) 
+		{
+			iMass = 0;
+			iMomentOfInertia = 0;
+		}
 	}
 	
 
@@ -52,15 +55,17 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 void PhysicsObject::Update(PhysicsProgram& program)
 {
 	transform.position += velocity * program.GetDeltaTime();
-	
-	//(apply drag)
-	velocity += force * iMass * program.GetDeltaTime();
-	velocity.y -= gravity * program.GetDeltaTime();
-
 	transform.rotation += angularVelocity * program.GetDeltaTime();
-	//(apply angular drag)
-	angularVelocity += torque * iMomentOfInertia * program.GetDeltaTime();
+	if (iMass != 0) {
+		//(apply drag)
+		velocity += force * iMass * program.GetDeltaTime();
+		velocity.y -= gravity * program.GetDeltaTime();
 
+		//(apply angular drag)
+		angularVelocity += torque * iMomentOfInertia * program.GetDeltaTime();
+
+	}
+	
 	//clear force stuff
 	force = Vector2(0, 0);
 	torque = 0;
@@ -71,8 +76,21 @@ void PhysicsObject::Update(PhysicsProgram& program)
 
 void PhysicsObject::Render(PhysicsProgram& program)
 {
-	if (collider)
+	if (collider) {
 		collider->RenderShape(program);
+
+		/*auto& aABB = collider->aABB;
+		program.GetLineRenderer().DrawLineSegment(aABB.max, Vector2(aABB.max.x, aABB.min.y));
+		program.GetLineRenderer().DrawLineSegment(Vector2(aABB.max.x, aABB.min.y), aABB.min);
+		program.GetLineRenderer().DrawLineSegment(aABB.min, Vector2(aABB.min.x, aABB.max.y));
+		program.GetLineRenderer().DrawLineSegment(Vector2(aABB.min.x, aABB.max.y), aABB.max);*/
+
+	}
+}
+
+void PhysicsObject::GenerateAABB() {
+	if (collider)
+		collider->CalculateAABB(transform);
 }
 
 //z value of cross product in 3D with a and b (x and y values equal 0)

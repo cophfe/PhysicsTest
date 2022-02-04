@@ -1,34 +1,77 @@
 #include "Shape.h"
 #include "PhysicsObject.h"
 #include "PhysicsProgram.h"
+#include "CollisionManager.h"
+
+// non member functions
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+static float GetAngle(Vector2 a, Vector2 b) {
+	return acos(glm::dot(a, b));
+}
+
+static float Cross(Vector2 a, Vector2 b, Vector2 c) {
+	//line made of a and b, is c to the left or right
+
+	// > 0 : c is to the left
+	// < 0 : c is to the right
+	// == 0 : c is in front
+	return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
+}
+
+static float Cross(Vector2 a, Vector2 b) {
+	return (a.x * b.y - b.x * a.y);;
+}
+
+static float SquareLength(Vector2 v) {
+	return v.x * v.x + v.y * v.y;
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // POLYGON
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-PolygonShape::PolygonShape(Vector2* vertices, int vertexCount, Vector2 centrePoint)
+PolygonShape::PolygonShape(Vector2* vertices, int vertexCount)
 {
-	memcpy(points, vertices, sizeof(Vector2) * vertexCount);
+	//(this function organises vertices, calculates concave hull and centerpoint)
+	OrganisePoints(vertices, vertexCount);
 	
-	//memcpy(points, vertices, sizeof(Vector2) * vertexCount);
-	pointCount = vertexCount;
-	this->centrePoint = centrePoint;
-
+	CalculateNormals();
 }
 
-float PolygonShape::CalculateArea()
+bool PolygonShape::PointCast(Vector2 point, Transform& transform)
 {
+
+	return false;
+}
+
+void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
+{
+	//centrepoint is the average of the compositional triangles centrepoints, weighted by area
+	Vector2 polyCentre = Vector2(0, 0);
+	//mass moment of inertia is equal to the sum of the compositional triangle's mass moments
+	float i = 0;
 	float area = 0;
 
-	for (size_t i = 0; i < pointCount - 1; i++)
+	for (size_t i = 0; i < pointCount; i++)
 	{
-		area += centrePoint.x * (points[i].y - points[i + 1].y) + points[i].x * (points[i + 1].y - centrePoint.y) + points[i + 1].x * (centrePoint.y - points[i].y);
+		Vector2& a = this->points[i], b = this->points[(i + 1) % pointCount];
+
+		Vector2 triCentre = (a + b) / 3.0f;
+		float triArea = 0.5f * Cross(a, b);
+		area += triArea;
+
+		//fun fact: the squared length of a vector is the same as the dot product of it with itself
+		i += (SquareLength(a) + SquareLength(b) + glm::dot(a, b)) * triArea / 6;
+		//triangle area * triangle centre
+		polyCentre += triArea * triCentre;
 	}
-	area += centrePoint.x * (points[pointCount - 1].y - points[0].y) + points[pointCount - 1].x * (points[0].y - centrePoint.y) + points[0].x * (centrePoint.y - points[pointCount - 1].y);
-	area *= 0.5f;
+	i = density * i;
 
-	return area;
-
+	//set final values
+	centrePoint = polyCentre / (area); //divide by total area to get the centrepoint
+	mass = area * density; //multiply by density
+	inertia = i - mass * SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
 void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform)
@@ -79,6 +122,13 @@ Shape* PolygonShape::Clone()
 
 PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
 {
+
+	if (pointCount > max_vertices) {
+
+		std::cout << "Error: Polygons have a max vertex count of " << max_vertices;
+		pointCount = max_vertices;
+	}
+
 	Vector2* points = new Vector2[pointCount];
 
 	float iPointCount = glm::two_pi<float>() / pointCount;
@@ -87,7 +137,86 @@ PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCou
 		points[i] = Vector2(radius * cos((i + 0.5f) * iPointCount), radius * sin((i + 0.5f) * iPointCount));
 	}
 
-	return new PolygonShape(points, pointCount, Vector2(0, 0));
+	return new PolygonShape(points, pointCount);
+	delete[] points;
+}
+
+
+
+
+bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
+{
+	//first create convex hull using gift wrapping algorithm https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
+	//this should both discard all points that make the shape concave, and organise the points in a counterclockwise manner
+	
+	//the minimum and maximum on any axis is guaranteed to be on the convex hull, so find that for the first point
+
+	int startPoint = 0;
+	float minX = points[0].x;
+	for (size_t i = 1; i < pointCount; i++)
+	{
+		if (points[i].x < minX)
+		{
+			minX = points[i].x;
+			startPoint = i;
+		}
+	}
+
+	int lastPointOnHull = startPoint;
+	int size = 0;
+	int endPoint = 0;
+	do {
+		this->points[size] = points[lastPointOnHull];
+		endPoint = 0;
+		for (size_t i = 0; i < pointCount; i++)
+		{
+			float cross = Cross(points[lastPointOnHull], points[endPoint], points[i]);
+
+			// if:
+			// the endpoint is the last hull point
+			// point i is further to the right than the last point
+			// point i is the same amount to the right as the last, but is longer
+			//
+			// set the new endpoint to point i;
+			if (endPoint == lastPointOnHull || cross > 0
+				|| (cross == 0 && (SquareLength(points[lastPointOnHull] - points[i]) > SquareLength(points[lastPointOnHull] - points[endPoint]))))
+			{
+				endPoint = i;
+			}
+		}
+		size++;
+		lastPointOnHull = endPoint;
+	} while (endPoint != startPoint && size <= max_vertices);
+	//now set correct pointCount
+	this->pointCount = size;
+
+	//returns whether point count changed or not
+	return size != pointCount;
+}
+
+//WINDING ORDER: COUNTER CLOCKWISE
+void PolygonShape::CalculateNormals()
+{
+	//calculate normals, assuming counter clockwise order
+	for (size_t i = 0; i < pointCount; i++)
+	{
+		int j = (i + 1) % pointCount;
+		Vector2 delta = glm::normalize(points[i] - points[j]);
+		delta = Vector2(-delta.y, delta.x);
+		normals[i] = delta;
+	}
+}
+
+void PolygonShape::CalculateCentrePoint()
+{
+	Vector2 average = Vector2(0, 0);
+	for (size_t i = 0; i < pointCount; i++)
+	{
+		average += points[i];
+	}
+	average /= pointCount;
+
+	centrePoint = average;
 }
 
 
@@ -101,9 +230,18 @@ CircleShape::CircleShape(float radius, Vector2 centrePoint)
 	this->centrePoint = centrePoint;
 }
 
-float CircleShape::CalculateArea()
+bool CircleShape::PointCast(Vector2 point, Transform& transform)
 {
-	return radius * radius * glm::pi<float>();
+	Vector2 centre = transform.TransformPoint(centrePoint);
+	return SquareLength(centre - point) > radius * radius;
+}
+
+void CircleShape::CalculateMass(float& mass, float& inertia, float density)
+{
+	mass = density * radius * radius * glm::pi<float>();
+	inertia = mass * radius * radius * mass * 0.5f; //mr^2/2
+	//im a bit confused on how translating inertia tensor stuff works but I think this is correct
+	inertia += mass * SquareLength(centrePoint);
 }
 
 void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform)
@@ -133,17 +271,22 @@ Shape* CircleShape::Clone()
 	return new CircleShape(*this);
 }
 
-LineShape::LineShape(Vector2 a, Vector2 b)
+LineShape::LineShape(Vector2 a, Vector2 b, float buffer)
 {
 	pointA = a;
 	pointB = b;
-	normal = glm::normalize(b - a);
-	normal = { -normal.y, normal.x };
+	this->buffer = buffer;
 }
 
-float LineShape::CalculateArea()
+bool LineShape::PointCast(Vector2 point, Transform& transform)
 {
-	return 0.0f;
+	return false;
+}
+
+void LineShape::CalculateMass(float& mass, float& inertia, float density)
+{
+	mass = 0;
+	inertia = 0;
 }
 
 void LineShape::RenderShape(PhysicsProgram& program, Transform& transform)
@@ -157,23 +300,23 @@ AABB LineShape::CalculateAABB(Transform& transform)
 {
 	AABB aABB;
 	if (pointA.x > pointB.x) {
-		aABB.max.x = pointA.x;
-		aABB.min.x = pointB.x;
+		aABB.max.x = pointA.x + buffer;
+		aABB.min.x = pointB.x + buffer;
 	}
 	else 
 	{
-		aABB.max.x = pointB.x;
-		aABB.min.x = pointA.x;
+		aABB.max.x = pointB.x + buffer;
+		aABB.min.x = pointA.x + buffer;
 	}
 
 	if (pointA.y > pointB.y) {
-		aABB.max.y = pointA.y;
-		aABB.min.y = pointB.y;
+		aABB.max.y = pointA.y + buffer;
+		aABB.min.y = pointB.y + buffer;
 	}
 	else
 	{
-		aABB.max.y = pointB.y;
-		aABB.min.y = pointA.y;
+		aABB.max.y = pointB.y + buffer;
+		aABB.min.y = pointA.y + buffer;
 	}
 	return aABB;
 }
@@ -188,67 +331,67 @@ Shape* LineShape::Clone()
 	return new LineShape(*this);
 }
 
-SausageShape::SausageShape(float radius, float height)
-{
-	this->radius = radius;
-	pointA = Vector2(0, height / 2);
-	pointB = -pointA;
-}
-
-float SausageShape::CalculateArea()
-{
-	return 2 * radius * glm::length(pointA - pointB) + radius * radius * glm::pi<float>();
-}
-
-void SausageShape::RenderShape(PhysicsProgram& program, Transform& transform)
-{
-	Vector2 a = transform.TransformPoint(pointA);
-	Vector2 b = transform.TransformPoint(pointB);
-	auto& lR = program.GetLineRenderer();
-	lR.DrawCircle(a, radius, 32);
-	lR.DrawCircle(b, radius, 32);
-
-	Vector2 radiusAddition = glm::normalize(a - b);
-	radiusAddition = { radiusAddition.y, -radiusAddition.x };
-
-	lR.DrawLineSegment(pointA + radiusAddition, pointB + radiusAddition);
-	lR.DrawLineSegment(pointA - radiusAddition, pointB - radiusAddition);
-}
-
-AABB SausageShape::CalculateAABB(Transform& transform)
-{
-	AABB aABB;
-	if (pointA.x > pointB.x) {
-		aABB.max.x = pointA.x + radius;
-		aABB.min.x = pointB.x - radius;
-	}
-	else
-	{
-		aABB.max.x = pointB.x + radius;
-		aABB.min.x = pointA.x - radius;
-	}
-
-	if (pointA.y > pointB.y) {
-		aABB.max.y = pointA.y + radius;
-		aABB.min.y = pointB.y - radius;
-	}
-	else
-	{
-		aABB.max.y = pointB.y + radius;
-		aABB.min.y = pointA.y - radius;
-	}
-	return aABB;
-}
-
-SHAPE_TYPE SausageShape::GetType()
-{
-	return SHAPE_TYPE::CAPSULE;
-}
-
-Shape* SausageShape::Clone()
-{
-	return new SausageShape(*this);
-}
+//SausageShape::SausageShape(float radius, float height)
+//{
+//	this->radius = radius;
+//	pointA = Vector2(0, height / 2);
+//	pointB = -pointA;
+//}
+//
+//float SausageShape::CalculateArea()
+//{
+//	return 2 * radius * glm::length(pointA - pointB) + radius * radius * glm::pi<float>();
+//}
+//
+//void SausageShape::RenderShape(PhysicsProgram& program, Transform& transform)
+//{
+//	Vector2 a = transform.TransformPoint(pointA);
+//	Vector2 b = transform.TransformPoint(pointB);
+//	auto& lR = program.GetLineRenderer();
+//	lR.DrawCircle(a, radius, 32);
+//	lR.DrawCircle(b, radius, 32);
+//
+//	Vector2 radiusAddition = glm::normalize(a - b);
+//	radiusAddition = { radiusAddition.y, -radiusAddition.x };
+//
+//	lR.DrawLineSegment(pointA + radiusAddition, pointB + radiusAddition);
+//	lR.DrawLineSegment(pointA - radiusAddition, pointB - radiusAddition);
+//}
+//
+//AABB SausageShape::CalculateAABB(Transform& transform)
+//{
+//	AABB aABB;
+//	if (pointA.x > pointB.x) {
+//		aABB.max.x = pointA.x + radius;
+//		aABB.min.x = pointB.x - radius;
+//	}
+//	else
+//	{
+//		aABB.max.x = pointB.x + radius;
+//		aABB.min.x = pointA.x - radius;
+//	}
+//
+//	if (pointA.y > pointB.y) {
+//		aABB.max.y = pointA.y + radius;
+//		aABB.min.y = pointB.y - radius;
+//	}
+//	else
+//	{
+//		aABB.max.y = pointB.y + radius;
+//		aABB.min.y = pointA.y - radius;
+//	}
+//	return aABB;
+//}
+//
+//SHAPE_TYPE SausageShape::GetType()
+//{
+//	return SHAPE_TYPE::CAPSULE;
+//}
+//
+//Shape* SausageShape::Clone()
+//{
+//	return new SausageShape(*this);
+//}
 
 void Shape::RenderShape(Transform transform, PhysicsProgram& program)
 {

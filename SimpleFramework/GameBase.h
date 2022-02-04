@@ -18,12 +18,12 @@ class GameBase
 
 	const float cameraSpeed = 0.8f;
 
-	const int gridLimits = 10;
 
 	glm::mat4 GetCameraTransform() const;
 
 
 protected:
+	const int gridLimits = 10;
 	ShaderProgram simpleShader;
 	ShaderProgram textShader;
 	TextRenderer text;

@@ -30,7 +30,7 @@ struct TextData
 class TextRenderer
 {
 public:
-	void Initialise(const char* font, ShaderProgram& shader);
+	void Initialise(const char* font, ShaderProgram& shader, bool staticText);
 
 	//text data will probably not have to update every frame, just every time it is changed
 	//There will be a UI manager that helps with that
@@ -39,6 +39,7 @@ public:
 	void Draw(ShaderProgram& shader);
 	void UpdateWindowMatrix(ShaderProgram& shader, int width, int height);
 
+	void Build();
 	~TextRenderer();
 private:
 	void DrawText(TextData& data);
@@ -60,5 +61,7 @@ private:
 	unsigned int textureID;
 	//quad vertex array
 	float vertices[6][4];
+
+	bool staticText = false;
 };
 

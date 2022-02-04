@@ -77,7 +77,7 @@ GameBase::GameBase()
 
 	//text now
 	textShader = ShaderProgram("Text.vsd", "Text.fsd");
-	text.Initialise("arial.ttf", textShader);
+	text.Initialise("arial.ttf", textShader, false);
 }
 
 GameBase::~GameBase()

@@ -1,7 +1,7 @@
 #include "TextRenderer.h"
 #define FONT_HEIGHT_PX 48
 
-void TextRenderer::Initialise(const char* font, ShaderProgram& shader)
+void TextRenderer::Initialise(const char* font, ShaderProgram& shader, bool staticText)
 {
 	//initialize freetype library
 	FT_Library fT;
@@ -81,7 +81,7 @@ void TextRenderer::Initialise(const char* font, ShaderProgram& shader)
 		auto data = CharacterData{
 			Vector2Int(face->glyph->bitmap.width, face->glyph->bitmap.rows),
 			Vector2Int(face->glyph->bitmap_left, face->glyph->bitmap_top),
-			Vector2Int(face->glyph->advance.x, face->glyph->advance.y),
+			Vector2Int(face->glyph->advance.x / 64, face->glyph->advance.y / 64),
 			(float)xOffset / textureWidth};
 
 		xOffset += face->glyph->bitmap.width;
@@ -89,47 +89,6 @@ void TextRenderer::Initialise(const char* font, ShaderProgram& shader)
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	//for (unsigned char c = 32; c < 127; c++)
-	//{
-	//	//creates a grayscale bitmap in face->glyph->bitmap
-	//	if (FT_Load_Char(face, c, FT_LOAD_RENDER)) //error returns non 0 int
-	//	{
-	//		std::cout << "FreeType: failed to load glyph" << std::endl;
-	//		continue;
-	//	}
-
-	//	//generate texture
-	//	unsigned int texture;
-	//	glGenTextures(1, &texture);
-	//	glBindTexture(GL_TEXTURE_2D, texture);
-	//	glTexImage2D(
-	//		GL_TEXTURE_2D,				//target texture
-	//		0,							//lod number
-	//		GL_RED,						//number of color components (one, this is a grayscale image)
-	//		face->glyph->bitmap.width,	//width of texture
-	//		face->glyph->bitmap.rows,	//height of texture
-	//		0,							//it literally says this value must be 0 in the docs, wtf
-	//		GL_RED,						//format of pixel data (gray scale, so one byte per pixel)
-	//		GL_UNSIGNED_BYTE,			//data type of data
-	//		face->glyph->bitmap.buffer	//the data in question
-	//		);
-	//	//set texture options
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	//	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	//	auto data = CharacterData{
-	//		texture,
-	//		Vector2Int(face->glyph->bitmap.width, face->glyph->bitmap.rows),
-	//		Vector2Int(face->glyph->bitmap_left, face->glyph->bitmap_top),
-	//		Vector2Int(face->glyph->advance.x, face->glyph->advance.y) };
-
-	//	charData.insert(std::make_pair(c, data));
-
-	//	glBindTexture(GL_TEXTURE_2D, 0);
-	//}
-	
 	//now the glyphs have been processed into data we can free FreeType
 	FT_Done_Face(face);
 	FT_Done_FreeType(fT);
@@ -179,6 +138,8 @@ void TextRenderer::Draw(ShaderProgram& shader)
 	shader.UseShader();
 	glActiveTexture(GL_TEXTURE0);
 	glBindVertexArray(VAO);
+	glBindTexture(GL_TEXTURE_2D, textureID);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	for (size_t i = 0; i < textData.size(); i++)
 	{
@@ -199,6 +160,11 @@ void TextRenderer::UpdateWindowMatrix(ShaderProgram& shader, int width, int heig
 
 }
 
+void TextRenderer::Build()
+{
+
+}
+
 TextRenderer::~TextRenderer()
 {
 	glDeleteBuffers(1, &VBO);
@@ -210,6 +176,8 @@ void TextRenderer::DrawText(TextData& data)
 	glUniform3f(textColourUniform, data.colour.x, data.colour.y, data.colour.z);
 	
 	float x = data.minXY.x;
+
+	
 
 	//go through all characters
 	for (char c : data.text) 
@@ -238,17 +206,12 @@ void TextRenderer::DrawText(TextData& data)
 			};
 
 			//set active texture to the char texture
-			glBindTexture(GL_TEXTURE_2D, textureID);
 
-			glBindBuffer(GL_ARRAY_BUFFER, VBO);
 			glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
-			//clear binding
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
 			//actually render
 			glDrawArrays(GL_TRIANGLES, 0, 6);
 		}
-		//now advance x (for some reason advance is stored in 1/64th of a pixel, probably some weird ass unit)
-		x += (glyph.advance.x / 64) * data.scale;
+		//now advance x
+		x += (glyph.advance.x) * data.scale;
 	}
-
 }

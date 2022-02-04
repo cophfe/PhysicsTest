@@ -32,6 +32,7 @@ private:
 	friend PhysicsObject;
 	
 	void SetAttached(PhysicsObject* attached) { this->attached = attached; }
+	bool CanBeDynamic();
 	PhysicsObject* attached;
 	AABB aABB;
 	float density;

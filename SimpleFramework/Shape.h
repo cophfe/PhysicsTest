@@ -4,6 +4,7 @@
 
 class PhysicsProgram;
 class Transform;
+class CollisionManager;
 
 struct AABB {
 public:
@@ -13,10 +14,9 @@ public:
 
 enum class SHAPE_TYPE : unsigned char {
 	CIRCLE = 1,
-	POLYGON = 4,
-	CAPSULE = 16,
-	LINE = 64,
-	COUNT = 4
+	POLYGON = 3,
+	LINE = 9,
+	COUNT = 3
 };
 
 
@@ -27,12 +27,17 @@ enum class SHAPE_TYPE : unsigned char {
 class Shape
 {
 public:
-	virtual float CalculateArea() = 0;
+	virtual bool PointCast(Vector2 point, Transform& transform) = 0;
+	virtual void CalculateMass(float& mass, float& inertia, float density) = 0;
 	virtual void RenderShape(PhysicsProgram& program, Transform& transform) = 0;
 	virtual void RenderShape(Transform transform, PhysicsProgram& program);
 	virtual AABB CalculateAABB(Transform& transform) = 0;
 	virtual SHAPE_TYPE GetType() = 0;
 	virtual Shape* Clone() = 0;
+
+private:
+	friend CollisionManager;
+
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -43,15 +48,22 @@ class PolygonShape : public Shape
 {
 public:
 
-	PolygonShape(Vector2* vertices, int vertexCount, Vector2 centrePoint);
+	PolygonShape(Vector2* vertices, int vertexCount);
 
-	float CalculateArea();
+	bool PointCast(Vector2 point, Transform& transform);
+	void CalculateMass(float& mass, float& inertia, float density);
 	void RenderShape(PhysicsProgram& program, Transform& transform);
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 	static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
+
 private:
+	friend CollisionManager;
+	void CalculateNormals();
+	void CalculateCentrePoint();
+	bool OrganisePoints(Vector2* points, int pointCount);
+
 	Vector2 points[max_vertices];
 	Vector2 normals[max_vertices];
 	char pointCount;
@@ -66,13 +78,18 @@ class CircleShape : public Shape
 {
 public:
 	CircleShape(float radius, Vector2 centrePoint);
-	float CalculateArea();
+	
+	bool PointCast(Vector2 point, Transform& transform);
+	void CalculateMass(float& mass, float& inertia, float density);
 	void RenderShape(PhysicsProgram& program, Transform& transform);
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 
 private:
+	friend CollisionManager;
+
+
 	float radius;
 	Vector2 centrePoint;
 };
@@ -85,17 +102,21 @@ class LineShape : public Shape
 {
 public:
 
-	LineShape(Vector2 a, Vector2 b);
-	float CalculateArea();
+	LineShape(Vector2 a, Vector2 b, float buffer = 0.01f);
+
+	bool PointCast(Vector2 point, Transform& transform);
+	void CalculateMass(float& mass, float& inertia, float density); // change to 
 	void RenderShape(PhysicsProgram& program, Transform& transform);
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 
 private:
+	friend CollisionManager;
+
+	float buffer;
 	Vector2 pointA;
 	Vector2 pointB;
-	Vector2 normal;
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -103,21 +124,21 @@ private:
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 //is cheap because it is a line segment with a radius, like how a circle is a point with a radius
-class SausageShape : public Shape 
-{
-public:
-
-	SausageShape(float radius, float height);
-	float CalculateArea();
-	void RenderShape(PhysicsProgram& program, Transform& transform);
-	AABB CalculateAABB(Transform& transform);
-	SHAPE_TYPE GetType();
-	Shape* Clone();
-
-private:
-	float radius;
-	//(can construct a line from this and the centrepoint)
-	Vector2 pointA;
-	Vector2 pointB;
-};
+//class SausageShape : public Shape 
+//{
+//public:
+//
+//	SausageShape(float radius, float height);
+//	void CalculateMass(float& mass, float& inertia, float density);
+//	void RenderShape(PhysicsProgram& program, Transform& transform);
+//	AABB CalculateAABB(Transform& transform);
+//	SHAPE_TYPE GetType();
+//	Shape* Clone();
+//
+//private:
+//	float radius;
+//	//(can construct a line from this and the centrepoint)
+//	Vector2 pointA;
+//	Vector2 pointB;
+//};
 
