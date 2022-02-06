@@ -7,6 +7,8 @@
 #include <map>
 #include <vector>
 #include FT_FREETYPE_H
+#define TEXT_RENDERER_FONT_HEIGHT_PX 48
+#include "Shape.h"
 
 //this text renderer was made using this tutorial, using the freetype library to load the font
 //https://learnopengl.com/In-Practice/Text-Rendering
@@ -27,6 +29,15 @@ struct TextData
 	glm::vec3 colour;
 };
 
+struct FontInfo 
+{
+	std::string fontName;
+	std::map<char, CharacterData> charData;
+	unsigned int textureWidth;
+	unsigned int textureHeight;
+	unsigned int textureID;
+};
+
 class TextRenderer
 {
 public:
@@ -36,32 +47,31 @@ public:
 	//There will be a UI manager that helps with that
 	void RefreshTextData();
 	void QueueText(std::string text, Vector2 minXY, float scale, glm::vec3 colour);
-	void Draw(ShaderProgram& shader);
-	void UpdateWindowMatrix(ShaderProgram& shader, int width, int height);
+	void Draw();
+	void ChangeFont(const char* font);
+	void GetTextWidthHeight(std::string string, float& width, float& height);
 
 	void Build();
 	~TextRenderer();
 private:
-	void DrawText(TextData& data);
-	//stores the data for each character needed for rendering
-	//index converted to char is letter
-	std::map<char, CharacterData> charData;
+	void BufferTextData(TextData& data);
+	
+	static int BuildFontTexture(const char* font);
+	static std::vector<FontInfo> font;
+	static int textRendererCount;
+	int fontIndex;
+
 	std::vector<TextData> textData;
 
-	//vertex array object, vertex buffer object
-	unsigned int VAO, VBO;
-	//the matrix used for rendering, is updated every time the window size changes
-	Matrix4x4 textProjectionMatrix;
+	//vertex array object, vertex and uv buffer id
+	unsigned int VAO, vertexBufferID;
 	int textColourUniform;
-	int projectionUniform;
 
-	//the character strip's total width
-	unsigned int textureWidth;
-	unsigned int textureHeight;
-	unsigned int textureID;
 	//quad vertex array
-	float vertices[6][4];
+	std::vector<glm::vec4> vertices;
+	int lastSize = -1;
 
 	bool staticText = false;
+	bool initialized = false;
 };
 

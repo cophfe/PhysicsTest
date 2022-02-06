@@ -53,9 +53,6 @@
     <ClCompile Include="Collider.cpp">
       <Filter>Game\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="CollisionManager.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="Shape.cpp">
       <Filter>Game\Physics</Filter>
     </ClCompile>
@@ -64,6 +61,15 @@
     </ClCompile>
     <ClCompile Include="PlayerInput.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="TriangleRenderer.cpp">
+      <Filter>Engine\MyAdditions</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionManager.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Button.cpp">
+      <Filter>Game\UI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -136,9 +142,6 @@
     <ClInclude Include="Collider.h">
       <Filter>Game\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="CollisionManager.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="Shape.h">
       <Filter>Game\Physics</Filter>
     </ClInclude>
@@ -147,6 +150,15 @@
     </ClInclude>
     <ClInclude Include="PlayerInput.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="TriangleRenderer.h">
+      <Filter>Engine\MyAdditions</Filter>
+    </ClInclude>
+    <ClInclude Include="CollisionManager.h">
+      <Filter>Game\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Button.h">
+      <Filter>Game\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +185,9 @@
     </Filter>
     <Filter Include="Engine\MyAdditions">
       <UniqueIdentifier>{7b0df856-4bcc-49c5-b05b-1b3f99c46f87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\UI">
+      <UniqueIdentifier>{3a047454-4d12-4526-a302-aa6b1d97643c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

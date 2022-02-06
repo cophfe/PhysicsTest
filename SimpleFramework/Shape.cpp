@@ -74,12 +74,12 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia = i - mass * SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
-void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform)
+void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
 {
 	auto& lines = program.GetLineRenderer();
 	for (size_t i = 0; i < pointCount; i++)
 	{
-		lines.AddPointToLine(transform.TransformPoint(points[i]));
+		lines.AddPointToLine(transform.TransformPoint(points[i]), colour);
 	}
 	lines.FinishLineLoop();
 }
@@ -94,17 +94,10 @@ AABB PolygonShape::CalculateAABB(Transform& transform)
 
 	for (size_t i = 1; i < pointCount; i++)
 	{
-		if (points[i].x > xMax)
-			xMax = points[i].x;
-
-		if (points[i].y > yMax)
-			yMax = points[i].y;
-
-		if (points[i].x < xMin)
-			xMin = points[i].x;
-
-		if (points[i].y < yMin)
-			yMin = points[i].y;
+		xMax = std::max(points[i].x, xMax);
+		yMax = std::max(points[i].y, yMax);
+		xMin = std::min(points[i].x, xMin);
+		yMin = std::min(points[i].y, yMin);
 	}
 
 	return { Vector2(xMax, yMax), Vector2(xMin, yMin) };
@@ -244,10 +237,11 @@ void CircleShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia += mass * SquareLength(centrePoint);
 }
 
-void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform)
+void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
 {
-	program.GetLineRenderer().DrawCircle(transform.TransformPoint(centrePoint), radius);
-	program.GetLineRenderer().DrawLineSegment(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(0, radius * 0.5f)));
+	program.GetLineRenderer().DrawCircle(transform.TransformPoint(centrePoint), radius, colour);
+	program.GetTriangleRenderer().QueueTriangle(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(radius, 0)), transform.TransformPoint(Vector2(0, -radius)));
+	program.GetLineRenderer().DrawLineSegment(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(0, radius * 0.5f)), colour);
 }
 
 AABB CircleShape::CalculateAABB(Transform& transform)
@@ -289,11 +283,11 @@ void LineShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia = 0;
 }
 
-void LineShape::RenderShape(PhysicsProgram& program, Transform& transform)
+void LineShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
 {
 	LineRenderer& lR = program.GetLineRenderer();
 	lR.DrawLineSegment(transform.TransformPoint(pointA),
-		transform.TransformPoint(pointB));
+		transform.TransformPoint(pointB), colour);
 }
 
 AABB LineShape::CalculateAABB(Transform& transform)
@@ -393,7 +387,7 @@ Shape* LineShape::Clone()
 //	return new SausageShape(*this);
 //}
 
-void Shape::RenderShape(Transform transform, PhysicsProgram& program)
+void Shape::RenderShape(Transform transform, PhysicsProgram& program, Vector3 colour)
 {
-	RenderShape(program, transform);
+	RenderShape(program, transform, colour);
 }

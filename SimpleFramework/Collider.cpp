@@ -60,26 +60,27 @@
 //
 //}
 
-Collider::Collider(Shape* shape, float density)
+Collider::Collider(Shape* shape, float density, Vector3 colour)
 {
 	shapes = new Shape *[1];
 	shapes[0] = shape;
 	shapeCount = 1;
 	this->density = density;
+	this->colour = colour;
 }
 
-Collider::Collider(Shape** shapes, int shapeCount, float density)
+Collider::Collider(Shape** shapes, int shapeCount, float density, Vector3 colour)
 {
 	this->shapes = shapes;
 	this->shapeCount = shapeCount;
 	this->density = density;
+	this->colour = colour;
 }
 
-void Collider::RenderShape(PhysicsProgram& program)
-{
+void Collider::RenderShape(PhysicsProgram& program) {
 	for (size_t i = 0; i < shapeCount; i++)
 	{
-		shapes[i]->RenderShape(attached->transform, program);
+		shapes[i]->RenderShape(attached->transform, program, colour);
 	}
 }
 
@@ -152,6 +153,7 @@ Collider::Collider(Collider& other)
 	shapeCount = other.shapeCount;
 	attached = other.attached;
 	density = other.density;
+	colour = other.colour;
 
 	shapes = new Shape*[shapeCount];
 	for (size_t i = 0; i < shapeCount; i++)
@@ -172,6 +174,7 @@ Collider& Collider::operator=(Collider& other)
 	shapeCount = other.shapeCount;
 	attached = other.attached;
 	density = other.density;
+	colour = other.colour;
 
 	shapes = new Shape * [shapeCount];
 	for (size_t i = 0; i < shapeCount; i++)

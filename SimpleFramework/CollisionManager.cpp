@@ -50,7 +50,6 @@ void CollisionManager::ResolveCollision(CollisionManifold& manifold)
 	//if collision happened (data is added into manifold about collision)
 	if (EvaluateCollision(manifold) && (manifold.a->iMass + manifold.b->iMass != 0))
 	{
-		
 		//resolve collision
 		Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity();
 		float projectedRV = glm::dot(manifold.collisionNormal, rV);
@@ -165,6 +164,13 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			else return false;
 		}
 		else return false;
+		break;
+	}
+	case COLLISION_TYPE::CIRCLEPOLYGON:
+	{
+
+
+		return false;
 		break;
 	}
 	}

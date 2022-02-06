@@ -12,11 +12,12 @@ class Transform;
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 class Collider
 {
-public:
-	Collider(Shape* shape, float density = 1);
-	Collider(Shape** shapes, int shapeCount, float density = 1);
 
-	virtual void RenderShape(PhysicsProgram& program);
+public:
+	Collider(Shape* shape, float density = 1, Vector3 colour = Vector3(1.0f, 1.0f, 1.0f));
+	Collider(Shape** shapes, int shapeCount, float density = 1, Vector3 colour = Vector3(1.0f, 1.0f, 1.0f));
+
+	void RenderShape(PhysicsProgram& program);
 
 	//calculaters
 	float CalculateInertia();
@@ -39,6 +40,8 @@ private:
 
 	Shape** shapes;
 	int shapeCount;
+
+	Vector3 colour;
 };
 
 

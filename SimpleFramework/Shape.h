@@ -2,6 +2,7 @@
 #include "Maths.h"
 #define max_vertices 8
 
+
 class PhysicsProgram;
 class Transform;
 class CollisionManager;
@@ -29,8 +30,8 @@ class Shape
 public:
 	virtual bool PointCast(Vector2 point, Transform& transform) = 0;
 	virtual void CalculateMass(float& mass, float& inertia, float density) = 0;
-	virtual void RenderShape(PhysicsProgram& program, Transform& transform) = 0;
-	virtual void RenderShape(Transform transform, PhysicsProgram& program);
+	virtual void RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour) = 0;
+	virtual void RenderShape(Transform transform, PhysicsProgram& program, Vector3 colour );
 	virtual AABB CalculateAABB(Transform& transform) = 0;
 	virtual SHAPE_TYPE GetType() = 0;
 	virtual Shape* Clone() = 0;
@@ -52,7 +53,7 @@ public:
 
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density);
-	void RenderShape(PhysicsProgram& program, Transform& transform);
+	void RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour );
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
@@ -81,7 +82,7 @@ public:
 	
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density);
-	void RenderShape(PhysicsProgram& program, Transform& transform);
+	void RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour );
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
@@ -106,7 +107,7 @@ public:
 
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density); // change to 
-	void RenderShape(PhysicsProgram& program, Transform& transform);
+	void RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour );
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();

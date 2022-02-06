@@ -2,6 +2,7 @@
 #include "Graphics.h"
 #include "Maths.h"
 #include "LineRenderer.h"
+#include "TriangleRenderer.h"
 #include "TextRenderer.h"
 #include "ShaderProgram.h"
 
@@ -26,8 +27,10 @@ protected:
 	const int gridLimits = 10;
 	ShaderProgram simpleShader;
 	ShaderProgram textShader;
-	TextRenderer text;
+	TextRenderer textRenderer; //updated every time it is modified, does not reset text ever
+	TriangleRenderer triangleRenderer;
 	glm::vec2 cursorPos = { 0.0f,0.0f };
+	glm::vec2 screenCursorPos = { 0.0f,0.0f };
 	bool leftButtonDown = false;
 	bool rightButtonDown = false;
 	float time = 0.0f;
@@ -35,6 +38,7 @@ protected:
 	const float deltaTime = 0.0166667f;	//Delta time should be constant for physics simulations.
 	GLFWwindow* window = nullptr;
 
+	Matrix4x4 textProjectionMatrix;
 public:
 	GameBase();
 	~GameBase();
@@ -51,6 +55,8 @@ public:
 	virtual void OnMouseClick(int mouseButton);
 	virtual void OnMouseRelease(int mouseButton);
 	virtual void OnWindowResize(int width, int height);
-
+	virtual void OnKeyPressed(int key);
+	virtual void OnKeyReleased(int key);
+	
 	void Zoom(float zoomFactor);
 };

@@ -37,3 +37,16 @@ void MouseWheelCallback(GLFWwindow* window, double xDelta, double yDelta)
 		programPointer->Zoom(1.0f / ZOOM_FACTOR);
 	}
 }
+
+void KeyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	GameBase* programPointer = (GameBase*)glfwGetWindowUserPointer(window);
+	if (action == GLFW_PRESS)
+	{
+		programPointer->OnKeyPressed(key);
+	}
+	else if (action == GLFW_RELEASE)
+	{
+		programPointer->OnKeyReleased(key);
+	}
+}

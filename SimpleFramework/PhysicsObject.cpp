@@ -2,6 +2,10 @@
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
 
+const float sleepVelocityMag = 0.0001f; //(these are also squared)
+const float sleepAngularVelocityMag = 0.0001f;
+const float sleepTime = 0.2f;
+
 float PhysicsObject::gravity = 2;
 
 PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
@@ -45,6 +49,7 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 			iMass = 0;
 			iMomentOfInertia = 0;
 		}
+		collider->CalculateAABB(transform);
 	}
 	
 
@@ -54,8 +59,13 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 
 void PhysicsObject::Update(PhysicsProgram& program)
 {
+	
 	transform.position += velocity * program.GetDeltaTime();
 	transform.rotation += angularVelocity * program.GetDeltaTime();
+
+	//update transform
+	transform.UpdateData();
+	
 	if (iMass != 0) {
 		//(apply drag)
 		velocity += force * iMass * program.GetDeltaTime();
@@ -70,8 +80,8 @@ void PhysicsObject::Update(PhysicsProgram& program)
 	force = Vector2(0, 0);
 	torque = 0;
 
-	//update transform
-	transform.UpdateData();
+
+	
 }
 
 void PhysicsObject::Render(PhysicsProgram& program)
@@ -89,6 +99,7 @@ void PhysicsObject::Render(PhysicsProgram& program)
 }
 
 void PhysicsObject::GenerateAABB() {
+
 	if (collider)
 		collider->CalculateAABB(transform);
 }
@@ -106,8 +117,10 @@ void PhysicsObject::AddForceAtPosition(Vector2 force, Vector2 point)
 	this->torque += Cross(point - transform.position, force);
 }
 
-void PhysicsObject::AddImpulseAtPosition(Vector2 force, Vector2 point)
+void PhysicsObject::AddImpulseAtPosition(Vector2 impulse, Vector2 point)
 {
+	this->velocity += impulse * iMass;
+	this->angularVelocity += Cross(point - transform.position, impulse) * iMomentOfInertia;
 }
 
 PhysicsObject::~PhysicsObject()
@@ -131,7 +144,6 @@ PhysicsObject::PhysicsObject(const PhysicsObject& other)
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
 	iMomentOfInertia = other.iMomentOfInertia;
-	sleeping = other.sleeping;
 }
 
 PhysicsObject::PhysicsObject(PhysicsObject&& other)
@@ -151,7 +163,6 @@ PhysicsObject::PhysicsObject(PhysicsObject&& other)
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
 	iMomentOfInertia = other.iMomentOfInertia;
-	sleeping = other.sleeping;
 }
 
 PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
@@ -170,7 +181,6 @@ PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
 	iMomentOfInertia = other.iMomentOfInertia;
-	sleeping = other.sleeping;
 
 	return *this;
 }
@@ -193,7 +203,6 @@ PhysicsObject& PhysicsObject::operator=(PhysicsObject&& other)
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
 	iMomentOfInertia = other.iMomentOfInertia;
-	sleeping = other.sleeping;
 
 	return *this;
 }

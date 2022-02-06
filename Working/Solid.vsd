@@ -1,0 +1,10 @@
+#version 450
+
+layout (location = 0) in vec2 Position;
+
+uniform mat4 vpMatrix;
+
+void main()
+{
+	gl_Position = vpMatrix * vec4(Position, 0, 1);
+}

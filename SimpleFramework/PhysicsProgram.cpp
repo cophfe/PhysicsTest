@@ -3,8 +3,9 @@
 
 PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
 {
-	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 1, Vector3(1.0f, 0.6f, 0.0f));
-	
+	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
+	//text.Build();
+
 	//multiple shapes in 1 physics object aren't supported JUST yet
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
 	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(-gridLimits, -gridLimits), Vector2(-gridLimits, gridLimits)))));
@@ -28,11 +29,23 @@ void PhysicsProgram::Update()
 
 	//player input also
 	playerInput.Update();
+
+	
 }
 
 void PhysicsProgram::Render()
 {
+	//update text
+	double time = glfwGetTime();
+	//if FPS_OFFSET seconds has elapsed since last FPS update
+	if (time - lastFPSUpdateTime> FPS_OFFSET)
+	{
+		lastFPSUpdateTime = time;
+		fpsText = std::string("FPS: ") + std::to_string((int)(1 / (time - lastTime)));
+	}
+	textRenderer.QueueText(fpsText, Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
 	
+	lastTime = time;
 
 	if (leftButtonDown)
 	{

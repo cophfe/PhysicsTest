@@ -85,9 +85,9 @@ public:
 
 	//setters
 	inline void	SetPosition(Vector2 pos)			{ transform.position = pos; }
-	inline void	SetRotation(float rot)				{ transform.rotation = rot;}
+	inline void	SetRotation(float rot)				{ transform.rotation = rot; }
 
-	inline void	SetVelocity(Vector2 vel)			{ velocity = vel;}
+	inline void	SetVelocity(Vector2 vel)			{ velocity = vel; }
 	inline void	SetAngularVelocity(float aVel)		{ angularVelocity = aVel; }
 	inline void	SetForce(Vector2 force)				{ this->force = force;}
 	inline void	SetTorque(float torque)				{ this->torque = torque; }
@@ -99,13 +99,13 @@ public:
 	inline void	SetMomentOfInertia(float mOI)		{ iMomentOfInertia = 1.0f/mOI; }
 
 	//adders?
-	inline void AddPosition(Vector2 position)		{ transform.position += position; }
-	inline void AddForce(Vector2 force)				{ this->force += force; }
-	inline void AddTorque(float torque)				{ this->torque += torque; }
-	inline void AddVelocity(Vector2 velocity)		{ this->velocity += velocity; }
-	inline void AddAngularVelocity(float velocity)	{ angularVelocity += velocity; }
-	inline void AddImpulse(Vector2 impulse)			{ velocity += impulse * iMass; }
-	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iMomentOfInertia; }
+	inline void AddPosition(Vector2 position)		{ transform.position += position;  }
+	inline void AddForce(Vector2 force)				{ this->force += force;  }
+	inline void AddTorque(float torque)				{ this->torque += torque;  }
+	inline void AddVelocity(Vector2 velocity)		{ this->velocity += velocity;  }
+	inline void AddAngularVelocity(float velocity)	{ angularVelocity += velocity;  }
+	inline void AddImpulse(Vector2 impulse)			{ velocity += impulse * iMass;  }
+	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iMomentOfInertia;  }
 	void AddForceAtPosition(Vector2 force, Vector2 point);
 	void AddImpulseAtPosition(Vector2 force, Vector2 point);
 
@@ -143,7 +143,7 @@ protected:
 	float iMomentOfInertia;
 
 	//(just in case something is not moving, so no movement calculations have to be done)
-	bool sleeping = false;
-
+	//bool 
+	//float sleepTimer = 0;
 };
 

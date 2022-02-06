@@ -32,6 +32,7 @@ GameBase::GameBase()
 	glfwSetWindowSizeCallback(window, WindowResizeCallback);
 	glfwSetMouseButtonCallback(window, MouseButtonCallback);
 	glfwSetScrollCallback(window, MouseWheelCallback);
+	glfwSetKeyCallback(window, KeyCallback);
 
 	if (!window)
 	{
@@ -77,7 +78,15 @@ GameBase::GameBase()
 
 	//text now
 	textShader = ShaderProgram("Text.vsd", "Text.fsd");
-	text.Initialise("arial.ttf", textShader, false);
+	textRenderer.Initialise("arial.ttf", textShader, false);
+
+	int width, height;
+	glfwGetWindowSize(window, &width, &height);
+
+	textProjectionMatrix = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+	textShader.SetUniform("textProjection", textProjectionMatrix);
+
+	triangleRenderer.Initialize();
 }
 
 GameBase::~GameBase()
@@ -99,6 +108,7 @@ void GameBase::Update()
 	glm::mat4 deprojection = glm::inverse(GetCameraTransform());
 	double cursorX, cursorY;
 	glfwGetCursorPos(window, &cursorX, &cursorY);
+	screenCursorPos = Vector2(cursorX, cursorY);
 	cursorX = (cursorX / width) * 2.0 - 1.0;
 	cursorY = -((cursorY / height) * 2.0 - 1.0);
 
@@ -145,8 +155,14 @@ void GameBase::Render()
 	grid.Draw();	//Grid lines don't change so we just draw them.
 	lines.UpdateFrame();	//Other lines potentially change every frame, so we have to compile/draw/clear them.
 	
+	//change matrix for UI triangles
+	simpleShader.SetUniform("vpMatrix", textProjectionMatrix);
+	//draw triangles
+	triangleRenderer.UpdateFrame();
 	//draw text
-	text.Draw(textShader);
+	textShader.UseShader();
+	textRenderer.Draw();
+	textRenderer.RefreshTextData();
 
 	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
@@ -172,7 +188,19 @@ void GameBase::OnMouseRelease(int mouseButton)
 
 void GameBase::OnWindowResize(int width, int height)
 {
-	text.UpdateWindowMatrix(textShader, width, height);
+	textProjectionMatrix = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
+	textShader.SetUniform("textProjection", textProjectionMatrix);
+}
+
+void GameBase::OnKeyPressed(int key)
+{
+	//eg: GLFW_KEY_W
+}
+
+void GameBase::OnKeyReleased(int key)
+{
+	//eg: GLFW_KEY_W
+
 }
 
 void GameBase::Zoom(float zoomFactor)
