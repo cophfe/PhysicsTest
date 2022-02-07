@@ -39,6 +39,9 @@ protected:
 	GLFWwindow* window = nullptr;
 
 	Matrix4x4 textProjectionMatrix;
+
+	Vector2Int oldWindowSize;
+	Vector2Int windowSize;
 public:
 	GameBase();
 	~GameBase();

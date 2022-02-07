@@ -101,18 +101,17 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		else return false;
 		break;
 	}
-	case COLLISION_TYPE::CIRCLELINE:
+	case COLLISION_TYPE::CIRCLECAPSULE:
 	{
-		//NOTE: could easily add a little buffer area to line by adding to all references to a->radius
 
 		CircleShape* a = (CircleShape*)*manifold.a->collider->shapes;
-		LineShape* b = (LineShape*)*manifold.b->collider->shapes;
+		CapsuleShape* b = (CapsuleShape*)*manifold.b->collider->shapes;
 		
 		Vector2 pA = manifold.b->transform.TransformPoint(b->pointA), pB = manifold.b->transform.TransformPoint(b->pointB);
 		Vector2 circleCentre = manifold.a->transform.TransformPoint(a->centrePoint);
 		
-		//circle radius + line buffer
-		float radius = a->radius + b->buffer;
+		//circle radius + line radius
+		float radius = a->radius + b->radius;
 
 		Vector2 delta = pB - pA;
 		float lineLength = glm::length(delta);
@@ -129,35 +128,47 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 
 			if (pointOnLine > lineStart - radius && pointOnLine < lineEnd + radius)
 			{
-				//now is guaranteed to be colliding
+				//point a
 				if (pointOnLine < lineStart)
 				{
-					//colliding with end point A
-					//collisionPoint = pA
-					manifold.collisionNormal = circleCentre - pA;
-					manifold.penetration = glm::length(manifold.collisionNormal);
-					manifold.collisionNormal /= manifold.penetration;
-					//p = radius - distance to center + line buffer
-					manifold.penetration = a->radius - manifold.penetration + b->buffer;
-					return true;
+					Vector2 deltaPoint = circleCentre - pA;
+					//now is guaranteed to be colliding
+					if (glm::dot(deltaPoint, deltaPoint) < radius * radius)
+					{
+						//colliding with end point A, which is practically a circle
+						//collisionPoint = pA + normalize(deltaPoint) * b->buffer
+						manifold.collisionNormal = deltaPoint;
+						manifold.penetration = glm::length(manifold.collisionNormal);
+						manifold.collisionNormal /= manifold.penetration;
+						//p = radius - distance to center + line buffer
+						manifold.penetration = a->radius - manifold.penetration + b->radius;
+						return true;
+					}
+					else return false;
 				}
 				else if (pointOnLine > lineEnd)
 				{
-					//colliding with end point B, so basically the same as end point a code
-					//collisionPoint = pB
-					manifold.collisionNormal = circleCentre - pB;
-					manifold.penetration = glm::length(manifold.collisionNormal);
-					manifold.collisionNormal /= manifold.penetration;
-					//p = radius - distance to center + line buffer
-					manifold.penetration = a->radius - manifold.penetration + b->buffer;
-					return true;
+					Vector2 deltaPoint = circleCentre - pB;
+					//now is guaranteed to be colliding
+					if (glm::dot(deltaPoint, deltaPoint) < radius * radius)
+					{
+						//colliding with end point B, which is practically a circle
+						//collisionPoint = pA + normalize(deltaPoint) * b->buffer
+						manifold.collisionNormal = deltaPoint;
+						manifold.penetration = glm::length(manifold.collisionNormal);
+						manifold.collisionNormal /= manifold.penetration;
+						//p = radius - distance to center + line buffer
+						manifold.penetration = a->radius - manifold.penetration + b->radius;
+						return true;
+					}
+					else return false;
 				}
 				else {
 					//colliding with line
 					
 					manifold.collisionNormal = glm::normalize(lineNormal * glm::sign(distanceToLinePlane));
-					manifold.penetration = a->radius - glm::abs(distanceToLinePlane) + b->buffer;
-					//collisionPoint = circleCentre + manifold.collisionNormal * manifold.penetration;
+					manifold.penetration = a->radius - glm::abs(distanceToLinePlane) + b->radius;
+					//collisionPoint = circleCentre + manifold.collisionNormal * manifold.penetration; << accurate for line, this is now a capsule (so it is wrong)
 					return true;
 				}
 			}
@@ -197,45 +208,83 @@ void CollisionManager::GetCollisionType(CollisionManifold& manifold)
 		manifold.type = COLLISION_TYPE::CIRCLECIRCLE;
 		break;
 
-	case 7:		// Circle - Polygon
+	case 9:		// Circle - Polygon
 		manifold.type = COLLISION_TYPE::CIRCLEPOLYGON;
 		break;
 	
-	case 19:	// Circle - Line
-		manifold.type = COLLISION_TYPE::CIRCLELINE;
+	case 33:	// Circle - Capsule
+		manifold.type = COLLISION_TYPE::CIRCLECAPSULE;
 		break;
 
-	case 5:		// Polygon - Circle
+	case 129:	// Circle - Plane
+		manifold.type = COLLISION_TYPE::CIRCLEPLANE;
+		break;
+
+	case 6:		// Polygon - Circle
 		t = manifold.a;
 		manifold.a = manifold.b;
 		manifold.b = t;
 		manifold.type = COLLISION_TYPE::CIRCLEPOLYGON;
 		break;
 	
-	case 9:	// Polygon - Polygon
+	case 12:	// Polygon - Polygon
 		manifold.type = COLLISION_TYPE::POLYGONPOLYGON;
 		break;
 	
-	case 21:	// Polygon - Line
-		manifold.type = COLLISION_TYPE::POLYGONLINE;
+	case 36:	// Polygon - Capsule
+		manifold.type = COLLISION_TYPE::POLYGONCAPSULE;
 		break;
 
-	case 11:	// Line - Circle
+	case 132: // Polygon - Plane
+		manifold.type = COLLISION_TYPE::POLYGONPLANE;
+		break;
+
+	case 18:	// Capsule - Circle
 		t = manifold.a;
 		manifold.a = manifold.b;
 		manifold.b = t;
-		manifold.type = COLLISION_TYPE::CIRCLELINE;
+		manifold.type = COLLISION_TYPE::CIRCLECAPSULE;
 		break;
 	
-	case 15:	// Line - Polygon
+	case 24:	// Capsule - Polygon
 		 t = manifold.a;
 		manifold.a = manifold.b;
 		manifold.b = t;
-		manifold.type = COLLISION_TYPE::POLYGONLINE;
+		manifold.type = COLLISION_TYPE::POLYGONCAPSULE;
 		break;
 	
+	case 48: //Capsule - Capsule
+		manifold.type = COLLISION_TYPE::CAPSULECAPSULE;
+
+		break;
+
+	case 144: //Capsule - Plane
+		manifold.type = COLLISION_TYPE::CAPSULEPLANE;
+
+		break;
+
+	case 66: // Plane - Circle
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CIRCLEPLANE;
+		break;
+
+	case 72:	//Plane - Polygon
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::POLYGONPLANE;
+		break;
+
+	case 96:	//Plane - Capsule
+		t = manifold.a;
+		manifold.a = manifold.b;
+		manifold.b = t;
+		manifold.type = COLLISION_TYPE::CAPSULEPLANE;
+		break;
 	default:
-	case 27:	// Line - Line
+	case 192:	// Plane - Plane
 		manifold.type = COLLISION_TYPE::INVALID;
 		break;
 	

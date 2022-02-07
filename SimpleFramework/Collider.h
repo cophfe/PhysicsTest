@@ -20,8 +20,7 @@ public:
 	void RenderShape(PhysicsProgram& program);
 
 	//calculaters
-	float CalculateInertia();
-	float CalculateMass();
+	void CalculateMass(float& massVar, float& inertiaVar);
 	void CalculateAABB(Transform& transform);
 
 	~Collider();

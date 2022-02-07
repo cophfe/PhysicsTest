@@ -82,6 +82,7 @@ GameBase::GameBase()
 
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
+	windowSize = { width, height };
 
 	textProjectionMatrix = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
 	textShader.SetUniform("textProjection", textProjectionMatrix);
@@ -99,18 +100,17 @@ GameBase::~GameBase()
 
 void GameBase::Update()
 {
-	int width, height;
-	glfwGetWindowSize(window, &width, &height);
-	aspectRatio = width / (float)height;
-
+	/*int width, height;
+	glfwGetWindowSize(window, &width, &height);*/
+	
 	time += deltaTime;
 
 	glm::mat4 deprojection = glm::inverse(GetCameraTransform());
 	double cursorX, cursorY;
 	glfwGetCursorPos(window, &cursorX, &cursorY);
-	screenCursorPos = Vector2(cursorX, cursorY);
-	cursorX = (cursorX / width) * 2.0 - 1.0;
-	cursorY = -((cursorY / height) * 2.0 - 1.0);
+	screenCursorPos =  glm::vec2(cursorX, windowSize.y - cursorY);
+	cursorX = (cursorX / windowSize.x) * 2.0 - 1.0;
+	cursorY = -((cursorY / windowSize.y) * 2.0 - 1.0);
 
 	glm::vec4 mousePosNDC(float(cursorX), float(cursorY), 0, 1);
 
@@ -188,6 +188,10 @@ void GameBase::OnMouseRelease(int mouseButton)
 
 void GameBase::OnWindowResize(int width, int height)
 {
+	oldWindowSize = windowSize;
+	windowSize = { width,height };
+	aspectRatio = width / (float)height;
+
 	textProjectionMatrix = glm::ortho(0.0f, (float)width, 0.0f, (float)height);
 	textShader.SetUniform("textProjection", textProjectionMatrix);
 }

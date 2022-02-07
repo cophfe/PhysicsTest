@@ -1,7 +1,7 @@
 #pragma once
 #include "Maths.h"
 #define max_vertices 8
-
+#include <iostream>
 
 class PhysicsProgram;
 class Transform;
@@ -11,13 +11,20 @@ struct AABB {
 public:
 	Vector2 max;
 	Vector2 min;
+
+	bool PointCast(Vector2 point)
+	{
+		return point.x < max.x && point.x > min.x
+			&& point.y < max.y && point.y > min.y;
+	}
 };
 
 enum class SHAPE_TYPE : unsigned char {
 	CIRCLE = 1,
-	POLYGON = 3,
-	LINE = 9,
-	COUNT = 3
+	POLYGON = 4,
+	CAPSULE = 16,
+	PLANE = 64,
+	COUNT = 4
 };
 
 
@@ -99,11 +106,11 @@ private:
 // LINE CLASS
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class LineShape : public Shape 
+class CapsuleShape : public Shape 
 {
 public:
 
-	LineShape(Vector2 a, Vector2 b, float buffer = 0.01f);
+	CapsuleShape(Vector2 a, Vector2 b, float buffer = 0.01f);
 
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density); // change to 
@@ -115,10 +122,34 @@ public:
 private:
 	friend CollisionManager;
 
-	float buffer;
+	float radius;
 	Vector2 pointA;
 	Vector2 pointB;
 };
+
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// PLANE CLASS
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+class PlaneShape : public Shape 
+{
+public:
+	PlaneShape(Vector2 normal, float d);
+	PlaneShape(Vector2 pointA, Vector2 pointB);
+
+	bool PointCast(Vector2 point, Transform& transform);
+	void CalculateMass(float& mass, float& inertia, float density);
+	void RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour);
+	AABB CalculateAABB(Transform& transform);
+	SHAPE_TYPE GetType();
+	Shape* Clone();
+
+private:
+	Vector2 normal;
+	float distance;
+};
+
+
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // CAPSULE CLASS

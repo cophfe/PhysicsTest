@@ -77,6 +77,11 @@ void TextRenderer::Draw()
 		//here should do glDrawArrays for each individual text line, calling 
 		//glUniform3f(textColourUniform, data.colour.x, data.colour.y, data.colour.z);
 		//to change the text colour
+		for (size_t i = 0; i < textData.size(); i++)
+		{
+			glUniform3f(textColourUniform, textData[i].colour.x, textData[i].colour.y, textData[i].colour.z);
+
+		}
 	}
 	
 	//actually render
@@ -140,8 +145,6 @@ TextRenderer::~TextRenderer()
 
 void TextRenderer::BufferTextData(TextData& data)
 {
-	//set colour
-	glUniform3f(textColourUniform, data.colour.x, data.colour.y, data.colour.z);
 	float x = data.minXY.x;
 
 	//go through all characters
@@ -301,6 +304,7 @@ int TextRenderer::BuildFontTexture(const char* font)
 //width and height of text bounding box 
 void TextRenderer::GetTextWidthHeight(std::string string, float& width, float& height)
 {
+	width = 0;
 	for (size_t i = 0; i < string.size(); i++)
 	{
 		char character = (char)string[i];

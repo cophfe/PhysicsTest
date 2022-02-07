@@ -6,7 +6,7 @@ const float sleepVelocityMag = 0.0001f; //(these are also squared)
 const float sleepAngularVelocityMag = 0.0001f;
 const float sleepTime = 0.2f;
 
-float PhysicsObject::gravity = 2;
+float PhysicsObject::gravity = 5;
 
 PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
 {
@@ -22,13 +22,13 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 	else if (data.mass == -1) 
 	{
 		if (collider != nullptr) {
-			float mass = collider->CalculateMass();
+			float mass, inertia;
+			collider->CalculateMass(mass, inertia);
 			if (mass == 0)
 				iMass = 0;
 			else
 				iMass = 1 / mass;
 
-			float inertia = collider->CalculateInertia();
 			if (inertia == 0)
 				iMomentOfInertia = 0;
 			else

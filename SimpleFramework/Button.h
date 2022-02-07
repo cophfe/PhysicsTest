@@ -3,28 +3,56 @@
 #include "TextRenderer.h"
 #include "LineRenderer.h"
 #include "Shape.h"
+#include "UIObject.h"
 
 class PhysicsProgram;
 
-class Button
+class Button : public UIObject
 {
 public:
-	Button(Vector2 size, Vector2 position, std::string text, Vector3 textColour, Vector3 edgeColour, PhysicsProgram& program, float textScale = 1.0f);
+	
+
+	Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale = 0.0f, float padding = 2.0f);
 	
 	void Update(PhysicsProgram& program);
+	void OnMouseClick(PhysicsProgram& program);
+	void OnMouseRelease(PhysicsProgram& program);
+	bool IsHeldDown() { return heldDown; }
+	
 	void Draw(PhysicsProgram& program);
 
-	void SetOnClick(void(*function));
-	void SetOnHover(void(*function));
-	
+	void SetOnClick(void(*function)(Button& button, void* infoPointer), void* infoPointer);
+	//void SetOnHover(void(*function)(Button& button, void* infoPointer), void* infoPointer);
+
+	void DisableButton(Vector3 disableColour);
+	void EnableButton();
+
+	void ChangeText(PhysicsProgram& program, std::string text, bool autoSetScale, float padding = 8, float scale = 1);
+	const std::string& GetText() { return text; }
+	void SetPosition(Vector2 pos);
+	Vector2 GetPosition();
+
+	Vector3 textColour; 
+	Vector3 colour;
+	Vector3 colourOnHover;
+	Vector3 colourOnClick;
 private:
+	void AutoSetScale(PhysicsProgram& program, float padding, Vector2 boxSize);
+	
+	bool enabled = true;
 	AABB buttonAABB;
 	std::string text;
-	Vector3 textColour; 
-	Vector3 edgeColour;
+
+	Vector3 currentColour;
+	bool heldDown = false;
+
 	float textScale;
 	Vector2 textOffset;
-	void(*onClick) = nullptr;
-	void(*onHover) = nullptr;
+
+	void(*onClick)(Button& button, void* infoPointer) = nullptr;
+	//void(*onHover)(Button& button, void* infoPointer) = nullptr;
+
+	void* onClickPtr = nullptr;
+	//void* onHoverPtr = nullptr;
 };
 

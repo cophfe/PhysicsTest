@@ -8,10 +8,11 @@ PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
 
 	//multiple shapes in 1 physics object aren't supported JUST yet
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
-	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(-gridLimits, -gridLimits), Vector2(-gridLimits, gridLimits)))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(-gridLimits, gridLimits), Vector2(gridLimits, gridLimits)))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(gridLimits, gridLimits), Vector2(gridLimits, -gridLimits)))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new LineShape(Vector2(gridLimits, -gridLimits), Vector2(-gridLimits, -gridLimits)))));
+	float bufferRadius = 1.0f;
+	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(-gridLimits, -gridLimits), Vector2(-gridLimits, gridLimits), bufferRadius))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(-gridLimits, gridLimits), Vector2(gridLimits, gridLimits), bufferRadius))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(gridLimits, gridLimits), Vector2(gridLimits, -gridLimits), bufferRadius))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(gridLimits, -gridLimits), Vector2(-gridLimits, -gridLimits), bufferRadius))));
 
 }
 
@@ -30,6 +31,16 @@ void PhysicsProgram::Update()
 	//player input also
 	playerInput.Update();
 
+	//(currently no ui objects change held status here)
+	uiHeldDown = false;
+	if (uiEnabled) {
+		for (size_t i = 0; i < uiObjects.size(); i++)
+		{
+			uiObjects[i]->Update(*this);
+			//uiHeldDown |= uiObjects[i].IsHeldDown();
+
+		}
+	}
 	
 }
 
@@ -47,29 +58,19 @@ void PhysicsProgram::Render()
 	
 	lastTime = time;
 
-	if (leftButtonDown)
-	{
-		lines.DrawCircle(cursorPos, 0.2f, { 1, 0, 0 });
-		OnMouseClick(0);
-
-	}
-	else if (rightButtonDown)
-	{
-		lines.DrawCircle(cursorPos, 0.2f, { 0, 1, 0 });
-		OnMouseClick(1);
-	}
-	else
-	{
-		lines.DrawCircle(cursorPos, 0.2f, { 0, 0, 1 });
-	}
-
 	for (auto& pObject : pObjects)
 	{
 		pObject.Render(*this);
 	}
 
+	//wow pretty disgusting that this function is doesn't take in *this when the others do
 	playerInput.Render();
 
+	for (size_t i = 0; i < uiObjects.size(); i++)
+	{
+		//wow pretty disgusting that this function is called Draw when the others are called render
+		uiObjects[i]->Draw(*this);
+	}
 	//This call puts all the lines you've set up on screen - don't delete it or things won't work.
 	//uses simple shader to draw lines and grid
 	GameBase::Render();
@@ -77,11 +78,24 @@ void PhysicsProgram::Render()
 
 void PhysicsProgram::OnMouseClick(int mouseButton)
 {
+	if (uiEnabled) {
+		uiHeldDown = false;
+		for (size_t i = 0; i < uiObjects.size(); i++)
+		{
+			uiObjects[i]->OnMouseClick(*this);
+		}
+	}
 	playerInput.OnMouseClick(mouseButton);
 }
 
 void PhysicsProgram::OnMouseRelease(int mouseButton)
 {
+	if (uiEnabled) {
+		for (size_t i = 0; i < uiObjects.size(); i++)
+		{
+			uiObjects[i]->OnMouseRelease(*this);
+		}
+	}
 	playerInput.OnMouseRelease(mouseButton);
 }
 
@@ -89,4 +103,19 @@ PhysicsObject& PhysicsProgram::AddPhysicsObject(PhysicsObject&& pObject)
 {
 	pObjects.emplace_back(pObject);
 	return pObjects[pObjects.size() - 1];
+}
+
+UIObject* PhysicsProgram::AddUIObject(UIObject* uiObject)
+{
+	uiObjects.emplace_back(uiObject);
+	return uiObjects[uiObjects.size() - 1];
+}
+
+void PhysicsProgram::OnWindowResize(int width, int height)
+{
+	GameBase::OnWindowResize(width, height);
+	for (size_t i = 0; i < uiObjects.size(); i++)
+	{
+		uiObjects[i]->OnWindowChange(oldWindowSize, windowSize);
+	}
 }

@@ -84,12 +84,7 @@ void Collider::RenderShape(PhysicsProgram& program) {
 	}
 }
 
-float Collider::CalculateInertia()
-{
-	return 0.0f;
-}
-
-float Collider::CalculateMass()
+void Collider::CalculateMass(float& massVar, float& inertiaVar)
 {
 	float mass = 0;
 	float inertia = 0;
@@ -101,7 +96,9 @@ float Collider::CalculateMass()
 		mass += shapeMass;
 		inertia += shapeInertia;
 	}
-	return mass;
+
+	massVar = mass;
+	inertiaVar = inertia;
 }
 
 void Collider::CalculateAABB(Transform& transform)
@@ -187,11 +184,11 @@ Collider& Collider::operator=(Collider& other)
 
 bool Collider::CanBeDynamic()
 {
-	//lines cannot be dynamic, because they don't have any mass and it dont make sense.
+	//planes cannot be dynamic, because they don't have any mass and it dont make sense.
 
 	for (size_t i = 0; i < shapeCount; i++)
 	{
-		if (shapes[i]->GetType() == SHAPE_TYPE::LINE)
+		if (shapes[i]->GetType() == SHAPE_TYPE::PLANE)
 			return false;
 	}
 	return true;

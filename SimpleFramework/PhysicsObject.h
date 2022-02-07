@@ -43,6 +43,25 @@ public:
 		return Vector2(point.x * c - point.y * s + position.x, point.y * c + point.x * s + position.y);
 	}
 
+	inline Vector2 InverseTransformPoint(const Vector2& point)
+	{
+		Vector2 p = point;
+		p -= position;
+
+		return Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
+	}
+
+
+	inline Vector2 TransformDirection(const Vector2& direction)
+	{
+		return Vector2(direction.x * c - direction.y * s, direction.y * c + direction.x * s);
+	}
+
+	inline Vector2 InverseTransformDirection(const Vector2& direction) 
+	{
+		return Vector2(direction.x * -c + direction.y * s, direction.y * -c - direction.x * s);
+	}
+
 	Transform() = default;
 	Transform(Vector2 position, float rotation) : position(position), rotation(rotation)
 	{
@@ -82,6 +101,7 @@ public:
 	inline float		GetInertia()				{ return 1.0f / iMomentOfInertia; }
 	inline float		GetInverseMass()			{ return iMass; }
 	inline float		GetInverseInertia()			{ return iMomentOfInertia; }
+	inline Transform&	GetTransform()				{ return transform; }
 
 	//setters
 	inline void	SetPosition(Vector2 pos)			{ transform.position = pos; }

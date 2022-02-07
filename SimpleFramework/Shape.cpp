@@ -27,6 +27,11 @@ static float SquareLength(Vector2 v) {
 }
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+void Shape::RenderShape(Transform transform, PhysicsProgram& program, Vector3 colour)
+{
+	RenderShape(program, transform, colour);
+}
+
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // POLYGON
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,7 +55,7 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 	//centrepoint is the average of the compositional triangles centrepoints, weighted by area
 	Vector2 polyCentre = Vector2(0, 0);
 	//mass moment of inertia is equal to the sum of the compositional triangle's mass moments
-	float i = 0;
+	float in = 0;
 	float area = 0;
 
 	for (size_t i = 0; i < pointCount; i++)
@@ -62,16 +67,16 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 		area += triArea;
 
 		//fun fact: the squared length of a vector is the same as the dot product of it with itself
-		i += (SquareLength(a) + SquareLength(b) + glm::dot(a, b)) * triArea / 6;
+		in += (SquareLength(a) + SquareLength(b) + glm::dot(a, b)) * triArea / 6;
 		//triangle area * triangle centre
 		polyCentre += triArea * triCentre;
 	}
-	i = density * i;
+	in = density * in;
 
 	//set final values
 	centrePoint = polyCentre / (area); //divide by total area to get the centrepoint
 	mass = area * density; //multiply by density
-	inertia = i - mass * SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
+	inertia = in - mass * SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
 void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
@@ -240,7 +245,6 @@ void CircleShape::CalculateMass(float& mass, float& inertia, float density)
 void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
 {
 	program.GetLineRenderer().DrawCircle(transform.TransformPoint(centrePoint), radius, colour);
-	program.GetTriangleRenderer().QueueTriangle(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(radius, 0)), transform.TransformPoint(Vector2(0, -radius)));
 	program.GetLineRenderer().DrawLineSegment(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(0, radius * 0.5f)), colour);
 }
 
@@ -265,129 +269,154 @@ Shape* CircleShape::Clone()
 	return new CircleShape(*this);
 }
 
-LineShape::LineShape(Vector2 a, Vector2 b, float buffer)
+CapsuleShape::CapsuleShape(Vector2 a, Vector2 b, float radius)
 {
 	pointA = a;
 	pointB = b;
-	this->buffer = buffer;
+	this->radius = radius;
 }
 
-bool LineShape::PointCast(Vector2 point, Transform& transform)
+bool CapsuleShape::PointCast(Vector2 point, Transform& transform)
 {
-	return false;
+	//capsule is basically 2 circles and a rect
+
+	//inverse transform point instead of transforming the points, one less calculation
+	point = transform.InverseTransformPoint(point);
+
+	//if point is inside the two circles, it is colliding
+	if (SquareLength(pointA - point) > radius * radius || SquareLength(pointB - point) > radius * radius)
+		return true;
+
+	//if the point is inside the oriented bounding box, it is colliding
+	Vector2 tangent = glm::normalize(pointA - pointB);
+	Vector2 normal = { -tangent.y, tangent.x };
+	
+	//y axis, with 0 being the min of the OBB
+	float distanceFromLine = glm::dot(normal, point) - glm::dot(normal, pointA);
+	//x axis, 0 being the min of the OBB
+	float distanceAlongLine = glm::dot(tangent, point) - glm::dot(tangent, pointA);
+	
+	if (glm::abs(distanceFromLine) < radius
+		&& distanceAlongLine > 0 && distanceAlongLine < glm::dot(tangent, pointB))
+	{
+		return true;
+	}
+	else return false;
 }
 
-void LineShape::CalculateMass(float& mass, float& inertia, float density)
+void CapsuleShape::CalculateMass(float& mass, float& inertia, float density)
+{
+	mass = 2 * radius * glm::length(pointA - pointB) + radius * radius * glm::pi<float>();
+	inertia = 0; //??? idk how to calculate this
+}
+
+void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
+{
+	//if the buffer is big enough, this is a capsule, otherwise treat it as a line
+	if (radius > 0.01f)
+	{
+		Vector2 a = transform.TransformPoint(pointA);
+		Vector2 b = transform.TransformPoint(pointB);
+		auto& lR = program.GetLineRenderer();
+		lR.DrawCircle(a, radius, 8);
+		lR.DrawCircle(b, radius, 8);
+
+		Vector2 radiusAddition = glm::normalize(a - b);
+		radiusAddition = { radiusAddition.y, -radiusAddition.x };
+
+		lR.DrawLineSegment(pointA + radiusAddition, pointB + radiusAddition);
+		lR.DrawLineSegment(pointA - radiusAddition, pointB - radiusAddition);
+	}
+	else {
+		LineRenderer& lR = program.GetLineRenderer();
+		lR.DrawLineSegment(transform.TransformPoint(pointA),
+			transform.TransformPoint(pointB), colour);
+	}
+	
+}
+
+AABB CapsuleShape::CalculateAABB(Transform& transform)
+{
+	AABB aABB;
+	if (pointA.x > pointB.x) {
+		aABB.max.x = pointA.x + radius;
+		aABB.min.x = pointB.x - radius;
+	}
+	else 
+	{
+		aABB.max.x = pointB.x + radius;
+		aABB.min.x = pointA.x - radius;
+	}
+
+	if (pointA.y > pointB.y) {
+		aABB.max.y = pointA.y + radius;
+		aABB.min.y = pointB.y - radius;
+	}
+	else
+	{
+		aABB.max.y = pointB.y + radius;
+		aABB.min.y = pointA.y - radius;
+	}
+	return aABB;
+}
+
+SHAPE_TYPE CapsuleShape::GetType()
+{
+	return SHAPE_TYPE::CAPSULE;
+}
+
+Shape* CapsuleShape::Clone()
+{
+	return new CapsuleShape(*this);
+}
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// Plane
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+PlaneShape::PlaneShape(Vector2 normal, float d) : normal(normal), distance(d)
+{}
+
+PlaneShape::PlaneShape(Vector2 pointA, Vector2 pointB)
+{
+	Vector2 normal = glm::normalize(pointA - pointB);
+	this->normal = Vector2(-normal.y, normal.x);
+	distance = glm::dot(normal, pointB);
+}
+
+bool PlaneShape::PointCast(Vector2 point, Transform& transform)
+{
+	std::cout << "Plane point is colliding: " << (glm::dot(transform.InverseTransformPoint(point), normal) < distance) << "\n";
+	return glm::dot(transform.InverseTransformPoint(point), normal) < distance;
+}
+
+void PlaneShape::CalculateMass(float& mass, float& inertia, float density)
 {
 	mass = 0;
 	inertia = 0;
 }
 
-void LineShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
+void PlaneShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
 {
-	LineRenderer& lR = program.GetLineRenderer();
-	lR.DrawLineSegment(transform.TransformPoint(pointA),
-		transform.TransformPoint(pointB), colour);
+	auto& lR = program.GetLineRenderer();
+	
+	//normal
+	lR.DrawLineSegment(normal * distance, normal * (distance + 1), Vector3(1,0,0));
+
+	Vector2 tangent = 1000.0f * Vector2{ normal.y, -normal.x };
+	lR.DrawLineSegment(normal * distance + tangent, normal * distance - tangent, colour);
 }
 
-AABB LineShape::CalculateAABB(Transform& transform)
+AABB PlaneShape::CalculateAABB(Transform& transform)
 {
-	AABB aABB;
-	if (pointA.x > pointB.x) {
-		aABB.max.x = pointA.x + buffer;
-		aABB.min.x = pointB.x + buffer;
-	}
-	else 
-	{
-		aABB.max.x = pointB.x + buffer;
-		aABB.min.x = pointA.x + buffer;
-	}
-
-	if (pointA.y > pointB.y) {
-		aABB.max.y = pointA.y + buffer;
-		aABB.min.y = pointB.y + buffer;
-	}
-	else
-	{
-		aABB.max.y = pointB.y + buffer;
-		aABB.min.y = pointA.y + buffer;
-	}
-	return aABB;
+	return AABB{ Vector2{-INFINITY, -INFINITY}, Vector2{INFINITY, INFINITY} };
 }
 
-SHAPE_TYPE LineShape::GetType()
+SHAPE_TYPE PlaneShape::GetType()
 {
-	return SHAPE_TYPE::LINE;
+	return SHAPE_TYPE::PLANE;
 }
 
-Shape* LineShape::Clone()
+Shape* PlaneShape::Clone()
 {
-	return new LineShape(*this);
-}
-
-//SausageShape::SausageShape(float radius, float height)
-//{
-//	this->radius = radius;
-//	pointA = Vector2(0, height / 2);
-//	pointB = -pointA;
-//}
-//
-//float SausageShape::CalculateArea()
-//{
-//	return 2 * radius * glm::length(pointA - pointB) + radius * radius * glm::pi<float>();
-//}
-//
-//void SausageShape::RenderShape(PhysicsProgram& program, Transform& transform)
-//{
-//	Vector2 a = transform.TransformPoint(pointA);
-//	Vector2 b = transform.TransformPoint(pointB);
-//	auto& lR = program.GetLineRenderer();
-//	lR.DrawCircle(a, radius, 32);
-//	lR.DrawCircle(b, radius, 32);
-//
-//	Vector2 radiusAddition = glm::normalize(a - b);
-//	radiusAddition = { radiusAddition.y, -radiusAddition.x };
-//
-//	lR.DrawLineSegment(pointA + radiusAddition, pointB + radiusAddition);
-//	lR.DrawLineSegment(pointA - radiusAddition, pointB - radiusAddition);
-//}
-//
-//AABB SausageShape::CalculateAABB(Transform& transform)
-//{
-//	AABB aABB;
-//	if (pointA.x > pointB.x) {
-//		aABB.max.x = pointA.x + radius;
-//		aABB.min.x = pointB.x - radius;
-//	}
-//	else
-//	{
-//		aABB.max.x = pointB.x + radius;
-//		aABB.min.x = pointA.x - radius;
-//	}
-//
-//	if (pointA.y > pointB.y) {
-//		aABB.max.y = pointA.y + radius;
-//		aABB.min.y = pointB.y - radius;
-//	}
-//	else
-//	{
-//		aABB.max.y = pointB.y + radius;
-//		aABB.min.y = pointA.y - radius;
-//	}
-//	return aABB;
-//}
-//
-//SHAPE_TYPE SausageShape::GetType()
-//{
-//	return SHAPE_TYPE::CAPSULE;
-//}
-//
-//Shape* SausageShape::Clone()
-//{
-//	return new SausageShape(*this);
-//}
-
-void Shape::RenderShape(Transform transform, PhysicsProgram& program, Vector3 colour)
-{
-	RenderShape(program, transform, colour);
+	return new PlaneShape(*this);
 }
