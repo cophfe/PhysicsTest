@@ -23,7 +23,8 @@ GameBase::GameBase()
 	//Can choose resolution here.
 	window = glfwCreateWindow(1280, 720, "Physics Testbed", nullptr, nullptr);
 	//glfwSetWindowPos(window, 1950, 30);
-
+	//glfwWindowHint(GLFW_REFRESH_RATE, 400);
+	
 	//This is the somewhat hacky oldschool way of making callbacks work without everything having to be global. Look
 	//at the way the function callbacks work to get an idea of what's going on.
 	glfwSetWindowUserPointer(window, (void*)this);	
@@ -49,6 +50,8 @@ GameBase::GameBase()
 	{
 		return;
 	}
+	
+	//set to 0 for uncapped fps
 	glfwSwapInterval(1);
 
 	ImGui::CreateContext();
@@ -98,6 +101,18 @@ GameBase::~GameBase()
 	glfwTerminate();
 }
 
+void GameBase::CapFPS(bool capped)
+{
+	if (capped)
+	{
+		glfwSwapInterval(1);
+	}
+	else 
+	{
+		glfwSwapInterval(0);
+	}
+}
+
 void GameBase::Update()
 {
 	/*int width, height;
@@ -105,19 +120,9 @@ void GameBase::Update()
 	
 	time += deltaTime;
 
-	glm::mat4 deprojection = glm::inverse(GetCameraTransform());
-	double cursorX, cursorY;
-	glfwGetCursorPos(window, &cursorX, &cursorY);
-	screenCursorPos =  glm::vec2(cursorX, windowSize.y - cursorY);
-	cursorX = (cursorX / windowSize.x) * 2.0 - 1.0;
-	cursorY = -((cursorY / windowSize.y) * 2.0 - 1.0);
+	
 
-	glm::vec4 mousePosNDC(float(cursorX), float(cursorY), 0, 1);
-
-	glm::vec4 mousePosWorld = deprojection * mousePosNDC;
-
-	cursorPos.x = mousePosWorld.x;
-	cursorPos.y = mousePosWorld.y;
+	
 
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS || glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
@@ -139,6 +144,18 @@ void GameBase::Update()
 	leftButtonDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	rightButtonDown = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
 
+	glm::mat4 deprojection = glm::inverse(GetCameraTransform());
+	double cursorX, cursorY;
+	glfwGetCursorPos(window, &cursorX, &cursorY);
+	screenCursorPos = glm::vec2(cursorX, windowSize.y - cursorY);
+	cursorX = (cursorX / windowSize.x) * 2.0 - 1.0;
+	cursorY = -((cursorY / windowSize.y) * 2.0 - 1.0);
+	glm::vec4 mousePosNDC(float(cursorX), float(cursorY), 0, 1);
+
+	glm::vec4 mousePosWorld = deprojection * mousePosNDC;
+
+	cursorPos.x = mousePosWorld.x;
+	cursorPos.y = mousePosWorld.y;
 
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();

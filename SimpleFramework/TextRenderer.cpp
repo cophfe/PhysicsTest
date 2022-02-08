@@ -74,24 +74,28 @@ void TextRenderer::Draw()
 		{
 			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec4), vertices.data(), GL_DYNAMIC_DRAW);
 		}
-		//here should do glDrawArrays for each individual text line, calling 
-		//glUniform3f(textColourUniform, data.colour.x, data.colour.y, data.colour.z);
-		//to change the text colour
-		for (size_t i = 0; i < textData.size(); i++)
-		{
-			glUniform3f(textColourUniform, textData[i].colour.x, textData[i].colour.y, textData[i].colour.z);
-
-		}
+		lastSize = vertices.size();
 	}
 	
 	//actually render
-	glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	//here should do glDrawArrays for each individual text line, calling 
+		//glUniform3f(textColourUniform, data.colour.x, data.colour.y, data.colour.z);
+		//to change the text colour
+	int startOffset = 0;
+	for (size_t i = 0; i < textData.size(); i++)
+	{
+		glUniform3f(textColourUniform, textData[i].colour.x, textData[i].colour.y, textData[i].colour.z);
+		int bufferSize = textData[i].vertexCount;
+		glDrawArrays(GL_TRIANGLES, startOffset, bufferSize);
+		startOffset += bufferSize;
+	}
+	//glDrawArrays(GL_TRIANGLES, 0, vertices.size());
+	
 	//clear 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	
-	lastSize = vertices.size();
 }
 
 void TextRenderer::ChangeFont(const char* font)
@@ -147,6 +151,9 @@ void TextRenderer::BufferTextData(TextData& data)
 {
 	float x = data.minXY.x;
 
+	//vertex count is (text size - space count) * 6
+	data.vertexCount = data.text.size() * 6;
+
 	//go through all characters
 	for (char c : data.text)
 	{
@@ -191,6 +198,9 @@ void TextRenderer::BufferTextData(TextData& data)
 			// it has to WAIT for the last one to end before it begins, if it is a different area it is MUUUCH faster
 			//glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
 			
+		}
+		else {
+			data.vertexCount -= 6;
 		}
 		//now advance x
 		x += (glyph.advance.x) * data.scale;

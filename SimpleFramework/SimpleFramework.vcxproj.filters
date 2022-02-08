@@ -74,6 +74,12 @@
     <ClCompile Include="UIObject.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="Toggle.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="Slider.cpp">
+      <Filter>Game\UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -164,6 +170,12 @@
       <Filter>Game\UI</Filter>
     </ClInclude>
     <ClInclude Include="UIObject.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Toggle.h">
+      <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="Slider.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
   </ItemGroup>

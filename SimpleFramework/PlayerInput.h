@@ -2,6 +2,8 @@
 #include "Maths.h"
 #include "PhysicsObject.h"
 #include "Button.h"
+#include "Slider.h"
+#include "Toggle.h"
 
 class PhysicsProgram;
 
@@ -30,6 +32,7 @@ public:
 	void OnKeyPressed(int key);
 	void OnKeyReleased(int key);
 
+	void SetShapeRadius(float rad);
 	
 
 	void SetHeldTool(HELD_TOOL type);

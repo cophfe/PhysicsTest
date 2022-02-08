@@ -8,11 +8,10 @@ PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
 
 	//multiple shapes in 1 physics object aren't supported JUST yet
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
-	float bufferRadius = 1.0f;
-	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(-gridLimits, -gridLimits), Vector2(-gridLimits, gridLimits), bufferRadius))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(-gridLimits, gridLimits), Vector2(gridLimits, gridLimits), bufferRadius))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(gridLimits, gridLimits), Vector2(gridLimits, -gridLimits), bufferRadius))));
-	AddPhysicsObject(PhysicsObject(data, new Collider(new CapsuleShape(Vector2(gridLimits, -gridLimits), Vector2(-gridLimits, -gridLimits), bufferRadius))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(1, 0), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, 1), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(-1, 0), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, -1), -gridLimits))));
 
 }
 
@@ -55,6 +54,7 @@ void PhysicsProgram::Render()
 		fpsText = std::string("FPS: ") + std::to_string((int)(1 / (time - lastTime)));
 	}
 	textRenderer.QueueText(fpsText, Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
+	textRenderer.QueueText("AHHHHHHHHH", Vector2(25.0f, 60.0f), 0.4f, Vector3(1.0f, 0.1f, 1.0f));
 	
 	lastTime = time;
 
@@ -118,4 +118,20 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 	{
 		uiObjects[i]->OnWindowChange(oldWindowSize, windowSize);
 	}
+}
+
+void PhysicsProgram::ClearPhysicsObjects()
+{
+	pObjects.clear();
+
+	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(1, 0), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, 1), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(-1, 0), -gridLimits))));
+	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, -1), -gridLimits))));
+}
+
+PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)
+{
+	return collisionManager.PointCast(point, pObjects, includeStatic);
 }

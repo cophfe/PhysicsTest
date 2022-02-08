@@ -110,7 +110,7 @@ class CapsuleShape : public Shape
 {
 public:
 
-	CapsuleShape(Vector2 a, Vector2 b, float buffer = 0.01f);
+	CapsuleShape(Vector2 a, Vector2 b, float radius = 0.01f);
 
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density); // change to 
@@ -135,7 +135,8 @@ class PlaneShape : public Shape
 {
 public:
 	PlaneShape(Vector2 normal, float d);
-	PlaneShape(Vector2 pointA, Vector2 pointB);
+	PlaneShape(Vector2 normal, Vector2 startPosition);
+	PlaneShape(Vector2 pointA, Vector2 pointB, void* null);
 
 	bool PointCast(Vector2 point, Transform& transform);
 	void CalculateMass(float& mass, float& inertia, float density);
@@ -145,6 +146,8 @@ public:
 	Shape* Clone();
 
 private:
+	friend CollisionManager;
+
 	Vector2 normal;
 	float distance;
 };

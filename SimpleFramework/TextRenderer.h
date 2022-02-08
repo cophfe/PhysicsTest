@@ -27,6 +27,7 @@ struct TextData
 	Vector2 minXY;
 	float scale;
 	glm::vec3 colour;
+	int vertexCount = 0;
 };
 
 struct FontInfo 

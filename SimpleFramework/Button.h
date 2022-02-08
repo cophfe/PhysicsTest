@@ -1,8 +1,4 @@
 #pragma once
-#include "Graphics.h"
-#include "TextRenderer.h"
-#include "LineRenderer.h"
-#include "Shape.h"
 #include "UIObject.h"
 
 class PhysicsProgram;
@@ -39,12 +35,10 @@ public:
 private:
 	void AutoSetScale(PhysicsProgram& program, float padding, Vector2 boxSize);
 	
-	bool enabled = true;
 	AABB buttonAABB;
 	std::string text;
 
 	Vector3 currentColour;
-	bool heldDown = false;
 
 	float textScale;
 	Vector2 textOffset;

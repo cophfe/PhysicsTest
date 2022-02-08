@@ -139,9 +139,6 @@ PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCou
 	delete[] points;
 }
 
-
-
-
 bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
 {
 	//first create convex hull using gift wrapping algorithm https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
@@ -176,7 +173,7 @@ bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
 			// point i is the same amount to the right as the last, but is longer
 			//
 			// set the new endpoint to point i;
-			if (endPoint == lastPointOnHull || cross > 0
+			if (endPoint == lastPointOnHull || cross < 0
 				|| (cross == 0 && (SquareLength(points[lastPointOnHull] - points[i]) > SquareLength(points[lastPointOnHull] - points[endPoint]))))
 			{
 				endPoint = i;
@@ -231,13 +228,14 @@ CircleShape::CircleShape(float radius, Vector2 centrePoint)
 bool CircleShape::PointCast(Vector2 point, Transform& transform)
 {
 	Vector2 centre = transform.TransformPoint(centrePoint);
-	return SquareLength(centre - point) > radius * radius;
+	return SquareLength(centre - point) < radius * radius;
 }
 
 void CircleShape::CalculateMass(float& mass, float& inertia, float density)
 {
 	mass = density * radius * radius * glm::pi<float>();
-	inertia = mass * radius * radius * mass * 0.5f; //mr^2/2
+	//circle is a cylinder with thickness of one, meaning the mass moment of inertia is mr^2/2
+	inertia = mass * radius * radius * 0.5f; 
 	//im a bit confused on how translating inertia tensor stuff works but I think this is correct
 	inertia += mass * SquareLength(centrePoint);
 }
@@ -306,8 +304,31 @@ bool CapsuleShape::PointCast(Vector2 point, Transform& transform)
 
 void CapsuleShape::CalculateMass(float& mass, float& inertia, float density)
 {
-	mass = 2 * radius * glm::length(pointA - pointB) + radius * radius * glm::pi<float>();
-	inertia = 0; //??? idk how to calculate this
+	float len = glm::length(pointA - pointB);
+	mass = density * (2 * radius * len + radius * radius * glm::pi<float>());
+	inertia = 0; 
+
+	//inertia is equal to 2 translated semicircles + inertia of rectangle
+	float semiCircleMass = 0.5f * density * radius * radius * glm::pi<float>();
+	float semiCircleInertia = semiCircleMass * radius * radius * 0.5f;
+	//translate inertia by adding mr^2 (proof in notebook)
+	//the semi circle is currently rotating around what would be it's centre if it was a full circle
+	//so need to move it by half of length of the capsule's rectangle
+	semiCircleInertia += semiCircleMass * 0.25 * len * len;
+	//now get the rect inertia
+	float width = radius * 2;
+	float rectMass = len * width * density;
+	float rectInertia = rectMass * (width * width + len * len) / 12.0f;
+	//rect inertia is already about the right axis (relative to the semicircles.
+	//now add all inertias together 
+	inertia = rectInertia + semiCircleInertia * 2;
+	//now translate it by the distance between the centrepoint of the capsule and the centrepoint of the physicsObject (0,0), so it is correct when rotating about that axis
+	float dist = glm::length(0.5f * (pointA + pointB));
+	inertia += mass * dist * dist;
+
+	//success! (probably, I have no idea how to check)
+
+
 }
 
 void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
@@ -318,14 +339,14 @@ void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Ve
 		Vector2 a = transform.TransformPoint(pointA);
 		Vector2 b = transform.TransformPoint(pointB);
 		auto& lR = program.GetLineRenderer();
-		lR.DrawCircle(a, radius, 8);
-		lR.DrawCircle(b, radius, 8);
+		lR.DrawCircle(a, radius, colour, 8);
+		lR.DrawCircle(b, radius, colour, 8);
 
 		Vector2 radiusAddition = glm::normalize(a - b);
 		radiusAddition = { radiusAddition.y, -radiusAddition.x };
 
-		lR.DrawLineSegment(pointA + radiusAddition, pointB + radiusAddition);
-		lR.DrawLineSegment(pointA - radiusAddition, pointB - radiusAddition);
+		lR.DrawLineSegment(a + radiusAddition, b + radiusAddition, colour);
+		lR.DrawLineSegment(a - radiusAddition, b - radiusAddition, colour);
 	}
 	else {
 		LineRenderer& lR = program.GetLineRenderer();
@@ -338,24 +359,26 @@ void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Ve
 AABB CapsuleShape::CalculateAABB(Transform& transform)
 {
 	AABB aABB;
-	if (pointA.x > pointB.x) {
-		aABB.max.x = pointA.x + radius;
-		aABB.min.x = pointB.x - radius;
+	Vector2 pA = transform.TransformPoint(pointA), pB = transform.TransformPoint(pointB);
+
+	if (pA.x > pB.x) {
+		aABB.max.x = pA.x + radius;
+		aABB.min.x = pB.x - radius;
 	}
 	else 
 	{
-		aABB.max.x = pointB.x + radius;
-		aABB.min.x = pointA.x - radius;
+		aABB.max.x = pB.x + radius;
+		aABB.min.x = pA.x - radius;
 	}
 
-	if (pointA.y > pointB.y) {
-		aABB.max.y = pointA.y + radius;
-		aABB.min.y = pointB.y - radius;
+	if (pA.y > pB.y) {
+		aABB.max.y = pA.y + radius;
+		aABB.min.y = pB.y - radius;
 	}
 	else
 	{
-		aABB.max.y = pointB.y + radius;
-		aABB.min.y = pointA.y - radius;
+		aABB.max.y = pB.y + radius;
+		aABB.min.y = pA.y - radius;
 	}
 	return aABB;
 }
@@ -376,7 +399,13 @@ Shape* CapsuleShape::Clone()
 PlaneShape::PlaneShape(Vector2 normal, float d) : normal(normal), distance(d)
 {}
 
-PlaneShape::PlaneShape(Vector2 pointA, Vector2 pointB)
+PlaneShape::PlaneShape(Vector2 normal, Vector2 startPosition)
+{
+	this->normal = glm::normalize(normal);
+	distance = glm::dot(normal, startPosition);
+}
+
+PlaneShape::PlaneShape(Vector2 pointA, Vector2 pointB, void* null)
 {
 	Vector2 normal = glm::normalize(pointA - pointB);
 	this->normal = Vector2(-normal.y, normal.x);
@@ -385,7 +414,6 @@ PlaneShape::PlaneShape(Vector2 pointA, Vector2 pointB)
 
 bool PlaneShape::PointCast(Vector2 point, Transform& transform)
 {
-	std::cout << "Plane point is colliding: " << (glm::dot(transform.InverseTransformPoint(point), normal) < distance) << "\n";
 	return glm::dot(transform.InverseTransformPoint(point), normal) < distance;
 }
 
@@ -399,16 +427,18 @@ void PlaneShape::RenderShape(PhysicsProgram& program, Transform& transform, Vect
 {
 	auto& lR = program.GetLineRenderer();
 	
-	//normal
-	lR.DrawLineSegment(normal * distance, normal * (distance + 1), Vector3(1,0,0));
+	Vector2 tNormal = transform.TransformDirection(normal);
 
-	Vector2 tangent = 1000.0f * Vector2{ normal.y, -normal.x };
-	lR.DrawLineSegment(normal * distance + tangent, normal * distance - tangent, colour);
+	Vector2 tPlanePoint = transform.TransformPoint(normal*distance);
+	float tDist = glm::dot(normal, tPlanePoint);
+
+	Vector2 tangent = 1000.0f * Vector2{ tNormal.y, -tNormal.x };
+	lR.DrawLineSegment(tPlanePoint + tangent, tPlanePoint - tangent, colour);
 }
 
 AABB PlaneShape::CalculateAABB(Transform& transform)
 {
-	return AABB{ Vector2{-INFINITY, -INFINITY}, Vector2{INFINITY, INFINITY} };
+	return AABB{ Vector2{INFINITY, INFINITY}, Vector2{-INFINITY, -INFINITY} };
 }
 
 SHAPE_TYPE PlaneShape::GetType()

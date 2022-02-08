@@ -167,7 +167,9 @@
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="GameBase.cpp" />
     <ClCompile Include="Shape.cpp" />
+    <ClCompile Include="Slider.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Toggle.cpp" />
     <ClCompile Include="TriangleRenderer.cpp" />
     <ClCompile Include="UIObject.cpp" />
     <ClCompile Include="Utilities.cpp" />
@@ -199,7 +201,9 @@
     <ClInclude Include="ShaderProgram.h" />
     <ClInclude Include="GameBase.h" />
     <ClInclude Include="Shape.h" />
+    <ClInclude Include="Slider.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Toggle.h" />
     <ClInclude Include="TriangleRenderer.h" />
     <ClInclude Include="UIObject.h" />
     <ClInclude Include="Utilities.h" />

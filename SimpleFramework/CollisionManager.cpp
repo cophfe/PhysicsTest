@@ -45,6 +45,22 @@ void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 	}
 }
 
+PhysicsObject* CollisionManager::PointCast(Vector2 point, std::vector<PhysicsObject>& pObjects, bool includeStatic)
+{
+	for (size_t i = 0; i < pObjects.size(); i++)
+	{
+		if (pObjects[i].collider)
+		{
+			if ((includeStatic || pObjects[i].iMass != 0) && pObjects[i].collider->shapes[0]->PointCast(point, pObjects[i].transform))
+			{
+				std::cout << "Grabbed object with mass " << pObjects[i].iMass << std::endl;
+				return &pObjects[i];
+			}
+		}
+	}
+	return nullptr;
+}
+
 void CollisionManager::ResolveCollision(CollisionManifold& manifold)
 {
 	//if collision happened (data is added into manifold about collision)
@@ -107,10 +123,11 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		CircleShape* a = (CircleShape*)*manifold.a->collider->shapes;
 		CapsuleShape* b = (CapsuleShape*)*manifold.b->collider->shapes;
 		
+		//transform to global
 		Vector2 pA = manifold.b->transform.TransformPoint(b->pointA), pB = manifold.b->transform.TransformPoint(b->pointB);
 		Vector2 circleCentre = manifold.a->transform.TransformPoint(a->centrePoint);
 		
-		//circle radius + line radius
+		//circle radius + capsule radius
 		float radius = a->radius + b->radius;
 
 		Vector2 delta = pB - pA;
@@ -157,7 +174,8 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 						manifold.collisionNormal = deltaPoint;
 						manifold.penetration = glm::length(manifold.collisionNormal);
 						manifold.collisionNormal /= manifold.penetration;
-						//p = radius - distance to center + line buffer
+						//p = radius - distance to center + 
+						
 						manifold.penetration = a->radius - manifold.penetration + b->radius;
 						return true;
 					}
@@ -168,7 +186,8 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 					
 					manifold.collisionNormal = glm::normalize(lineNormal * glm::sign(distanceToLinePlane));
 					manifold.penetration = a->radius - glm::abs(distanceToLinePlane) + b->radius;
-					//collisionPoint = circleCentre + manifold.collisionNormal * manifold.penetration; << accurate for line, this is now a capsule (so it is wrong)
+					manifold.collisionPoints[0] = circleCentre + manifold.collisionNormal * manifold.penetration; //<< accurate for line, this is now a capsule(so it is wrong)
+					
 					return true;
 				}
 			}
@@ -184,6 +203,64 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		return false;
 		break;
 	}
+	case COLLISION_TYPE::CIRCLEPLANE:
+	{
+		CircleShape* a = (CircleShape*)*manifold.a->collider->shapes;
+		PlaneShape* b = (PlaneShape*)*manifold.b->collider->shapes;
+
+		//transform to global
+		Vector2 centre = manifold.a->transform.TransformPoint(a->centrePoint);
+		Vector2 planeDirection = manifold.b->transform.TransformDirection(b->normal);
+		float planeDistance = glm::dot(manifold.b->transform.TransformPoint(b->distance * b->normal), planeDirection);
+
+		float centreDot = glm::dot(centre, planeDirection);
+		float penetration = centreDot - a->radius - planeDistance;
+		
+		//is colliding
+		if (penetration < 0)
+		{
+			manifold.collisionNormal = planeDirection;
+			manifold.penetration = -penetration;
+			manifold.collisionPoints[0] = centre - planeDirection * (a->radius + penetration);
+			return true;
+		}
+		else
+			return false;
+		break;
+	}
+	case COLLISION_TYPE::CAPSULEPLANE:
+	{
+		CapsuleShape* a = (CapsuleShape*)*manifold.a->collider->shapes;
+		PlaneShape* b = (PlaneShape*)*manifold.b->collider->shapes;
+		
+		Vector2 pointA = manifold.a->transform.TransformPoint(a->pointA), pointB = manifold.a->transform.TransformPoint(a->pointB);
+		Vector2 planeDirection = manifold.b->transform.TransformDirection(b->normal);
+		float planeDistance = glm::dot(manifold.b->transform.TransformPoint(b->distance * b->normal), planeDirection);
+
+		float start = glm::dot(pointA, planeDirection);
+		float end = glm::dot(pointB, planeDirection);
+		if (start > end)
+		{
+			float temp = start;
+			start = end;
+			end = temp ;
+		}
+
+		start -= a->radius;
+		end += a->radius;
+
+		//if colliding
+		if (planeDistance > start)
+		{
+			manifold.collisionNormal = planeDirection;
+
+			manifold.penetration = planeDistance - start;
+			return true;
+			
+		}
+		break;
+	}
+
 	}
 
 	return false;

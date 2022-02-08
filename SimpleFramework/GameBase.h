@@ -24,7 +24,7 @@ class GameBase
 
 
 protected:
-	const int gridLimits = 10;
+	const int gridLimits = 20;
 	ShaderProgram simpleShader;
 	ShaderProgram textShader;
 	TextRenderer textRenderer; //updated every time it is modified, does not reset text ever
@@ -49,6 +49,7 @@ public:
 	GameBase(const GameBase& other) = delete;
 	GameBase& operator=(const GameBase& other) = delete;
 
+	void CapFPS(bool capped);
 	void Update();
 	void Render();
 

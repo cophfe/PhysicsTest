@@ -35,6 +35,8 @@ public:
 	inline void SetUIHeldDown(bool value) { uiHeldDown = value; }
 	inline Vector2Int GetWindowSize() { return windowSize; }
 	void OnWindowResize(int width, int height);
+	void ClearPhysicsObjects();
+	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false);
 private:
 	std::vector<UIObject*> uiObjects;
 	bool uiHeldDown;

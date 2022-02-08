@@ -48,7 +48,7 @@ public:
 		Vector2 p = point;
 		p -= position;
 
-		return Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
+		return -Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
 	}
 
 

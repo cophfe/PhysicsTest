@@ -35,6 +35,18 @@ static void SwitchToGrabTool(Button& button, void* infoPointer)
 	button.DisableButton(disabledColour);
 }
 
+static void ClearPhysicsObjects(Button& button, void* infoPointer)
+{
+	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
+	program->ClearPhysicsObjects();
+}
+
+static void RadiusChanged(Slider& slider, void* infoPointer, float value)
+{
+	PlayerInput* playerInput = (PlayerInput*)infoPointer;
+	playerInput->SetShapeRadius(value);
+}
+
 PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 {
 	const Vector2 size = Vector2(100, 30);
@@ -43,6 +55,14 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	const Vector3 textColour(0,0,0);
 	const Vector3 backgroundColour(0.8f, 0.5f, 0.8f);
 	const UIObject::ANCHOR_POINT anchor = UIObject::ANCHOR_POINT::TOP_RIGHT;
+
+	Slider* radiusSlider = (Slider*)program.AddUIObject(
+		new Slider(Vector2(200,30), anchor, startPos + Vector2(100 , 40), 0.1f, 10.0f, 1.0f, backgroundColour, Vector3(0.5f, 0.5f, 0.5f), program
+			, 4, true, true, "Radius: "));
+	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
+
+	Button* clearButton= (Button*)program.AddUIObject(new Button(size, startPos, UIObject::ANCHOR_POINT::TOP_LEFT, "Clear", textColour, Vector3(0.9f, 0.1f, 0.1f), program, 0, 8));
+	clearButton->SetOnClick(ClearPhysicsObjects, &program);
 
 	int i = 0;
 	Button* newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Grab", textColour, backgroundColour, program, 0, 8));
@@ -89,7 +109,9 @@ void PlayerInput::Render()
 
 		switch (heldTool)
 		{
-		case HELD_TOOL::CIRCLE: //pass through
+								//pass through
+		case HELD_TOOL::PLANE:
+		case HELD_TOOL::CIRCLE: 
 		case HELD_TOOL::POLYGON:
 		{
 			if (heldShape == nullptr) break;
@@ -97,6 +119,7 @@ void PlayerInput::Render()
 			program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), Vector3(1, 0, 0));
 
 			float angle = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
+
 			heldShape->RenderShape(Transform(startingPosition, angle), program, heldColour);
 			break;
 		}
@@ -104,7 +127,7 @@ void PlayerInput::Render()
 			program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
 			break;
 		case HELD_TOOL::CAPSULE:
-			auto t = Transform(startingPosition, 0);
+			auto t = Transform(Vector2(0,0), 0);
 			CapsuleShape(startingPosition, program.GetCursorPos(), shapeRadius)
 				.RenderShape(program, t, heldColour);
 			break;
@@ -142,11 +165,14 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					heldShape = PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);
 					break;
 				case HELD_TOOL::PLANE:
-					heldShape = new PlaneShape(Vector2(1,0), glm::dot(startingPosition, Vector2(1,0)));
+					//it is at 0,0 because the shape position is relative to the transform position
+					heldShape = new PlaneShape(Vector2(0,1), 0);
 					break;
 				case HELD_TOOL::GRAB:
 					//grab tool startingPosition will be relative to physicsObject transform, so it can be updated over time
 					//do something like program.GetCollisionManager().PointCast(startingPosition) to get an object under the cursor
+					grabbedObject = program.GetObjectUnderPoint(startingPosition, false);
+					startingPosition = grabbedObject->GetTransform().InverseTransformPoint(startingPosition);
 					break;
 				}
 			}
@@ -175,6 +201,7 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 
 			switch (heldTool)
 			{
+			case HELD_TOOL::PLANE:
 			case HELD_TOOL::CIRCLE: //pass through
 			case HELD_TOOL::POLYGON:
 			{
@@ -198,18 +225,22 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 					false,
 					false);
 				auto* collider = new Collider(new CapsuleShape(startingPosition, program.GetCursorPos()), 1.0f, afterCreatedColour);
-				program.AddPhysicsObject(PhysicsObject(data, collider)).AddImpulse(3.0f * (program.GetCursorPos() - startingPosition));
+				program.AddPhysicsObject(PhysicsObject(data, collider));
 			}
 			break;
 			case HELD_TOOL::CAPSULE:
 			{
+				Vector2 centrePos = 0.5f * (startingPosition + program.GetCursorPos());
+				Vector2 delta = (startingPosition - program.GetCursorPos());
+				float distance = 0.5f * glm::length(delta);
+
 				PhysicsData data = PhysicsData(
-					Vector2(0, 0),
-					0,
-					false,
-					false);
-				auto* collider = new Collider(new CapsuleShape(startingPosition, program.GetCursorPos(), shapeRadius), 1.0f, afterCreatedColour);
-				program.AddPhysicsObject(PhysicsObject(data, collider)).AddImpulse(3.0f * (program.GetCursorPos() - startingPosition));
+					centrePos,
+					GetAngleOfVector2(delta),
+					true,
+					true);
+				auto* collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f, afterCreatedColour);
+				program.AddPhysicsObject(PhysicsObject(data, collider));
 			}
 			break;
 			
@@ -240,6 +271,11 @@ void PlayerInput::SetHeldTool(HELD_TOOL type)
 	{
 		buttons[i]->EnableButton();
 	}
+}
+
+void PlayerInput::SetShapeRadius(float rad)
+{
+	shapeRadius = rad;
 }
 
 void PlayerInput::OnKeyPressed(int key)

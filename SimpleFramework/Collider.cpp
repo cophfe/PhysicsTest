@@ -81,6 +81,7 @@ void Collider::RenderShape(PhysicsProgram& program) {
 	for (size_t i = 0; i < shapeCount; i++)
 	{
 		shapes[i]->RenderShape(attached->transform, program, colour);
+		
 	}
 }
 
