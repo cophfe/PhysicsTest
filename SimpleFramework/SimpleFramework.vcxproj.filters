@@ -80,6 +80,9 @@
     <ClCompile Include="Slider.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
+    <ClCompile Include="ExtraMath.cpp">
+      <Filter>Engine\MyAdditions</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -177,6 +180,9 @@
     </ClInclude>
     <ClInclude Include="Slider.h">
       <Filter>Game\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="ExtraMath.hpp">
+      <Filter>Engine\MyAdditions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

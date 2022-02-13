@@ -2,30 +2,8 @@
 #include "PhysicsObject.h"
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
+#include "ExtraMath.hpp"
 
-// non member functions
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-static float GetAngle(Vector2 a, Vector2 b) {
-	return acos(glm::dot(a, b));
-}
-
-static float Cross(Vector2 a, Vector2 b, Vector2 c) {
-	//line made of a and b, is c to the left or right
-
-	// > 0 : c is to the left
-	// < 0 : c is to the right
-	// == 0 : c is in front
-	return ((b.x - a.x) * (c.y - a.y) - (b.y - a.y) * (c.x - a.x));
-}
-
-static float Cross(Vector2 a, Vector2 b) {
-	return (a.x * b.y - b.x * a.y);;
-}
-
-static float SquareLength(Vector2 v) {
-	return v.x * v.x + v.y * v.y;
-}
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void Shape::RenderShape(Transform transform, PhysicsProgram& program, Vector3 colour)
 {
@@ -63,11 +41,11 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 		Vector2& a = this->points[i], b = this->points[(i + 1) % pointCount];
 
 		Vector2 triCentre = (a + b) / 3.0f;
-		float triArea = 0.5f * Cross(a, b);
+		float triArea = 0.5f * em::Cross(a, b);
 		area += triArea;
 
 		//fun fact: the squared length of a vector is the same as the dot product of it with itself
-		in += (SquareLength(a) + SquareLength(b) + glm::dot(a, b)) * triArea / 6;
+		in += (em::SquareLength(a) + em::SquareLength(b) + glm::dot(a, b)) * triArea / 6;
 		//triangle area * triangle centre
 		polyCentre += triArea * triCentre;
 	}
@@ -76,7 +54,7 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 	//set final values
 	centrePoint = polyCentre / (area); //divide by total area to get the centrepoint
 	mass = area * density; //multiply by density
-	inertia = in - mass * SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
+	inertia = in - mass * em::SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
 void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
@@ -91,18 +69,21 @@ void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Ve
 
 AABB PolygonShape::CalculateAABB(Transform& transform)
 {
-	float xMax = points[0].x;
-	float xMin = points[0].x;
+	Vector2 point = transform.TransformPoint(points[0]);
 
-	float yMax = points[0].y;
-	float yMin = points[0].y;
+	float xMax = point.x;
+	float xMin = point.x;
+
+	float yMax = point.y;
+	float yMin = point.y;
 
 	for (size_t i = 1; i < pointCount; i++)
 	{
-		xMax = std::max(points[i].x, xMax);
-		yMax = std::max(points[i].y, yMax);
-		xMin = std::min(points[i].x, xMin);
-		yMin = std::min(points[i].y, yMin);
+		point = transform.TransformPoint(points[i]);
+		xMax = std::max(point.x, xMax);
+		yMax = std::max(point.y, yMax);
+		xMin = std::min(point.x, xMin);
+		yMin = std::min(point.y, yMin);
 	}
 
 	return { Vector2(xMax, yMax), Vector2(xMin, yMin) };
@@ -165,7 +146,7 @@ bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
 		endPoint = 0;
 		for (size_t i = 0; i < pointCount; i++)
 		{
-			float cross = Cross(points[lastPointOnHull], points[endPoint], points[i]);
+			float cross = em::CheckOrder(points[lastPointOnHull], points[endPoint], points[i]);
 
 			// if:
 			// the endpoint is the last hull point
@@ -174,7 +155,7 @@ bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
 			//
 			// set the new endpoint to point i;
 			if (endPoint == lastPointOnHull || cross < 0
-				|| (cross == 0 && (SquareLength(points[lastPointOnHull] - points[i]) > SquareLength(points[lastPointOnHull] - points[endPoint]))))
+				|| (cross == 0 && (em::SquareLength(points[lastPointOnHull] - points[i]) > em::SquareLength(points[lastPointOnHull] - points[endPoint]))))
 			{
 				endPoint = i;
 			}
@@ -228,7 +209,7 @@ CircleShape::CircleShape(float radius, Vector2 centrePoint)
 bool CircleShape::PointCast(Vector2 point, Transform& transform)
 {
 	Vector2 centre = transform.TransformPoint(centrePoint);
-	return SquareLength(centre - point) < radius * radius;
+	return em::SquareLength(centre - point) < radius * radius;
 }
 
 void CircleShape::CalculateMass(float& mass, float& inertia, float density)
@@ -237,7 +218,7 @@ void CircleShape::CalculateMass(float& mass, float& inertia, float density)
 	//circle is a cylinder with thickness of one, meaning the mass moment of inertia is mr^2/2
 	inertia = mass * radius * radius * 0.5f; 
 	//im a bit confused on how translating inertia tensor stuff works but I think this is correct
-	inertia += mass * SquareLength(centrePoint);
+	inertia += mass * em::SquareLength(centrePoint);
 }
 
 void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
@@ -282,7 +263,7 @@ bool CapsuleShape::PointCast(Vector2 point, Transform& transform)
 	point = transform.InverseTransformPoint(point);
 
 	//if point is inside the two circles, it is colliding
-	if (SquareLength(pointA - point) > radius * radius || SquareLength(pointB - point) > radius * radius)
+	if (em::SquareLength(pointA - point) > radius * radius || em::SquareLength(pointB - point) > radius * radius)
 		return true;
 
 	//if the point is inside the oriented bounding box, it is colliding

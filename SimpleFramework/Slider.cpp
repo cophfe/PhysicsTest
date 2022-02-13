@@ -55,7 +55,7 @@ void Slider::OnMouseRelease(PhysicsProgram& program)
 {
 	if (heldDown && onValueChanged)
 	{
-		onValueChanged(*this, OnValueChangedPtr, fillAmount);
+		onValueChanged(*this, OnValueChangedPtr, fillAmount * fillOffset);
 		heldDown = false;
 	}
 }

@@ -89,11 +89,11 @@ void PhysicsObject::Render(PhysicsProgram& program)
 	if (collider) {
 		collider->RenderShape(program);
 
-		auto& aABB = collider->aABB;
-		program.GetLineRenderer().DrawLineSegment(aABB.max, Vector2(aABB.max.x, aABB.min.y));
-		program.GetLineRenderer().DrawLineSegment(Vector2(aABB.max.x, aABB.min.y), aABB.min);
-		program.GetLineRenderer().DrawLineSegment(aABB.min, Vector2(aABB.min.x, aABB.max.y));
-		program.GetLineRenderer().DrawLineSegment(Vector2(aABB.min.x, aABB.max.y), aABB.max);
+		//auto& aABB = collider->aABB;
+		//program.GetLineRenderer().DrawLineSegment(aABB.max, Vector2(aABB.max.x, aABB.min.y));
+		//program.GetLineRenderer().DrawLineSegment(Vector2(aABB.max.x, aABB.min.y), aABB.min);
+		//program.GetLineRenderer().DrawLineSegment(aABB.min, Vector2(aABB.min.x, aABB.max.y));
+		//program.GetLineRenderer().DrawLineSegment(Vector2(aABB.min.x, aABB.max.y), aABB.max);
 
 	}
 }

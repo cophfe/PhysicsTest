@@ -1,4 +1,5 @@
 #include "CollisionManager.h"
+#include "ExtraMath.hpp"
 
 void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 {
@@ -103,7 +104,8 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		CircleShape* a = (CircleShape*)*manifold.a->collider->shapes;
 		CircleShape* b = (CircleShape*)*manifold.b->collider->shapes;
 
-		Vector2 delta = manifold.a->transform.TransformPoint(a->centrePoint) - manifold.b->transform.TransformPoint(b->centrePoint);
+		Vector2 pA = manifold.a->transform.TransformPoint(a->centrePoint), pB = manifold.b->transform.TransformPoint(b->centrePoint);
+		Vector2 delta = pA - pB;
 		float deltaMagSq = delta.x * delta.x + delta.y * delta.y;
 		float radiusSum = (a->radius + b->radius);
 
@@ -114,8 +116,8 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			manifold.collisionNormal = delta / deltaMagSq;
 			return true;
 		}
-		else return false;
-		break;
+
+		return false;
 	}
 	case COLLISION_TYPE::CIRCLECAPSULE:
 	{
@@ -130,78 +132,26 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		//circle radius + capsule radius
 		float radius = a->radius + b->radius;
 
-		Vector2 delta = pB - pA;
-		float lineLength = glm::length(delta);
-		Vector2 lineNormal = Vector2(-delta.y, delta.x)/lineLength;
-
-		float distanceToLinePlane = glm::dot(circleCentre, lineNormal) - glm::dot(lineNormal, pA);
+		//this basically simplifies the problem to a circle-circle collision
+		Vector2 pointOnCapsule = em::ClosestPointOnLine(pA, pB, circleCentre);
 		
-		if (glm::abs(distanceToLinePlane) < radius)
+		Vector2 delta = circleCentre - pointOnCapsule;
+		if (delta.x * delta.x + delta.y * delta.y < radius * radius)
 		{
-			Vector2 lineTangent = Vector2(lineNormal.y, -lineNormal.x);
-			//point on line relative to the first
-			float pointOnLine = glm::dot(lineTangent, circleCentre);
-			float lineStart = glm::dot(lineTangent, pA), lineEnd = glm::dot(lineTangent, pB);
-
-			if (pointOnLine > lineStart - radius && pointOnLine < lineEnd + radius)
-			{
-				//point a
-				if (pointOnLine < lineStart)
-				{
-					Vector2 deltaPoint = circleCentre - pA;
-					//now is guaranteed to be colliding
-					if (glm::dot(deltaPoint, deltaPoint) < radius * radius)
-					{
-						//colliding with end point A, which is practically a circle
-						//collisionPoint = pA + normalize(deltaPoint) * b->buffer
-						manifold.collisionNormal = deltaPoint;
-						manifold.penetration = glm::length(manifold.collisionNormal);
-						manifold.collisionNormal /= manifold.penetration;
-						//p = radius - distance to center + line buffer
-						manifold.penetration = a->radius - manifold.penetration + b->radius;
-						return true;
-					}
-					else return false;
-				}
-				else if (pointOnLine > lineEnd)
-				{
-					Vector2 deltaPoint = circleCentre - pB;
-					//now is guaranteed to be colliding
-					if (glm::dot(deltaPoint, deltaPoint) < radius * radius)
-					{
-						//colliding with end point B, which is practically a circle
-						//collisionPoint = pA + normalize(deltaPoint) * b->buffer
-						manifold.collisionNormal = deltaPoint;
-						manifold.penetration = glm::length(manifold.collisionNormal);
-						manifold.collisionNormal /= manifold.penetration;
-						//p = radius - distance to center + 
-						
-						manifold.penetration = a->radius - manifold.penetration + b->radius;
-						return true;
-					}
-					else return false;
-				}
-				else {
-					//colliding with line
-					
-					manifold.collisionNormal = glm::normalize(lineNormal * glm::sign(distanceToLinePlane));
-					manifold.penetration = a->radius - glm::abs(distanceToLinePlane) + b->radius;
-					manifold.collisionPoints[0] = circleCentre + manifold.collisionNormal * manifold.penetration; //<< accurate for line, this is now a capsule(so it is wrong)
-					
-					return true;
-				}
-			}
-			else return false;
+			//is colliding
+			manifold.collisionNormal = glm::normalize(delta); //collision normal is always from b to a
+			manifold.penetration = radius - glm::dot(delta, manifold.collisionNormal); //p = a->radius + b->radius - distancebetweencentreandclosestpointonLine
+			manifold.collisionPoints[0] = pointOnCapsule + manifold.collisionNormal * b->radius;
+			return true;
 		}
-		else return false;
-		break;
+
+		return false;
 	}
 	case COLLISION_TYPE::CIRCLEPOLYGON:
 	{
 
 
 		return false;
-		break;
 	}
 	case COLLISION_TYPE::CIRCLEPLANE:
 	{
@@ -213,10 +163,11 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		Vector2 planeDirection = manifold.b->transform.TransformDirection(b->normal);
 		float planeDistance = glm::dot(manifold.b->transform.TransformPoint(b->distance * b->normal), planeDirection);
 
+		//calculate penetration
 		float centreDot = glm::dot(centre, planeDirection);
 		float penetration = centreDot - a->radius - planeDistance;
 		
-		//is colliding
+		//if p < 0, is colliding
 		if (penetration < 0)
 		{
 			manifold.collisionNormal = planeDirection;
@@ -224,9 +175,117 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			manifold.collisionPoints[0] = centre - planeDirection * (a->radius + penetration);
 			return true;
 		}
-		else
-			return false;
-		break;
+
+		return false;
+	}
+	case COLLISION_TYPE::CAPSULECAPSULE:
+	{
+		CapsuleShape* a = (CapsuleShape*)*manifold.a->collider->shapes;
+		CapsuleShape* b = (CapsuleShape*)*manifold.b->collider->shapes;
+
+		Vector2 aPointA = manifold.a->transform.TransformPoint(a->pointA),
+			aPointB = manifold.a->transform.TransformPoint(a->pointB)
+			,bPointA = manifold.b->transform.TransformPoint(b->pointA),
+			bPointB = manifold.b->transform.TransformPoint(b->pointB);;
+
+		//find the smallest distance between the two lines, check if less than a->radius + b->radius
+		//in 2d this is 4 point-line distance checks, an intersection test, and 4 weird point tests
+		
+
+		Vector2 intersection;
+		if (em::CalculateIntersectionPoint(aPointA, aPointB, bPointA, bPointB, intersection))
+		{
+			Vector2 aTangent = glm::normalize(aPointB - aPointA);
+			Vector2 bTangent = glm::normalize(bPointB - bPointA);
+
+			Vector2 aNormal = { -aTangent.y, aTangent.x };
+			Vector2 bNormal = { -bTangent.y, bTangent.x };
+
+			//this is essentially 4 point-plane checks
+			//the point with the smallest penetration wins, and the capsule will be pushed out along that axis
+			Vector2 normal = aNormal;
+			float aPoint = glm::dot(aNormal, aPointA);
+			float bPoint = glm::dot(bNormal, bPointA);
+			float p1 = aPoint - glm::dot(aNormal, bPointA);
+			float p2 = aPoint - glm::dot(aNormal, bPointB);
+
+			if (p1* p1 > p2*p2)
+				p1 = p2;
+
+			p2 = glm::dot(bNormal, aPointA) - bPoint;
+			if (p1 * p1 > p2 * p2)
+			{
+				normal = bNormal;
+				p1 = p2;
+			}
+
+			p2 = glm::dot(bNormal, aPointB) - bPoint;
+
+			if (p1 * p1 > p2 * p2)
+			{
+				p1 = p2;
+				normal = bNormal;
+			}
+
+			//since we know they are intersecting there is no need to perform a check here
+			float sign = glm::sign(p1);
+			manifold.collisionNormal = sign  * -normal;
+			manifold.penetration = sign * p1 + a->radius + b->radius;
+			manifold.collisionPoints[0] = intersection + manifold.collisionNormal * manifold.penetration;
+			return true;
+		}
+		else 
+		{
+			//this is essentially 4 different circle checks
+			//we will use the one with the smallest distance between circle centres
+
+			struct {
+				Vector2 collisionDelta;
+				float collisionDistanceSq;
+			} collision, newCollision; 
+
+			Vector2 collisionPoint = aPointA;
+			collision.collisionDelta = aPointA - em::ClosestPointOnLine(bPointA, bPointB, aPointA);
+			collision.collisionDistanceSq = em::SquareLength(collision.collisionDelta);
+
+			newCollision.collisionDelta = aPointB - em::ClosestPointOnLine(bPointA, bPointB, aPointB);
+			newCollision.collisionDistanceSq = em::SquareLength(newCollision.collisionDelta);
+			if (collision.collisionDistanceSq > newCollision.collisionDistanceSq)
+			{
+				collision = newCollision;
+				collisionPoint = aPointB;
+			}
+
+			newCollision.collisionDelta = em::ClosestPointOnLine(aPointA, aPointB, bPointA) - bPointA;
+			newCollision.collisionDistanceSq = em::SquareLength(newCollision.collisionDelta);
+			if (collision.collisionDistanceSq > newCollision.collisionDistanceSq)
+			{
+				collision = newCollision;
+				collisionPoint = bPointA;
+			}
+
+			newCollision.collisionDelta = em::ClosestPointOnLine(aPointA, aPointB, bPointB) - bPointB;
+			newCollision.collisionDistanceSq = em::SquareLength(newCollision.collisionDelta);
+			if (collision.collisionDistanceSq > newCollision.collisionDistanceSq)
+			{
+				collision = newCollision;
+				collisionPoint = bPointB;
+			}
+
+			float radius = a->radius + b->radius;
+
+			//if the smallest collision distance is less than the sum of the radii, it is colliding
+			if (collision.collisionDistanceSq < radius * radius)
+			{
+				float length = sqrtf(collision.collisionDistanceSq);
+				manifold.penetration = radius - length;
+				manifold.collisionNormal = collision.collisionDelta/length;
+				manifold.collisionPoints[0] = collisionPoint;
+				return true;
+			}
+		}
+
+		return false;
 	}
 	case COLLISION_TYPE::CAPSULEPLANE:
 	{
@@ -250,15 +309,15 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		end += a->radius;
 
 		//if colliding
-		if (planeDistance > start)
+		if (planeDistance >= start)
 		{
 			manifold.collisionNormal = planeDirection;
 
 			manifold.penetration = planeDistance - start;
 			return true;
-			
 		}
-		break;
+
+		return false;
 	}
 
 	}
