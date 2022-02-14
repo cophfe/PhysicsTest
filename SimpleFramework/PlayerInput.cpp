@@ -1,6 +1,6 @@
 #include "PlayerInput.h"
 #include "PhysicsProgram.h"
-static const Vector3 disabledColour = Vector3(0.3f, 0.15f, 0.3f);
+static const Vector3 disabledColour = Vector3(0.3f, 0.3f, 0.3f);
 
 static void SwitchToCircle(Button& button, void* infoPointer) {
 	PlayerInput* playerInput = (PlayerInput*)infoPointer;
@@ -41,6 +41,59 @@ static void ClearPhysicsObjects(Button& button, void* infoPointer)
 	program->ClearPhysicsObjects();
 }
 
+static void PauseUnpause(Button& button, void* infoPointer)
+{
+	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
+	
+	bool paused = program->GetPauseState();
+
+	if (paused)
+	{
+		button.colour = Vector3(0, 0, 0);
+		button.textColour = Vector3(1, 1, 1);
+		button.colourOnHover = Vector3(0.2f, 0.2f, 0.2f);
+		button.colourOnClick = Vector3(0.4f, 0.4f, 0.4f);
+	}
+	else {
+		button.colour = Vector3(1, 1, 1);
+		button.textColour = Vector3(0, 0, 0);
+		button.colourOnHover = Vector3(0.8f, 0.8f, 0.8f);
+		button.colourOnClick = Vector3(0.6f, 0.6f, 0.6f);
+	}
+
+	program->GetPlayerInput().GetStepForwardButton()->SetEnabled(!paused);
+	program->SetPauseState(!paused);
+}
+
+static void StepOnce(Button& button, void* infoPointer)
+{
+	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
+	program->UpdatePhysics();
+}
+
+static void SpeedUnspeed(Button& button, void* infoPointer)
+{
+	static bool capped = false;
+	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
+	program->CapFPS(capped);
+
+	if (capped)
+	{
+		button.colour = Vector3(0, 0, 0);
+		button.textColour = Vector3(1, 1, 1);
+		button.colourOnHover = Vector3(0.2f, 0.2f, 0.2f);
+		button.colourOnClick = Vector3(0.4f, 0.4f, 0.4f);
+	}
+	else {
+		button.colour = Vector3(1, 1, 1);
+		button.textColour = Vector3(0, 0, 0);
+		button.colourOnHover = Vector3(0.8f, 0.8f, 0.8f);
+		button.colourOnClick = Vector3(0.6f, 0.6f, 0.6f);
+	}
+
+	capped = !capped;
+}
+
 static void RadiusChanged(Slider& slider, void* infoPointer, float value)
 {
 	PlayerInput* playerInput = (PlayerInput*)infoPointer;
@@ -52,40 +105,51 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	const Vector2 size = Vector2(100, 30);
 	const Vector2 startPos = Vector2(65, 30);
 	const Vector2 offset = Vector2(110, 0);
-	const Vector3 textColour(0,0,0);
-	const Vector3 backgroundColour(0.8f, 0.5f, 0.8f);
+	const Vector3 textColour(1,1,1);
+	const Vector3 backgroundColour(0, 0, 0);
+	const Vector3 edgeColour(1, 1, 1);
 	const UIObject::ANCHOR_POINT anchor = UIObject::ANCHOR_POINT::TOP_RIGHT;
 
+	
+	Button* speedUpButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 110), UIObject::ANCHOR_POINT::TOP_LEFT, ">>", textColour, backgroundColour, program, 0, 8, edgeColour));
+	speedUpButton->SetOnClick(SpeedUnspeed, &program);
+
+	Button* pauseButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 70), UIObject::ANCHOR_POINT::TOP_LEFT, "I I", textColour, backgroundColour, program, 0, 8, edgeColour));
+	pauseButton->SetOnClick(PauseUnpause, &program);
+	stepForwardButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(70, 70), UIObject::ANCHOR_POINT::TOP_LEFT, ">", textColour, backgroundColour, program, 0, 8, edgeColour));
+	stepForwardButton->SetEnabled(false);
+	stepForwardButton->SetOnClick(StepOnce, &program);
+
 	Slider* radiusSlider = (Slider*)program.AddUIObject(
-		new Slider(Vector2(200,30), anchor, startPos + Vector2(100 , 40), 0.1f, 10.0f, 1.0f, backgroundColour, Vector3(0.5f, 0.5f, 0.5f), program
-			, 4, true, true, "Radius: "));
+		new Slider(Vector2(200, 30), anchor, startPos + Vector2(50, 40), 0.1f, 10.0f, 1.0f, backgroundColour, textColour * 0.3f, program
+			, 4, true, true, "Radius: ", textColour));
 	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
 
-	Button* clearButton= (Button*)program.AddUIObject(new Button(size, startPos, UIObject::ANCHOR_POINT::TOP_LEFT, "Clear", textColour, Vector3(0.9f, 0.1f, 0.1f), program, 0, 8));
+	Button* clearButton= (Button*)program.AddUIObject(new Button(size, startPos, UIObject::ANCHOR_POINT::TOP_LEFT, "Clear", textColour, Vector3(0.9f, 0.1f, 0.1f), program, 0, 8, edgeColour));
 	clearButton->SetOnClick(ClearPhysicsObjects, &program);
 
 	int i = 0;
-	Button* newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Grab", textColour, backgroundColour, program, 0, 8));
+	Button* newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Grab", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);
 	buttons[i]->SetOnClick(SwitchToGrabTool, this);
 	i++;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Line", textColour, backgroundColour, program, 0, 8));
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Line", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);
 	buttons[i]->SetOnClick(SwitchToLineTool, this);
 	i++;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Plane", textColour, backgroundColour, program, 0, 8));
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Plane", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);
 	buttons[i]->SetOnClick(SwitchToPlane, this);
 	i++;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Capsule", textColour, backgroundColour, program, 0, 8));
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Capsule", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);
 	buttons[i]->SetOnClick(SwitchToCapsule, this);
 	i++;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Polygon", textColour, backgroundColour, program, 0, 8));
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Polygon", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);
 	buttons[i]->SetOnClick(SwitchToPolygon, this);
 	i++;																
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Circle", textColour, backgroundColour, program, 0, 8));
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Circle", textColour, backgroundColour, program, 0, 8, edgeColour));
 	buttons.push_back(newButton);																											  			  
 	buttons[i]->SetOnClick(SwitchToCircle, this);		
 	newButton->DisableButton(disabledColour);
@@ -172,6 +236,11 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					//grab tool startingPosition will be relative to physicsObject transform, so it can be updated over time
 					//do something like program.GetCollisionManager().PointCast(startingPosition) to get an object under the cursor
 					grabbedObject = program.GetObjectUnderPoint(startingPosition, false);
+					if (grabbedObject == nullptr)
+					{
+						usingTool = false;
+						return;
+					}
 					startingPosition = grabbedObject->GetTransform().InverseTransformPoint(startingPosition);
 					break;
 				}
@@ -239,7 +308,16 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 					GetAngleOfVector2(delta),
 					true,
 					true);
-				auto* collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f, afterCreatedColour);
+				Collider* collider;
+				if (delta.x == 52 && delta.y == 0) //capsules NEED pA to be different from pB or they will not collide properly
+				{
+					collider = new Collider(new CircleShape(shapeRadius, Vector2(0,0)), 1.0f, afterCreatedColour);
+				}
+				else {
+					collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f, afterCreatedColour);
+				}
+
+				
 				program.AddPhysicsObject(PhysicsObject(data, collider));
 			}
 			break;

@@ -28,6 +28,9 @@ public:
 	virtual Vector2 GetPosition() = 0;
 	virtual void OnWindowChange(Vector2Int oldSize, Vector2Int newSize);
 
+	virtual void SetEnabled(bool val) { enabled = val; }
+	virtual bool GetEnabled() { return enabled; }
+
 	static Vector2 GetPositionFromAnchoredPosition(Vector2 anchoredPosition, ANCHOR_POINT anchor, Vector2Int windowSize);
 	static Vector2 GetAnchoredPositionFromPosition(Vector2 position, ANCHOR_POINT anchor, Vector2Int windowSize);
 protected:

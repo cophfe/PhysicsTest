@@ -1,7 +1,9 @@
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
 
-PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), GameBase()
+std::vector<Vector2> PhysicsProgram::collisionPoints;
+
+PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(this), GameBase()
 {
 	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
 	//text.Build();
@@ -19,6 +21,30 @@ void PhysicsProgram::Update()
 {
 	GameBase::Update();
 
+	playerInput.Update();
+	uiHeldDown = false;
+	if (uiEnabled) {
+		for (size_t i = 0; i < uiObjects.size(); i++)
+		{
+			uiObjects[i]->Update(*this);
+		}
+	}
+
+	if (!paused)
+	{
+		UpdatePhysics();
+	}
+}
+
+void PhysicsProgram::UpdatePhysics()
+{
+	collisionPointUpdateTime -= deltaTime;
+	if (collisionPointUpdateTime < 0)
+	{
+		collisionPointUpdateTime = COLLISION_POINT_OFFSET;
+		collisionPoints.clear(); 
+	}
+
 	//do physics
 	for (auto& pObject : pObjects)
 	{
@@ -26,21 +52,6 @@ void PhysicsProgram::Update()
 	}
 
 	collisionManager.ResolveCollisions(pObjects);
-
-	//player input also
-	playerInput.Update();
-
-	//(currently no ui objects change held status here)
-	uiHeldDown = false;
-	if (uiEnabled) {
-		for (size_t i = 0; i < uiObjects.size(); i++)
-		{
-			uiObjects[i]->Update(*this);
-			//uiHeldDown |= uiObjects[i].IsHeldDown();
-
-		}
-	}
-	
 }
 
 void PhysicsProgram::Render()
@@ -54,7 +65,6 @@ void PhysicsProgram::Render()
 		fpsText = std::string("FPS: ") + std::to_string((int)(1 / (time - lastTime)));
 	}
 	textRenderer.QueueText(fpsText, Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
-	textRenderer.QueueText("AHHHHHHHHH", Vector2(25.0f, 60.0f), 0.4f, Vector3(1.0f, 0.1f, 1.0f));
 	
 	lastTime = time;
 
@@ -71,6 +81,13 @@ void PhysicsProgram::Render()
 		//wow pretty disgusting that this function is called Draw when the others are called render
 		uiObjects[i]->Draw(*this);
 	}
+
+	//draw collision crosses
+	for (size_t i = 0; i < collisionPoints.size(); i++)
+	{
+		lines.DrawCross(collisionPoints[i], 0.1f, { 0.9f, 0.1f, 0.1f });
+	}
+
 	//This call puts all the lines you've set up on screen - don't delete it or things won't work.
 	//uses simple shader to draw lines and grid
 	GameBase::Render();

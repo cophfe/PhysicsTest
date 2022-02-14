@@ -1,10 +1,11 @@
 #include "Slider.h"
 #include "PhysicsProgram.h"
+#include <format>
 
 Slider::Slider(Vector2 size, ANCHOR_POINT anchor, Vector2 anchoredPosition, float minFill, float maxFill,
 	float currentFill, Vector3 fillColour, Vector3 backgroundColour, PhysicsProgram& program, float fillPadding,
 	bool fillDirectionIsLeft, bool useText, std::string label, Vector3 textColour, float textScale, float textPadding)
-	: fillPadding(Vector2(fillPadding, fillPadding)), textScale(textScale), textPadding(Vector2(textPadding, textPadding))
+	: fillPadding(Vector2(fillPadding, fillPadding)), textScale(textScale), textPadding(Vector2(textPadding, textPadding)), textColour(textColour)
 	, fillMin(minFill), backgroundColour(backgroundColour), fillColour(fillColour), useText(useText), label(label)
 {
 	fillOffset = maxFill - minFill;
@@ -16,8 +17,16 @@ Slider::Slider(Vector2 size, ANCHOR_POINT anchor, Vector2 anchoredPosition, floa
 	fillAABB.min = position - size * 0.5f + this->fillPadding;
 
 
-	fillColourOnHover = fillColour * 0.73f;
-	fillColourOnClick = fillColour * 0.5f;
+	if (fillColour.x * fillColour.x + fillColour.y * fillColour.y + fillColour.z * fillColour.z > 0.5f * 0.5f)
+	{
+		fillColourOnHover = fillColour * 0.75f;
+		fillColourOnClick = fillColour * 0.5f;
+	}
+	else
+	{
+		fillColourOnHover = fillColour + Vector3(0.2f, 0.2f, 0.2f);
+		fillColourOnClick = fillColour + Vector3(0.5f, 0.5f, 0.5f);
+	}
 	currentFillColour = fillColour;
 }
 
@@ -53,7 +62,7 @@ void Slider::OnMouseClick(PhysicsProgram& program)
 
 void Slider::OnMouseRelease(PhysicsProgram& program)
 {
-	if (heldDown && onValueChanged)
+	if (enabled && heldDown && onValueChanged)
 	{
 		onValueChanged(*this, OnValueChangedPtr, fillAmount * fillOffset);
 		heldDown = false;
@@ -62,15 +71,19 @@ void Slider::OnMouseRelease(PhysicsProgram& program)
 
 void Slider::Draw(PhysicsProgram& program)
 {
+	if (!enabled) return;
+
 	auto& triR = program.GetTriangleRenderer();
-	
 	//bg
 	triR.QueueBox(fillAABB.min - fillPadding, fillAABB.max + fillPadding, backgroundColour);
 	//fill
 	triR.QueueBox(fillAABB.min, Vector2(fillAABB.min.x + fillAmount * (fillAABB.max.x - fillAABB.min.x), fillAABB.max.y), currentFillColour);
 
 	auto& texR = program.GetTextRenderer();
-	texR.QueueText(label + std::to_string((int)(fillAmount * fillOffset)), fillAABB.min + fillPadding + textPadding, textScale, textColour);
+
+	std::string numText = std::to_string((fillAmount * fillOffset + fillMin));
+	numText = numText.substr(0, numText.find(".") + 3); //format with 2 decimal points (rounds down)
+	texR.QueueText(label + numText, fillAABB.min + fillPadding + textPadding, textScale, textColour);
 }
 
 void Slider::SetPosition(Vector2 newPosition)

@@ -8,7 +8,7 @@ class Button : public UIObject
 public:
 	
 
-	Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale = 0.0f, float padding = 2.0f);
+	Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale = 0.0f, float padding = 2.0f, Vector3 edgeColour = Vector3(0,0,0));
 	
 	void Update(PhysicsProgram& program);
 	void OnMouseClick(PhysicsProgram& program);
@@ -32,9 +32,11 @@ public:
 	Vector3 colour;
 	Vector3 colourOnHover;
 	Vector3 colourOnClick;
+	Vector3 edgeColour;
 private:
 	void AutoSetScale(PhysicsProgram& program, float padding, Vector2 boxSize);
 	
+	bool buttonActive = true;
 	AABB buttonAABB;
 	std::string text;
 

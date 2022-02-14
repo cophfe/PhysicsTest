@@ -1,5 +1,6 @@
 #include "CollisionManager.h"
 #include "ExtraMath.hpp"
+#include "PhysicsProgram.h"
 
 void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 {
@@ -62,33 +63,62 @@ PhysicsObject* CollisionManager::PointCast(Vector2 point, std::vector<PhysicsObj
 	return nullptr;
 }
 
+static Vector2 GetVelocityAtPoint(Vector2 centre, Vector2 point, float angularVelocity, Vector2 velocity) 
+{
+	//radius vector works as both a distance from centre multiplier and an object normal
+	Vector2 radiusVector = point - centre;
+	Vector2 angularVelocityVector = angularVelocity * Vector2{ -radiusVector.y, radiusVector.x };
+	//this ^ is 2D equivelant of Cross(angularVelocity, radiusVector)
+	//this is different from the current em::Cross function because is simplified from when cross takes two vector3 values like this: Vector3(X,X,0), Vector3(X,X,0). returns a float because only the z component of the return value is nonzero
+	//This 'cross' simplifies from when cross takes two vector3 values like this: vector3(0,0,X), Vector3(X,X,0). it returns a vector2 because in that case, the x and y values of the return value are nonzero
+	return angularVelocityVector + velocity;
+}
+
+
 void CollisionManager::ResolveCollision(CollisionManifold& manifold)
 {
 	//if collision happened (data is added into manifold about collision)
 	if (EvaluateCollision(manifold) && (manifold.a->iMass + manifold.b->iMass != 0))
 	{
+		Vector2 radiusA = manifold.collisionPoints[0] - manifold.a->transform.position,
+			radiusB = manifold.collisionPoints[0] - manifold.b->transform.position;// <<angle
+
 		//resolve collision
-		Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity();
+		//Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity(); // <<nonangle
+		
+		//explanation for this \/ in GetVelocityAtPoint
+		Vector2 angularVelocityA = manifold.a->GetAngularVelocity() * Vector2{-radiusA.y, radiusA.x};
+		Vector2 angularVelocityB = manifold.b->GetAngularVelocity() * Vector2{-radiusB.y, radiusB.x};
+		Vector2 rV = (manifold.b->GetVelocity() + angularVelocityB)
+			- (manifold.a->GetVelocity() + angularVelocityA); // <<angle
 		float projectedRV = glm::dot(manifold.collisionNormal, rV);
 		
 		//bounciness is average of the two
 		float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
+		
 		//calculate impulse magnitude
-		float impulseMagnitude = -(1 + e) * projectedRV;
-		//divide by inverse masses add together to ratio by mass
-		impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());
+		//float impulseMagnitude = -(1 + e) * projectedRV;// <<nonangle
+		//impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());// <<nonangle
+		float rACrossN = em::Cross(radiusA, manifold.collisionNormal);// <<angle
+		float rBCrossN = em::Cross(radiusB, manifold.collisionNormal);// <<angle
+
+		float impulseMagnitude = (-(1 + e) * projectedRV)
+			/ (manifold.a->iMass + manifold.b->iMass
+				+ (rACrossN * rACrossN * manifold.a->iMomentOfInertia) + ( rBCrossN * rBCrossN * manifold.b->iMomentOfInertia));// <<angle
 		//turn into vector
 		Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
 
 		//calculate impulse to add
-		//manifold.a->AddImpulseAtPosition(impulse * -1, manifold->hitPosition);
-		//manifold.b->AddImpulseAtPosition(impulse, manifold->hitPosition);
-		manifold.a->AddImpulse(-impulse);
-		manifold.b->AddImpulse(impulse);
+		manifold.a->AddImpulseAtPosition(-impulse, manifold.collisionPoints[0]);// <<angle
+		manifold.b->AddImpulseAtPosition(impulse, manifold.collisionPoints[0]);// <<angle
+		//manifold.a->AddImpulse(-impulse);// <<nonangle
+		//manifold.b->AddImpulse(impulse);// <<nonangle
 
 		//teleport shapes out of each other based on mass
 		manifold.a->SetPosition(manifold.a->GetPosition() + manifold.collisionNormal * (manifold.penetration * manifold.a->GetInverseMass() / (manifold.a->GetInverseMass() + manifold.b->GetInverseMass())));
 		manifold.b->SetPosition(manifold.b->GetPosition() - manifold.collisionNormal * (manifold.penetration * manifold.b->GetInverseMass() / (manifold.a->GetInverseMass() + manifold.b->GetInverseMass())));
+
+		program->collisionPoints.push_back(manifold.collisionPoints[0]);
 	}
 }
 
@@ -114,6 +144,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			deltaMagSq = sqrtf(deltaMagSq);
 			manifold.penetration = radiusSum - deltaMagSq;
 			manifold.collisionNormal = delta / deltaMagSq;
+			manifold.collisionPoints[0] = pA - manifold.collisionNormal * a->radius;
 			return true;
 		}
 
@@ -133,15 +164,15 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		float radius = a->radius + b->radius;
 
 		//this basically simplifies the problem to a circle-circle collision
-		Vector2 pointOnCapsule = em::ClosestPointOnLine(pA, pB, circleCentre);
+		Vector2 pointOnCapsuleLine = em::ClosestPointOnLine(pA, pB, circleCentre);
 		
-		Vector2 delta = circleCentre - pointOnCapsule;
+		Vector2 delta = circleCentre - pointOnCapsuleLine;
 		if (delta.x * delta.x + delta.y * delta.y < radius * radius)
 		{
 			//is colliding
 			manifold.collisionNormal = glm::normalize(delta); //collision normal is always from b to a
 			manifold.penetration = radius - glm::dot(delta, manifold.collisionNormal); //p = a->radius + b->radius - distancebetweencentreandclosestpointonLine
-			manifold.collisionPoints[0] = pointOnCapsule + manifold.collisionNormal * b->radius;
+			manifold.collisionPoints[0] = pointOnCapsuleLine + manifold.collisionNormal * b->radius;
 			return true;
 		}
 
@@ -150,7 +181,34 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 	case COLLISION_TYPE::CIRCLEPOLYGON:
 	{
 
+		CircleShape* a = (CircleShape*)*manifold.a->collider->shapes;
+		PolygonShape* b = (PolygonShape*)*manifold.b->collider->shapes;
 
+		Vector2 circlePoint = manifold.b->transform.TransformPoint(a->centrePoint);
+
+		float minDistanceSqr = a->radius * a->radius;
+		Vector2 normal;
+
+		for (size_t i = 0; i < b->pointCount; i++)
+		{
+			Vector2 point = manifold.a->transform.TransformPoint(b->points[i]);
+			float distSqr = em::SquareLength(point - circlePoint);
+
+			if (distSqr < minDistanceSqr)
+			{
+				minDistanceSqr = distSqr;
+				normal = point - circlePoint;
+			}
+		}
+
+		if (minDistanceSqr < a->radius * a->radius)
+		{
+			minDistanceSqr = sqrtf(minDistanceSqr);
+			manifold.penetration = a->radius - minDistanceSqr;
+			manifold.collisionNormal = normal / minDistanceSqr;
+			manifold.collisionPoints[0] = circlePoint + manifold.collisionNormal * a->radius;
+			return true;
+		}
 		return false;
 	}
 	case COLLISION_TYPE::CIRCLEPLANE:
@@ -172,10 +230,87 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		{
 			manifold.collisionNormal = planeDirection;
 			manifold.penetration = -penetration;
-			manifold.collisionPoints[0] = centre - planeDirection * (a->radius + penetration);
+			manifold.collisionPoints[0] = centre - planeDirection * (a->radius);
 			return true;
 		}
 
+		return false;
+	}
+	case COLLISION_TYPE::POLYGONPOLYGON:
+	{
+
+		return false;
+	}
+	case COLLISION_TYPE::POLYGONCAPSULE:
+	{
+		PolygonShape* a = (PolygonShape*)*manifold.a->collider->shapes;
+		CapsuleShape* b = (CapsuleShape*)*manifold.b->collider->shapes;
+
+		Vector2 stadPointA = manifold.b->transform.TransformPoint(b->pointA),
+			stadPointB = manifold.b->transform.TransformPoint(b->pointB);
+		//Vector2 stadTangent = glm::normalize(stadPointA - stadPointB);
+		//Vector2 stadNormal = { -stadTangent.y, stadTangent.x };
+
+		float minDistanceSqr = b->radius * b->radius + 1;
+		Vector2 collisionPoint;
+		Vector2 normal;
+
+		for (size_t i = 0; i < a->pointCount; i++)
+		{
+			Vector2 point = manifold.a->transform.TransformPoint(a->points[i]);
+			Vector2 linePoint = em::ClosestPointOnLine(stadPointA, stadPointB, point);
+			float distSqr = em::SquareLength(point - linePoint);
+
+			if (distSqr < minDistanceSqr)
+			{
+				collisionPoint = linePoint;
+				minDistanceSqr = distSqr;
+				normal = point - linePoint;
+			}
+		}
+
+		if (minDistanceSqr < b->radius * b->radius)
+		{
+			minDistanceSqr = sqrtf(minDistanceSqr);
+
+			manifold.penetration = b->radius - minDistanceSqr;
+			manifold.collisionNormal = normal / minDistanceSqr;
+			manifold.collisionPoints[0] = collisionPoint + manifold.collisionNormal * b->radius; // this is wrong!!!!
+			return true;
+		}
+
+
+		return false;
+	}
+	case COLLISION_TYPE::POLYGONPLANE:
+	{
+		PolygonShape* a = (PolygonShape*)*manifold.a->collider->shapes;
+		PlaneShape* b = (PlaneShape*)*manifold.b->collider->shapes;
+
+		Vector2 planeNormal = manifold.b->transform.TransformPoint(b->normal);
+		float planeDistance = glm::dot(manifold.b->transform.TransformPoint(b->distance * b->normal), planeNormal);
+
+		float minPenetration = 1;
+		Vector2 collisionPoint;
+		for (size_t i = 0; i < a->pointCount; i++)
+		{
+			Vector2 point = manifold.a->transform.TransformPoint(a->points[i]);
+			float p = glm::dot(point, planeNormal) - planeDistance;
+
+			if (p < minPenetration)
+			{
+				collisionPoint = point;
+				minPenetration = p;
+			}
+		}
+
+		if (minPenetration < 0)
+		{
+			manifold.collisionNormal = planeNormal;
+			manifold.penetration = -minPenetration;
+			manifold.collisionPoints[0] = collisionPoint;
+			return true;
+		}
 		return false;
 	}
 	case COLLISION_TYPE::CAPSULECAPSULE:
@@ -188,9 +323,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			,bPointA = manifold.b->transform.TransformPoint(b->pointA),
 			bPointB = manifold.b->transform.TransformPoint(b->pointB);;
 
-		//find the smallest distance between the two lines, check if less than a->radius + b->radius
-		//in 2d this is 4 point-line distance checks, an intersection test, and 4 weird point tests
-		
+		//stadium checking comes down to 4 point-line distance checks, an intersection test, and 4 point normal tests
 
 		Vector2 intersection;
 		if (em::CalculateIntersectionPoint(aPointA, aPointB, bPointA, bPointB, intersection))
@@ -231,7 +364,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			float sign = glm::sign(p1);
 			manifold.collisionNormal = sign  * -normal;
 			manifold.penetration = sign * p1 + a->radius + b->radius;
-			manifold.collisionPoints[0] = intersection + manifold.collisionNormal * manifold.penetration;
+			manifold.collisionPoints[0] = intersection + manifold.collisionNormal * a->radius;
 			return true;
 		}
 		else 
@@ -244,6 +377,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 				float collisionDistanceSq;
 			} collision, newCollision; 
 
+			float collisionMul = -a->radius;
 			Vector2 collisionPoint = aPointA;
 			collision.collisionDelta = aPointA - em::ClosestPointOnLine(bPointA, bPointB, aPointA);
 			collision.collisionDistanceSq = em::SquareLength(collision.collisionDelta);
@@ -262,6 +396,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			{
 				collision = newCollision;
 				collisionPoint = bPointA;
+				collisionMul = b->radius;
 			}
 
 			newCollision.collisionDelta = em::ClosestPointOnLine(aPointA, aPointB, bPointB) - bPointB;
@@ -270,6 +405,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			{
 				collision = newCollision;
 				collisionPoint = bPointB;
+				collisionMul = b->radius;
 			}
 
 			float radius = a->radius + b->radius;
@@ -280,7 +416,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 				float length = sqrtf(collision.collisionDistanceSq);
 				manifold.penetration = radius - length;
 				manifold.collisionNormal = collision.collisionDelta/length;
-				manifold.collisionPoints[0] = collisionPoint;
+				manifold.collisionPoints[0] = collisionPoint + manifold.collisionNormal * collisionMul;
 				return true;
 			}
 		}
@@ -296,6 +432,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		Vector2 planeDirection = manifold.b->transform.TransformDirection(b->normal);
 		float planeDistance = glm::dot(manifold.b->transform.TransformPoint(b->distance * b->normal), planeDirection);
 
+		Vector2 collisionPoint = pointA;
 		float start = glm::dot(pointA, planeDirection);
 		float end = glm::dot(pointB, planeDirection);
 		if (start > end)
@@ -303,6 +440,7 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 			float temp = start;
 			start = end;
 			end = temp ;
+			collisionPoint = pointB;
 		}
 
 		start -= a->radius;
@@ -312,8 +450,8 @@ bool CollisionManager::EvaluateCollision(CollisionManifold& manifold)
 		if (planeDistance >= start)
 		{
 			manifold.collisionNormal = planeDirection;
-
 			manifold.penetration = planeDistance - start;
+			manifold.collisionPoints[0] = collisionPoint - planeDirection * a->radius;
 			return true;
 		}
 
@@ -330,7 +468,7 @@ void CollisionManager::GetCollisionType(CollisionManifold& manifold)
 	//use a pairing function
 	int a = (int)manifold.a->collider->shapes[0]->GetType();
 	int b = (int)manifold.b->collider->shapes[0]->GetType();
-	// a + 2b works like a cheap pairing function (only works for the inputs that SHAPE_TYPE are)
+	// a + 2b works like a pairing function (at least one that only works with specific inputs)
 	// it only works with inputs that are powers of each other (e.g 4^0, 4^1, 4^2), 
 	// and the number that is being put to the power of also needs to be greater than number of inputs - 1 otherwise there will be duplicates
 	

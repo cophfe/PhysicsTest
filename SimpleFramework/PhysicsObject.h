@@ -15,7 +15,7 @@ struct PhysicsData
 	Vector2 scale = Vector2(1.0f, 1.0f);
 	float rotation;
 
-	float bounciness = 0.4f;
+	float bounciness;
 	float drag;
 	float angularDrag;
 	bool isDynamic = false;
@@ -23,9 +23,13 @@ struct PhysicsData
 	//will automatically calculate mass and moment of inertia if equal to -1
 	float mass = -1;
 
+	float staticFriction;
+	float dynamicFriction;
 	PhysicsData() = default;
-	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.4f, float drag = 0, float angularDrag = 0, float mass = -1)
-		: position(position), rotation(rotation), isDynamic(isDynamic), isRotatable(isRotatable), bounciness(bounciness), drag(drag), angularDrag(angularDrag), mass(mass) {}
+	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.0f, 
+		float drag = 0, float angularDrag = 0, float mass = -1, float staticFriction = 0, float dynamicFriction = 0)
+		: position(position), rotation(rotation), isDynamic(isDynamic), isRotatable(isRotatable), bounciness(bounciness), drag(drag), angularDrag(angularDrag), mass(mass), staticFriction(staticFriction), dynamicFriction(dynamicFriction)
+	{}
 };
 
 class Transform {
@@ -38,28 +42,28 @@ public:
 		c = cos(rotation);
 	}
 	
-	inline Vector2 TransformPoint(const Vector2& point) 
+	inline Vector2 TransformPoint(Vector2 point) 
 	{
 		return Vector2(point.x * c - point.y * s + position.x, point.y * c + point.x * s + position.y);
 	}
 
-	inline Vector2 InverseTransformPoint(const Vector2& point)
+	inline Vector2 InverseTransformPoint(Vector2 point)
 	{
 		Vector2 p = point;
 		p -= position;
 
-		return -Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
+		return Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
 	}
 
 
-	inline Vector2 TransformDirection(const Vector2& direction)
+	inline Vector2 TransformDirection(Vector2 direction)
 	{
 		return Vector2(direction.x * c - direction.y * s, direction.y * c + direction.x * s);
 	}
 
-	inline Vector2 InverseTransformDirection(const Vector2& direction) 
+	inline Vector2 InverseTransformDirection(Vector2 direction) 
 	{
-		return Vector2(direction.x * -c + direction.y * s, direction.y * -c - direction.x * s);
+		return -Vector2(direction.x * -c + direction.y * s, direction.y * -c - direction.x * s);
 	}
 
 	Transform() = default;

@@ -2,6 +2,7 @@
 #include "PhysicsObject.h"
 #include <vector>
 #include <iostream>
+class PhysicsProgram;
 
 enum class COLLISION_TYPE
 {
@@ -35,6 +36,8 @@ struct CollisionManifold
 class CollisionManager
 {
 public:
+	CollisionManager(PhysicsProgram* program) : program(program) {}
+
 	void ResolveCollisions(std::vector<PhysicsObject>& pObjects);
 
 	PhysicsObject* PointCast(Vector2 point, std::vector<PhysicsObject>& pObjects, bool includeStatic = false);
@@ -47,5 +50,7 @@ private:
 
 	std::vector<CollisionManifold> collisions;
 	
+	//for debug drawing
+	PhysicsProgram* program;
 };
 

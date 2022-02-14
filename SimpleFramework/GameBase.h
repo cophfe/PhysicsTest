@@ -24,7 +24,7 @@ class GameBase
 
 
 protected:
-	const int gridLimits = 10;
+	const int gridLimits = 15;
 	ShaderProgram simpleShader;
 	ShaderProgram textShader;
 	TextRenderer textRenderer; //updated every time it is modified, does not reset text ever
@@ -35,6 +35,7 @@ protected:
 	bool rightButtonDown = false;
 	float time = 0.0f;
 	LineRenderer lines;
+	LineRenderer linesUI;
 	const float deltaTime = 0.0166667f;	//Delta time should be constant for physics simulations.
 	GLFWwindow* window = nullptr;
 

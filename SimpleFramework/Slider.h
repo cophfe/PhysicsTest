@@ -23,7 +23,7 @@ public:
 	Vector3 fillColourOnClick;
 
 	//fill amount is between 0 and 1
-	float GetFillAmount() { return fillMin + fillOffset * fillAmount; }
+	float GetFillAmount() { return fillAmount * fillOffset + fillMin; }
 
 private:
 	AABB fillAABB;

@@ -3,7 +3,6 @@
 #include "PhysicsObject.h"
 #include "Button.h"
 #include "Slider.h"
-#include "Toggle.h"
 
 class PhysicsProgram;
 
@@ -34,10 +33,10 @@ public:
 
 	void SetShapeRadius(float rad);
 	
-
 	void SetHeldTool(HELD_TOOL type);
 	HELD_TOOL GetHeldTool() { return heldTool; };
 
+	Button* GetStepForwardButton() { return stepForwardButton; };
 private:
 	bool usingTool = false;
 	Vector2 startingPosition = Vector2(0,0);
@@ -49,6 +48,7 @@ private:
 	Shape* heldShape = nullptr;
 
 	std::vector<Button*> buttons;
+	Button* stepForwardButton;
 	HELD_TOOL heldTool = HELD_TOOL::CIRCLE;
 
 	PhysicsObject* grabbedObject = nullptr;

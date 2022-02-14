@@ -21,7 +21,7 @@ GameBase::GameBase()
 		return;
 	}
 	//Can choose resolution here.
-	window = glfwCreateWindow(1280, 720, "Physics Testbed", nullptr, nullptr);
+	window = glfwCreateWindow(1280, 720, "Physics!", nullptr, nullptr);
 	//glfwSetWindowPos(window, 1950, 30);
 	//glfwWindowHint(GLFW_REFRESH_RATE, 400);
 	
@@ -81,7 +81,7 @@ GameBase::GameBase()
 
 	//text now
 	textShader = ShaderProgram("Text.vsd", "Text.fsd");
-	textRenderer.Initialise("arial.ttf", textShader, false);
+	textRenderer.Initialise("cabin.ttf", textShader, false);
 
 	int width, height;
 	glfwGetWindowSize(window, &width, &height);
@@ -91,6 +91,7 @@ GameBase::GameBase()
 	textShader.SetUniform("textProjection", textProjectionMatrix);
 
 	triangleRenderer.Initialize();
+	linesUI.Initialise();
 }
 
 GameBase::~GameBase()
@@ -176,6 +177,7 @@ void GameBase::Render()
 	simpleShader.SetUniform("vpMatrix", textProjectionMatrix);
 	//draw triangles
 	triangleRenderer.UpdateFrame();
+	linesUI.UpdateFrame();
 	//draw text
 	textShader.UseShader();
 	textRenderer.Draw();

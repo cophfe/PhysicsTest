@@ -1,8 +1,8 @@
 #include "Button.h"
 #include "PhysicsProgram.h";
 
-Button::Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale, float padding)
-	: text(text), textColour(textColour), colour(colour)
+Button::Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale, float padding, Vector3 edgeColour)
+	: text(text), textColour(textColour), colour(colour), edgeColour(edgeColour)
 {
 	//if textScale == 0 calculate it automatically
 	if (textScale == 0)
@@ -22,15 +22,23 @@ Button::Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std:
 	buttonAABB.max = position + size * 0.5f;
 	buttonAABB.min = position - size * 0.5f;
 
-
-	colourOnHover = colour * 0.73f;
-	colourOnClick = colour * 0.5f;
 	currentColour = colour;
+	if (colour.x * colour.x + colour.y * colour.y + colour.z * colour.z > 0.5f * 0.5f)
+	{
+		colourOnHover = colour * 0.75f;
+		colourOnClick = colour * 0.5f;
+	}
+	else
+	{
+		colourOnHover = colour + Vector3(0.2f,0.2f,0.2f);
+		colourOnClick = colour + Vector3(0.5f, 0.5f, 0.5f);
+	}
+	
 }
 
 void Button::Update(PhysicsProgram& program)
 {
-	if (enabled && !heldDown)
+	if (buttonActive && enabled && !heldDown)
 	{
 		if (buttonAABB.PointCast(program.GetScreenCursorPos()))
 		{
@@ -52,7 +60,7 @@ void Button::Update(PhysicsProgram& program)
 
 void Button::OnMouseClick(PhysicsProgram& program)
 {
-	if (enabled && buttonAABB.PointCast(program.GetScreenCursorPos()))
+	if (buttonActive && enabled && buttonAABB.PointCast(program.GetScreenCursorPos()))
 	{
 		heldDown = true;
 		currentColour = colourOnClick;
@@ -62,7 +70,7 @@ void Button::OnMouseClick(PhysicsProgram& program)
 
 void Button::OnMouseRelease(PhysicsProgram& program)
 {
-	if (enabled && heldDown)
+	if (buttonActive && enabled && heldDown)
 	{
 		heldDown = false;
 		if (buttonAABB.PointCast(program.GetScreenCursorPos()) && onClick != nullptr)
@@ -77,17 +85,19 @@ void Button::OnMouseRelease(PhysicsProgram& program)
 
 void Button::Draw(PhysicsProgram& program)
 {
-	/*LineRenderer& lR = program.GetLineRenderer();
-	lR.DrawLineSegment(buttonAABB.max, Vector2(buttonAABB.max.x, buttonAABB.min.y), edgeColour);
-	lR.DrawLineSegment(Vector2(buttonAABB.max.x, buttonAABB.min.y), buttonAABB.min, edgeColour);
-	lR.DrawLineSegment(buttonAABB.min, Vector2(buttonAABB.min.x, buttonAABB.max.y), edgeColour);
-	lR.DrawLineSegment(Vector2(buttonAABB.min.x, buttonAABB.max.y), buttonAABB.max, edgeColour);*/
+	if (!enabled) return;
 
 	TriangleRenderer& triR = program.GetTriangleRenderer();
 	triR.QueueBox(buttonAABB.min, buttonAABB.max, currentColour);
 
 	TextRenderer& tR = program.GetTextRenderer();
 	tR.QueueText(text, buttonAABB.min + textOffset, textScale, textColour);
+
+	LineRenderer& lR = program.GetUILineRenderer();
+	lR.DrawLineSegment(buttonAABB.max, Vector2(buttonAABB.max.x, buttonAABB.min.y), edgeColour);
+	lR.DrawLineSegment(Vector2(buttonAABB.max.x, buttonAABB.min.y), buttonAABB.min, edgeColour);
+	lR.DrawLineSegment(buttonAABB.min, Vector2(buttonAABB.min.x, buttonAABB.max.y), edgeColour);
+	lR.DrawLineSegment(Vector2(buttonAABB.min.x, buttonAABB.max.y), buttonAABB.max, edgeColour);
 }
 
 void Button::SetOnClick(void(*function)(Button& button, void* infoPointer), void* infoPointer)
@@ -98,16 +108,17 @@ void Button::SetOnClick(void(*function)(Button& button, void* infoPointer), void
 
 void Button::DisableButton(Vector3 disableColour)
 {
+	if (!enabled) return;
 	currentColour = disableColour;
-	enabled = false;
+	buttonActive = false;
 	heldDown = false;
 }
 
 void Button::EnableButton()
 {
-	if (!enabled) currentColour = colour;
-	enabled = true;
-
+	if (!enabled) return;
+	if (!buttonActive) currentColour = colour;
+	buttonActive = true;
 }
 
 void Button::ChangeText(PhysicsProgram& program, std::string text, bool autoSetScale, float padding, float scale)

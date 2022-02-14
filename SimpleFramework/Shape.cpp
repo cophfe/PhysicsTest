@@ -252,6 +252,9 @@ CapsuleShape::CapsuleShape(Vector2 a, Vector2 b, float radius)
 {
 	pointA = a;
 	pointB = b;
+
+	if (a == b)
+		pointB.y += 0.00001f;
 	this->radius = radius;
 }
 
@@ -320,10 +323,10 @@ void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Ve
 		Vector2 a = transform.TransformPoint(pointA);
 		Vector2 b = transform.TransformPoint(pointB);
 		auto& lR = program.GetLineRenderer();
-		lR.DrawCircle(a, radius, colour, 8);
-		lR.DrawCircle(b, radius, colour, 8);
+		lR.DrawCircle(a, radius, colour, 32);
+		lR.DrawCircle(b, radius, colour, 32);
 
-		Vector2 radiusAddition = glm::normalize(a - b);
+		Vector2 radiusAddition = glm::normalize(a - b) * radius;
 		radiusAddition = { radiusAddition.y, -radiusAddition.x };
 
 		lR.DrawLineSegment(a + radiusAddition, b + radiusAddition, colour);

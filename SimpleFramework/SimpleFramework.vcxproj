@@ -102,6 +102,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)imgui;$(SolutionDir)GLFW;$(SolutionDir)glm;$(SolutionDir)FreeType</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -170,7 +171,6 @@
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Slider.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
-    <ClCompile Include="Toggle.cpp" />
     <ClCompile Include="TriangleRenderer.cpp" />
     <ClCompile Include="UIObject.cpp" />
     <ClCompile Include="Utilities.cpp" />
@@ -205,7 +205,6 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Slider.h" />
     <ClInclude Include="TextRenderer.h" />
-    <ClInclude Include="Toggle.h" />
     <ClInclude Include="TriangleRenderer.h" />
     <ClInclude Include="UIObject.h" />
     <ClInclude Include="Utilities.h" />
