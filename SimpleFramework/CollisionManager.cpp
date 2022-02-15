@@ -2,6 +2,14 @@
 #include "ExtraMath.hpp"
 #include "PhysicsProgram.h"
 
+#ifndef COLLISIONROTATION
+#define COLLISIONROTATION
+#endif // !COLLISIONROTATION
+#ifndef FRICTION
+#define FRICTION
+#endif // !FRICTION
+
+
 void CollisionManager::ResolveCollisions(std::vector<PhysicsObject>& pObjects)
 {
 	if (pObjects.size() < 2)
@@ -80,44 +88,97 @@ void CollisionManager::ResolveCollision(CollisionManifold& manifold)
 	//if collision happened (data is added into manifold about collision)
 	if (EvaluateCollision(manifold) && (manifold.a->iMass + manifold.b->iMass != 0))
 	{
+#ifdef COLLISIONROTATION
 		Vector2 radiusA = manifold.collisionPoints[0] - manifold.a->transform.position,
-			radiusB = manifold.collisionPoints[0] - manifold.b->transform.position;// <<angle
-
-		//resolve collision
-		//Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity(); // <<nonangle
-		
+			radiusB = manifold.collisionPoints[0] - manifold.b->transform.position;
 		//explanation for this \/ in GetVelocityAtPoint
-		Vector2 angularVelocityA = manifold.a->GetAngularVelocity() * Vector2{-radiusA.y, radiusA.x};
-		Vector2 angularVelocityB = manifold.b->GetAngularVelocity() * Vector2{-radiusB.y, radiusB.x};
+		Vector2 angularVelocityA = manifold.a->GetAngularVelocity() * Vector2 { -radiusA.y, radiusA.x };
+		Vector2 angularVelocityB = manifold.b->GetAngularVelocity() * Vector2 { -radiusB.y, radiusB.x };
 		Vector2 rV = (manifold.b->GetVelocity() + angularVelocityB)
-			- (manifold.a->GetVelocity() + angularVelocityA); // <<angle
+			- (manifold.a->GetVelocity() + angularVelocityA);
+
 		float projectedRV = glm::dot(manifold.collisionNormal, rV);
-		
 		//bounciness is average of the two
 		float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
-		
-		//calculate impulse magnitude
-		//float impulseMagnitude = -(1 + e) * projectedRV;// <<nonangle
-		//impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());// <<nonangle
-		float rACrossN = em::Cross(radiusA, manifold.collisionNormal);// <<angle
-		float rBCrossN = em::Cross(radiusB, manifold.collisionNormal);// <<angle
+
+		float rACrossN = em::Cross(radiusA, manifold.collisionNormal);
+		float rBCrossN = em::Cross(radiusB, manifold.collisionNormal);
 
 		float impulseMagnitude = (-(1 + e) * projectedRV)
 			/ (manifold.a->iMass + manifold.b->iMass
-				+ (rACrossN * rACrossN * manifold.a->iMomentOfInertia) + ( rBCrossN * rBCrossN * manifold.b->iMomentOfInertia));// <<angle
+				+ (rACrossN * rACrossN * manifold.a->iMomentOfInertia) + (rBCrossN * rBCrossN * manifold.b->iMomentOfInertia));
+
 		//turn into vector
 		Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
 
 		//calculate impulse to add
-		manifold.a->AddImpulseAtPosition(-impulse, manifold.collisionPoints[0]);// <<angle
-		manifold.b->AddImpulseAtPosition(impulse, manifold.collisionPoints[0]);// <<angle
-		//manifold.a->AddImpulse(-impulse);// <<nonangle
-		//manifold.b->AddImpulse(impulse);// <<nonangle
+		manifold.a->AddImpulseAtPosition(-impulse, manifold.collisionPoints[0]);
+		manifold.b->AddImpulseAtPosition(impulse, manifold.collisionPoints[0]);
 
+#ifdef FRICTION
+		//FRICTION
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		//a lot of this requires object-specific info, which doesn't make sense because impulse based collision model should have equal and opposite forces
+
+		//function that box2D uses to get friction (so that low object frictions seriously lower overall friction)
+		float staticFriction = sqrtf(manifold.a->staticFriction * manifold.b->staticFriction);
+		float dynamicFriction = sqrtf(manifold.a->dynamicFriction * manifold.b->dynamicFriction);
+
+		Vector2 tangent;
+		if (projectedRV == 0)
+		{
+			//component of forces that that is parallel to the collision normal
+			tangent = glm::normalize(Vector2(0, -1) - glm::dot(Vector2(0, -1), manifold.collisionNormal) * manifold.collisionNormal);
+		}
+		else
+		{
+			//component of rV that is parallel to the collision normal
+			Vector2 t = rV - projectedRV * manifold.collisionNormal;
+			if (t == Vector2(0, 0))
+				tangent = Vector2(0, 0);
+			else
+				tangent = glm::normalize(t); // t can be 0,0
+	}
+		float frictionMagnitude;
+
+		frictionMagnitude = glm::dot(rV, tangent) * dynamicFriction; //<-- what actually works (mostly
+		//frictionMagnitude = -impulseMagnitude * dynamicFriction; //<-- what it says to do 
+
+		//if friction magnitude would be so big as to flip the direction of velocity, just make it zero the velocity
+		//float velocityInTangentDirection = glm::dot(manifold.a->velocity, tangent);
+		//if (glm::abs(frictionMagnitude * manifold.a->iMass) > glm::abs(velocityInTangentDirection))
+			//manifold.a->AddVelocityAtPosition(-velocityInTangentDirection * tangent, manifold.collisionPoints[0]);
+		//else
+		manifold.a->AddImpulseAtPosition(frictionMagnitude * tangent, manifold.collisionPoints[0]);
+		manifold.b->AddImpulseAtPosition(-frictionMagnitude * tangent, manifold.collisionPoints[0]);
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+#endif
+#else
+		//resolve collision
+		Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity();
+		
+		float projectedRV = glm::dot(manifold.collisionNormal, rV);
+		//bounciness is average of the two
+		float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
+
+		//calculate impulse magnitude
+		float impulseMagnitude = -(1 + e) * projectedRV;
+		impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());
+
+		//turn into vector
+		Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
+
+		manifold.a->AddImpulse(-impulse);
+		manifold.b->AddImpulse(impulse);
+#endif
+
+		
+		
 		//teleport shapes out of each other based on mass
 		manifold.a->SetPosition(manifold.a->GetPosition() + manifold.collisionNormal * (manifold.penetration * manifold.a->GetInverseMass() / (manifold.a->GetInverseMass() + manifold.b->GetInverseMass())));
 		manifold.b->SetPosition(manifold.b->GetPosition() - manifold.collisionNormal * (manifold.penetration * manifold.b->GetInverseMass() / (manifold.a->GetInverseMass() + manifold.b->GetInverseMass())));
 
+		//[debug] add collision point for rendering
 		program->collisionPoints.push_back(manifold.collisionPoints[0]);
 	}
 }

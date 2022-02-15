@@ -4,11 +4,6 @@
 class PhysicsProgram;
 class CollisionManager;
 
-enum class PHYSICS_OBJECT_TYPE {
-	KINEMATIC,
-	DYNAMIC
-};
-
 struct PhysicsData 
 {
 	Vector2 position;
@@ -26,8 +21,8 @@ struct PhysicsData
 	float staticFriction;
 	float dynamicFriction;
 	PhysicsData() = default;
-	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.0f, 
-		float drag = 0, float angularDrag = 0, float mass = -1, float staticFriction = 0, float dynamicFriction = 0)
+	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.2f, 
+		float drag = 0, float angularDrag = 0, float mass = -1, float staticFriction = 0.9f, float dynamicFriction = 0.5f)
 		: position(position), rotation(rotation), isDynamic(isDynamic), isRotatable(isRotatable), bounciness(bounciness), drag(drag), angularDrag(angularDrag), mass(mass), staticFriction(staticFriction), dynamicFriction(dynamicFriction)
 	{}
 };
@@ -132,6 +127,7 @@ public:
 	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iMomentOfInertia;  }
 	void AddForceAtPosition(Vector2 force, Vector2 point);
 	void AddImpulseAtPosition(Vector2 force, Vector2 point);
+	void AddVelocityAtPosition(Vector2 impulse, Vector2 point);
 
 	//rule of 5
 	~PhysicsObject(); //destructor
@@ -140,8 +136,8 @@ public:
 	PhysicsObject& operator= (const PhysicsObject& other); //copy assignment
 	PhysicsObject& operator= (PhysicsObject&& other); //move assignment
 
-	static float gravity;
 protected:
+	static float gravity;
 	friend CollisionManager;
 	friend Collider;
 
@@ -163,8 +159,11 @@ protected:
 	float drag;
 	float angularDrag;
 	float iMass;
+	float staticFriction;
+	float dynamicFriction;
 	//the mass moment of inertia
 	float iMomentOfInertia;
+
 
 	//(just in case something is not moving, so no movement calculations have to be done)
 	//bool 

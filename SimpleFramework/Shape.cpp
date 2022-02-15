@@ -54,7 +54,7 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 	//set final values
 	centrePoint = polyCentre / (area); //divide by total area to get the centrepoint
 	mass = area * density; //multiply by density
-	inertia = in - mass * em::SquareLength(polyCentre);//(translate mass moment of inertia to be relative to centrepoint)
+	inertia = in; //- mass * em::SquareLength(centrePoint);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
 void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)

@@ -1,7 +1,7 @@
 #include "PhysicsObject.h"
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
-
+#include "ExtraMath.hpp"
 const float sleepVelocityMag = 0.0001f; //(these are also squared)
 const float sleepAngularVelocityMag = 0.0001f;
 const float sleepTime = 0.2f;
@@ -9,6 +9,7 @@ const float sleepTime = 0.2f;
 float PhysicsObject::gravity = 5;
 
 PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
+	,staticFriction(data.staticFriction), dynamicFriction(data.dynamicFriction)
 {
 	if (!data.isDynamic)
 	{
@@ -59,7 +60,6 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 
 void PhysicsObject::Update(PhysicsProgram& program)
 {
-	
 	transform.position += velocity * program.GetDeltaTime();
 	transform.rotation += angularVelocity * program.GetDeltaTime();
 
@@ -67,21 +67,29 @@ void PhysicsObject::Update(PhysicsProgram& program)
 	transform.UpdateData();
 	
 	if (iMass != 0) {
+
 		//(apply drag)
 		velocity += force * iMass * program.GetDeltaTime();
-		velocity.y -= gravity * program.GetDeltaTime();
 
 		//(apply angular drag)
 		angularVelocity += torque * iMomentOfInertia * program.GetDeltaTime();
 
+		//clear force stuff
+		force = Vector2(0, 0);
+		torque = 0;
+
+		//add gravity force
+		force.y -= gravity / iMass;
+	}
+	else 
+	{
+		//clear force stuff
+		force = Vector2(0, 0);
+		torque = 0;
 	}
 	
-	//clear force stuff
-	force = Vector2(0, 0);
-	torque = 0;
 
 
-	
 }
 
 void PhysicsObject::Render(PhysicsProgram& program)
@@ -104,23 +112,27 @@ void PhysicsObject::GenerateAABB() {
 		collider->CalculateAABB(transform);
 }
 
-//z value of cross product in 3D with a and b (x and y values equal 0)
-float Cross(Vector2 a, Vector2 b)
-{
-	return a.x * b.y - a.y * b.x;
-}
-
 void PhysicsObject::AddForceAtPosition(Vector2 force, Vector2 point)
 {
 	this->force += force;
 	//transform.position should actually be the center point of the collider
-	this->torque += Cross(point - transform.position, force);
+	this->torque += em::Cross(point - transform.position, force);
 }
 
 void PhysicsObject::AddImpulseAtPosition(Vector2 impulse, Vector2 point)
 {
 	this->velocity += impulse * iMass;
-	this->angularVelocity += Cross(point - transform.position, impulse) * iMomentOfInertia;
+
+	//transform.position should be the centre of mass
+	this->angularVelocity += em::Cross(point - transform.position, impulse) * iMomentOfInertia;
+}
+
+void PhysicsObject::AddVelocityAtPosition(Vector2 velocity, Vector2 point)
+{
+	this->velocity += velocity;
+
+	//transform.position should be the centre of mass
+	this->angularVelocity += em::Cross(point - transform.position, velocity);
 }
 
 PhysicsObject::~PhysicsObject()
@@ -129,7 +141,7 @@ PhysicsObject::~PhysicsObject()
 	collider = nullptr;
 }
 
-PhysicsObject::PhysicsObject(const PhysicsObject& other)
+PhysicsObject::PhysicsObject(const PhysicsObject& other) : staticFriction(other.staticFriction), dynamicFriction(other.dynamicFriction)
 {
 	collider = new Collider(*other.collider);
 	collider->SetAttached(this);
@@ -146,7 +158,7 @@ PhysicsObject::PhysicsObject(const PhysicsObject& other)
 	iMomentOfInertia = other.iMomentOfInertia;
 }
 
-PhysicsObject::PhysicsObject(PhysicsObject&& other)
+PhysicsObject::PhysicsObject(PhysicsObject&& other) : staticFriction(other.staticFriction), dynamicFriction(other.dynamicFriction)
 {
 	collider = other.collider;
 	collider->SetAttached(this);
@@ -171,6 +183,8 @@ PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
 	collider = new Collider(*other.collider);
 	collider->SetAttached(this);
 
+	staticFriction = other.staticFriction;
+	dynamicFriction = other.dynamicFriction;
 	transform = other.transform;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;
@@ -192,7 +206,8 @@ PhysicsObject& PhysicsObject::operator=(PhysicsObject&& other)
 	collider->SetAttached(this);
 
 	other.collider = nullptr;
-
+	staticFriction = other.staticFriction;
+	dynamicFriction = other.dynamicFriction;
 	transform = other.transform;
 	velocity = other.velocity;
 	angularVelocity = other.angularVelocity;

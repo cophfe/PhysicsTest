@@ -75,4 +75,12 @@ namespace em
 		intersectionPoint = c + t * deltaB;
 		return t >= 0 && t <= 1 && t2 >= 0 && t2 <= 1;
 	}
+    Vector2 GetPerpendicularClockwise(Vector2 v)
+    {
+        return Vector2(v.y, -v.x);
+    }
+    Vector2 GetPerpendicularCounterClockwise(Vector2 v)
+    {
+        return Vector2(-v.y, v.x);
+    }
 }

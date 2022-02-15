@@ -38,8 +38,10 @@ static void SwitchToGrabTool(Button& button, void* infoPointer)
 static void ClearPhysicsObjects(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
-	program->ClearPhysicsObjects();
+	program->ResetPhysics();
 }
+
+//static bool updateCollision = false;
 
 static void PauseUnpause(Button& button, void* infoPointer)
 {
@@ -55,6 +57,7 @@ static void PauseUnpause(Button& button, void* infoPointer)
 		button.colourOnClick = Vector3(0.4f, 0.4f, 0.4f);
 	}
 	else {
+		//updateCollision = false;
 		button.colour = Vector3(1, 1, 1);
 		button.textColour = Vector3(0, 0, 0);
 		button.colourOnHover = Vector3(0.8f, 0.8f, 0.8f);
@@ -68,7 +71,13 @@ static void PauseUnpause(Button& button, void* infoPointer)
 static void StepOnce(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
+
+	//if (!updateCollision)
 	program->UpdatePhysics();
+	//else
+	program->ResolveCollisions();
+
+	//updateCollision = !updateCollision;
 }
 
 static void SpeedUnspeed(Button& button, void* infoPointer)

@@ -41,8 +41,10 @@ public:
 	inline void SetUIHeldDown(bool value) { uiHeldDown = value; }
 	inline Vector2Int GetWindowSize() { return windowSize; }
 	void OnWindowResize(int width, int height);
-	void ClearPhysicsObjects();
+	void ResetPhysics();
 	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false);
+
+	void ResolveCollisions();
 private:
 	friend CollisionManager;
 	static std::vector<Vector2> collisionPoints;

@@ -23,6 +23,8 @@ public:
 	void CalculateMass(float& massVar, float& inertiaVar);
 	void CalculateAABB(Transform& transform);
 
+	
+
 	~Collider();
 	Collider(Collider& other);
 	Collider& operator=(Collider& other);
@@ -31,6 +33,10 @@ private:
 	friend CollisionManager;
 	friend PhysicsObject;
 	
+	//centres collider about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
+	//returns the offset from rotation
+	Vector2 CentreShapeAboutZero();
+
 	void SetAttached(PhysicsObject* attached) { this->attached = attached; }
 	bool CanBeDynamic();
 	PhysicsObject* attached;

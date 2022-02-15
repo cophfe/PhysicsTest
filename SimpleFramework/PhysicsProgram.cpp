@@ -33,6 +33,7 @@ void PhysicsProgram::Update()
 	if (!paused)
 	{
 		UpdatePhysics();
+		collisionManager.ResolveCollisions(pObjects);
 	}
 }
 
@@ -50,8 +51,6 @@ void PhysicsProgram::UpdatePhysics()
 	{
 		pObject.Update(*this);
 	}
-
-	collisionManager.ResolveCollisions(pObjects);
 }
 
 void PhysicsProgram::Render()
@@ -137,9 +136,10 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 	}
 }
 
-void PhysicsProgram::ClearPhysicsObjects()
+void PhysicsProgram::ResetPhysics()
 {
 	pObjects.clear();
+	collisionPoints.clear();
 
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
 	AddPhysicsObject(PhysicsObject(data, new Collider(new PlaneShape(Vector2(1, 0), -gridLimits))));
@@ -151,4 +151,10 @@ void PhysicsProgram::ClearPhysicsObjects()
 PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)
 {
 	return collisionManager.PointCast(point, pObjects, includeStatic);
+}
+
+void PhysicsProgram::ResolveCollisions()
+{
+	collisionManager.ResolveCollisions(pObjects);
+
 }
