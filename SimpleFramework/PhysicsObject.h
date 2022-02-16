@@ -1,6 +1,7 @@
 #pragma once
 #include "Maths.h"
 #include "Collider.h"
+#include "Transform.h"
 class PhysicsProgram;
 class CollisionManager;
 
@@ -27,59 +28,14 @@ struct PhysicsData
 	{}
 };
 
-class Transform {
-public:
-	Vector2 position;
-	float rotation;
 
-	void UpdateData() {
-		s = sin(rotation);
-		c = cos(rotation);
-	}
-	
-	inline Vector2 TransformPoint(Vector2 point) 
-	{
-		return Vector2(point.x * c - point.y * s + position.x, point.y * c + point.x * s + position.y);
-	}
-
-	inline Vector2 InverseTransformPoint(Vector2 point)
-	{
-		Vector2 p = point;
-		p -= position;
-
-		return Vector2(p.x * -c + p.y * s, -p.y * c - p.x * s);
-	}
-
-
-	inline Vector2 TransformDirection(Vector2 direction)
-	{
-		return Vector2(direction.x * c - direction.y * s, direction.y * c + direction.x * s);
-	}
-
-	inline Vector2 InverseTransformDirection(Vector2 direction) 
-	{
-		return -Vector2(direction.x * -c + direction.y * s, direction.y * -c - direction.x * s);
-	}
-
-	Transform() = default;
-	Transform(Vector2 position, float rotation) : position(position), rotation(rotation)
-	{
-		UpdateData();
-	}
-
-private:
-	//ehh its basically a matrix
-	float s;
-	float c;
-};
 
 class PhysicsObject
 {
 public:
-
 	PhysicsObject(PhysicsData& data, Collider* collider);
 	
-	void Update(PhysicsProgram& program);
+	void Update(float deltaTime);
 	void Render(PhysicsProgram& program);
 	void GenerateAABB();
 
@@ -129,15 +85,15 @@ public:
 	void AddImpulseAtPosition(Vector2 force, Vector2 point);
 	void AddVelocityAtPosition(Vector2 impulse, Vector2 point);
 
-	//rule of 5
+	//rule o' 5
 	~PhysicsObject(); //destructor
 	PhysicsObject(const PhysicsObject& other); //copy constructor
 	PhysicsObject(PhysicsObject&& other); //move constructor
 	PhysicsObject& operator= (const PhysicsObject& other); //copy assignment
 	PhysicsObject& operator= (PhysicsObject&& other); //move assignment
 
+
 protected:
-	static float gravity;
 	friend CollisionManager;
 	friend Collider;
 

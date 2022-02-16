@@ -18,7 +18,9 @@ public:
 	void Render();
 	void OnMouseClick(int mouseButton);
 	void OnMouseRelease(int mouseButton);
-	
+	void OnKeyPressed(int key);
+	void OnKeyReleased(int key);
+
 	PhysicsObject& AddPhysicsObject(PhysicsObject&& pObject);
 	UIObject* AddUIObject(UIObject* uiObject);
 
@@ -53,7 +55,6 @@ private:
 	bool uiHeldDown;
 	bool uiEnabled = true;
 
-	std::vector<PhysicsObject> pObjects;
 	PlayerInput playerInput;
 	CollisionManager collisionManager;
 	double lastTime = 0;

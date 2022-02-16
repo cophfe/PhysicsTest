@@ -23,7 +23,11 @@ public:
 	void CalculateMass(float& massVar, float& inertiaVar);
 	void CalculateAABB(Transform& transform);
 
-	
+	Shape* GetShape(int index)	{ return shapes[index]; }
+	int GetShapeCount()			{ return shapeCount; }
+
+	//void AddShape(Shape* shape);
+	//void ResetShapes(Shape* shape); //<< collider has to have at least one shape
 
 	~Collider();
 	Collider(Collider& other);
@@ -48,52 +52,3 @@ private:
 
 	Vector3 colour;
 };
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// CIRCLE COLLIDER CLASS
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//class CircleCollider : public Collider
-//{
-//public:
-//
-//	CircleCollider(float radius, Vector2 centrePoint, PhysicsObject* attached);
-//
-//	void RenderShape(PhysicsProgram& program);
-//	COLLIDER_TYPE GetType() { return COLLIDER_TYPE::CIRCLE; }
-//	float CalculateArea();
-//	void CalculateGlobal();
-//	void CalculateAABB();
-//
-//protected:
-//	float radius;
-//	float globalRadius;
-//};
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//// POLYGON COLLIDER CLASS
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//class PolygonCollider : public Collider 
-//{
-//public:
-//	PolygonCollider(Vector2* vertices, int vertexCount, Vector2 centrePoint, PhysicsObject* attached);
-//	void RenderShape(PhysicsProgram& program);
-//	COLLIDER_TYPE GetType() { return COLLIDER_TYPE::POLYGON; }
-//	float CalculateArea();
-//	void CalculateGlobal();
-//	void CalculateAABB();
-//
-//	static PolygonCollider&& GetRegularPolygonCollider(float radius, int pointCount, PhysicsObject* attached);
-//
-//protected:
-//	Vector2* points;
-//	Vector2* globalPoints;
-//	int pointCount;
-//};
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

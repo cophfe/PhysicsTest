@@ -20,11 +20,11 @@ public:
 };
 
 enum class SHAPE_TYPE : unsigned char {
-	CIRCLE = 1,
-	POLYGON = 4,
-	CAPSULE = 16,
-	PLANE = 64,
-	COUNT = 4
+	CIRCLE,
+	POLYGON,
+	CAPSULE,
+	PLANE,
+	COUNT
 };
 
 
@@ -66,16 +66,18 @@ public:
 	Shape* Clone();
 	static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
 
+	Vector2 points[max_vertices];
+	Vector2 normals[max_vertices];
+	char pointCount;
+	Vector2 centrePoint;
+
 private:
 	friend CollisionManager;
 	void CalculateNormals();
 	void CalculateCentrePoint();
 	bool OrganisePoints(Vector2* points, int pointCount);
 
-	Vector2 points[max_vertices];
-	Vector2 normals[max_vertices];
-	char pointCount;
-	Vector2 centrePoint;
+	
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,16 +96,15 @@ public:
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 
+	float radius;
+	Vector2 centrePoint;
 private:
 	friend CollisionManager;
 
-
-	float radius;
-	Vector2 centrePoint;
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// LINE CLASS
+// STADIUM CLASS
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 class CapsuleShape : public Shape 
@@ -119,12 +120,13 @@ public:
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 
-private:
-	friend CollisionManager;
 
 	float radius;
 	Vector2 pointA;
 	Vector2 pointB;
+private:
+	friend CollisionManager;
+
 };
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -145,11 +147,13 @@ public:
 	SHAPE_TYPE GetType();
 	Shape* Clone();
 
-private:
-	friend CollisionManager;
 
 	Vector2 normal;
 	float distance;
+
+private:
+	friend CollisionManager;
+
 };
 
 

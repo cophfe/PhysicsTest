@@ -3,7 +3,7 @@
 
 std::vector<Vector2> PhysicsProgram::collisionPoints;
 
-PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(this), GameBase()
+PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(this, GetDeltaTime()), GameBase()
 {
 	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
 	//text.Build();
@@ -33,7 +33,7 @@ void PhysicsProgram::Update()
 	if (!paused)
 	{
 		UpdatePhysics();
-		collisionManager.ResolveCollisions(pObjects);
+		collisionManager.ResolveCollisions();
 	}
 }
 
@@ -46,11 +46,7 @@ void PhysicsProgram::UpdatePhysics()
 		collisionPoints.clear(); 
 	}
 
-	//do physics
-	for (auto& pObject : pObjects)
-	{
-		pObject.Update(*this);
-	}
+	collisionManager.UpdatePhysics();
 }
 
 void PhysicsProgram::Render()
@@ -67,10 +63,7 @@ void PhysicsProgram::Render()
 	
 	lastTime = time;
 
-	for (auto& pObject : pObjects)
-	{
-		pObject.Render(*this);
-	}
+	collisionManager.DrawShapes();
 
 	//wow pretty disgusting that this function is doesn't take in *this when the others do
 	playerInput.Render();
@@ -115,10 +108,19 @@ void PhysicsProgram::OnMouseRelease(int mouseButton)
 	playerInput.OnMouseRelease(mouseButton);
 }
 
+void PhysicsProgram::OnKeyPressed(int key)
+{
+	playerInput.OnKeyPressed(key);
+}
+
+void PhysicsProgram::OnKeyReleased(int key)
+{
+	playerInput.OnKeyReleased(key);
+}
+
 PhysicsObject& PhysicsProgram::AddPhysicsObject(PhysicsObject&& pObject)
 {
-	pObjects.emplace_back(pObject);
-	return pObjects[pObjects.size() - 1];
+	return collisionManager.AddPhysicsObject(pObject);
 }
 
 UIObject* PhysicsProgram::AddUIObject(UIObject* uiObject)
@@ -138,7 +140,7 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 
 void PhysicsProgram::ResetPhysics()
 {
-	pObjects.clear();
+	collisionManager.ClearPhysicsBodies();
 	collisionPoints.clear();
 
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
@@ -150,11 +152,11 @@ void PhysicsProgram::ResetPhysics()
 
 PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)
 {
-	return collisionManager.PointCast(point, pObjects, includeStatic);
+	return collisionManager.PointCast(point, includeStatic);
 }
 
 void PhysicsProgram::ResolveCollisions()
 {
-	collisionManager.ResolveCollisions(pObjects);
+	collisionManager.ResolveCollisions();
 
 }

@@ -1,56 +1,46 @@
 #pragma once
 #include "PhysicsObject.h"
+#include "Collision.h"
 #include <vector>
 #include <iostream>
 class PhysicsProgram;
 
-enum class COLLISION_TYPE
-{
-	CIRCLECIRCLE,
-	CIRCLEPOLYGON,
-	CIRCLECAPSULE,
-	CIRCLEPLANE,
-	POLYGONPOLYGON,
-	POLYGONCAPSULE,
-	POLYGONPLANE,
-	CAPSULECAPSULE,
-	CAPSULEPLANE,
-	INVALID,
-	COUNT
-};
+typedef bool (*CollideFunction)(CollisionData& data);
 
-struct CollisionManifold
-{
-	CollisionManifold() { a = nullptr; b = nullptr; penetration = 0; type = (COLLISION_TYPE)0; }
-	CollisionManifold(PhysicsObject* a, PhysicsObject* b) : a(a), b(b) { penetration = 0; type = (COLLISION_TYPE)0; }
-
-	PhysicsObject* a;
-	PhysicsObject* b;
-	//not used rn, will be used to factor in rotation speed of objects + apply torque
-	Vector2 collisionPoints[1];
-	Vector2 collisionNormal;
-	float penetration;
-	COLLISION_TYPE type;
-};
-
+constexpr int DEFAULT_GRAVITY = 5;
 class CollisionManager
 {
 public:
-	CollisionManager(PhysicsProgram* program) : program(program) {}
+	CollisionManager(PhysicsProgram* program, float deltaTime, Vector2 gravity = Vector2{ 0, -DEFAULT_GRAVITY }) : program(program), deltaTime(deltaTime), gravity(gravity) {}
+	PhysicsObject* PointCast(Vector2 point, bool includeStatic = false);
 
-	void ResolveCollisions(std::vector<PhysicsObject>& pObjects);
+	void Update();
+	void DrawShapes();
 
-	PhysicsObject* PointCast(Vector2 point, std::vector<PhysicsObject>& pObjects, bool includeStatic = false);
+	void ResolveCollisions();
+	void UpdatePhysics();
+	PhysicsObject& AddPhysicsObject(PhysicsObject&& body);
+	PhysicsObject& AddPhysicsObject(PhysicsObject body);
+	void ClearPhysicsBodies();
+
+
+	inline float GetDeltaTime() { return deltaTime; }
+	inline void SetDeltaTime(float newDeltaTime) { deltaTime = newDeltaTime; }
 private:
 	bool CheckAABBCollision(AABB& a, AABB& b);
 	
-	void ResolveCollision(CollisionManifold& manifold);
-	bool EvaluateCollision(CollisionManifold& manifold);
-	void GetCollisionType(CollisionManifold& manifold);
+	void ResolveCollision(CollisionData& data);
+	bool EvaluateCollision(CollisionData& data);
 
-	std::vector<CollisionManifold> collisions;
+	std::vector<PhysicsObject> bodies;
+	std::vector<CollisionData> collisions;
 	
+	float deltaTime;
+	Vector2 gravity;
+
 	//for debug drawing
 	PhysicsProgram* program;
+	static CollideFunction collisionFunctions[4][4];
 };
+
 

@@ -80,6 +80,24 @@
     <ClCompile Include="ExtraMath.cpp">
       <Filter>Engine\MyAdditions</Filter>
     </ClCompile>
+    <ClCompile Include="Transform.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="CollisionFunctions.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="CircleShape.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="CapsuleShape.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PolygonShape.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="PlaneShape.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -177,6 +195,12 @@
     </ClInclude>
     <ClInclude Include="ExtraMath.hpp">
       <Filter>Engine\MyAdditions</Filter>
+    </ClInclude>
+    <ClInclude Include="Transform.h">
+      <Filter>Game\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Collision.h">
+      <Filter>Game\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -155,7 +155,10 @@
     <ClCompile Include="..\imgui\imgui_tables.cpp" />
     <ClCompile Include="..\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Button.cpp" />
+    <ClCompile Include="CapsuleShape.cpp" />
+    <ClCompile Include="CircleShape.cpp" />
     <ClCompile Include="Collider.cpp" />
+    <ClCompile Include="CollisionFunctions.cpp" />
     <ClCompile Include="CollisionManager.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
     <ClCompile Include="Example.cpp" />
@@ -165,12 +168,15 @@
     <ClCompile Include="GLFWCallbacks.cpp" />
     <ClCompile Include="LineRenderer.cpp" />
     <ClCompile Include="PhysicsProgram.cpp" />
+    <ClCompile Include="PlaneShape.cpp" />
     <ClCompile Include="PlayerInput.cpp" />
+    <ClCompile Include="PolygonShape.cpp" />
     <ClCompile Include="ShaderProgram.cpp" />
     <ClCompile Include="GameBase.cpp" />
     <ClCompile Include="Shape.cpp" />
     <ClCompile Include="Slider.cpp" />
     <ClCompile Include="TextRenderer.cpp" />
+    <ClCompile Include="Transform.cpp" />
     <ClCompile Include="TriangleRenderer.cpp" />
     <ClCompile Include="UIObject.cpp" />
     <ClCompile Include="Utilities.cpp" />
@@ -188,6 +194,7 @@
     <ClInclude Include="..\imgui\imstb_truetype.h" />
     <ClInclude Include="Button.h" />
     <ClInclude Include="Collider.h" />
+    <ClInclude Include="Collision.h" />
     <ClInclude Include="CollisionManager.h" />
     <ClInclude Include="Example.h" />
     <ClInclude Include="ExtraMath.hpp" />
@@ -205,6 +212,7 @@
     <ClInclude Include="Shape.h" />
     <ClInclude Include="Slider.h" />
     <ClInclude Include="TextRenderer.h" />
+    <ClInclude Include="Transform.h" />
     <ClInclude Include="TriangleRenderer.h" />
     <ClInclude Include="UIObject.h" />
     <ClInclude Include="Utilities.h" />

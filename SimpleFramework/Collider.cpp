@@ -3,63 +3,6 @@
 #include "CollisionManager.h"
 #include "PhysicsObject.h"
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// POLYGON COLLIDER
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//PolygonCollider::PolygonCollider(Vector2* vertices, int vertexCount, Vector2 centrePoint, PhysicsObject *attached)
-//{
-//	points = vertices;
-//	//memcpy(points, vertices, sizeof(Vector2) * vertexCount);
-//	pointCount = vertexCount;
-//	this->centrePoint = centrePoint;
-//	globalPoints = new Vector2[pointCount];
-//	this->attached = attached;
-//	CalculateGlobal();
-//}
-//void PolygonCollider::RenderShape(PhysicsProgram& program)
-//{
-//	program.GetLineRenderer().DrawRawShape((float*)globalPoints, pointCount);
-//}
-//
-//void PolygonCollider::CalculateGlobal()
-//{
-//	Matrix2x2 &mat = attached->GetScaleRotationMatrix();
-//	globalCentrePoint = centrePoint * mat;
-//
-//	for (size_t i = 0; i < pointCount; i++)
-//	{
-//		globalPoints[i] = points[i] * mat + globalCentrePoint;
-//	}
-//}
-//
-//
-//
-//
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//// CIRCLE COLLIDER
-////~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-//CircleCollider::CircleCollider(float radius, Vector2 centrePoint, PhysicsObject* attached)
-//{
-//	this->radius = radius;
-//	this->centrePoint = centrePoint;
-//	this->attached = attached;
-//
-//	CalculateGlobal();
-//}
-//
-//void CircleCollider::RenderShape(PhysicsProgram& program)
-//{
-//	program.GetLineRenderer().DrawCircle(attached->GetPosition() + centrePoint, radius);
-//}
-//
-//void CircleCollider::CalculateGlobal()
-//{
-//	Matrix2x2& mat = attached->GetScaleRotationMatrix();
-//	globalCentrePoint = centrePoint * mat;
-//	globalRadius = radius * attached->GetScale();
-//
-//}
-
 Collider::Collider(Shape* shape, float density, Vector3 colour)
 {
 	shapes = new Shape *[1];

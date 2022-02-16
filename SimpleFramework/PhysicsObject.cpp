@@ -6,8 +6,6 @@ const float sleepVelocityMag = 0.0001f; //(these are also squared)
 const float sleepAngularVelocityMag = 0.0001f;
 const float sleepTime = 0.2f;
 
-float PhysicsObject::gravity = 5;
-
 PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(Transform(data.position, data.rotation)), bounciness(data.bounciness), drag(data.drag), angularDrag(data.angularDrag)
 	,staticFriction(data.staticFriction), dynamicFriction(data.dynamicFriction)
 {
@@ -58,38 +56,20 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 	
 }
 
-void PhysicsObject::Update(PhysicsProgram& program)
+void PhysicsObject::Update(float deltaTime)
 {
-	transform.position += velocity * program.GetDeltaTime();
-	transform.rotation += angularVelocity * program.GetDeltaTime();
+	transform.position += velocity * deltaTime;
+	transform.rotation += angularVelocity * deltaTime;
 
 	//update transform
 	transform.UpdateData();
 	
-	if (iMass != 0) {
+	velocity += force * iMass * deltaTime;
+	angularVelocity += torque * iMomentOfInertia * deltaTime;
 
-		//(apply drag)
-		velocity += force * iMass * program.GetDeltaTime();
-
-		//(apply angular drag)
-		angularVelocity += torque * iMomentOfInertia * program.GetDeltaTime();
-
-		//clear force stuff
-		force = Vector2(0, 0);
-		torque = 0;
-
-		//add gravity force
-		force.y -= gravity / iMass;
-	}
-	else 
-	{
-		//clear force stuff
-		force = Vector2(0, 0);
-		torque = 0;
-	}
-	
-
-
+	//clear force stuff
+	force = Vector2(0, 0);
+	torque = 0;
 }
 
 void PhysicsObject::Render(PhysicsProgram& program)
