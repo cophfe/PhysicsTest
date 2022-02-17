@@ -10,19 +10,19 @@ static void SwitchShapeTool(Button& button, void* infoPointer, PlayerInput::HELD
 	button.DisableButton(disabledColour);
 }
 
-static void SwitchToCircle(Button& button, void* infoPointer) {
+void PlayerInput::SwitchToCircle(Button& button, void* infoPointer) {
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::CIRCLE);
 }
-static void SwitchToPolygon(Button& button, void* infoPointer) {
+void PlayerInput::SwitchToPolygon(Button& button, void* infoPointer) {
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::POLYGON);
 }
-static void SwitchToCapsule(Button& button, void* infoPointer) {
+void PlayerInput::SwitchToCapsule(Button& button, void* infoPointer) {
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::CAPSULE);
 }
-static void SwitchToPlane(Button& button, void* infoPointer) {
+void PlayerInput::SwitchToPlane(Button& button, void* infoPointer) {
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::PLANE);
 }
-static void SwitchToLineTool(Button& button, void* infoPointer){
+void PlayerInput::SwitchToLineTool(Button& button, void* infoPointer){
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::LINE);
 }
 #pragma endregion
@@ -35,23 +35,26 @@ static void SwitchModifierTool(Button& button, void* infoPointer, PlayerInput::H
 	button.DisableButton(disabledColour);
 }
 
-static void SwitchToGrabTool(Button& button, void* infoPointer){
+void PlayerInput::SwitchToGrabTool(Button& button, void* infoPointer){
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::GRAB);
 }
-static void SwitchToLaunchTool(Button& button, void* infoPointer) {
+
+void PlayerInput::SwitchToLaunchTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::LAUNCH);
 }
-static void SwitchToDeleteTool(Button& button, void* infoPointer) {
+
+void PlayerInput::SwitchToDeleteTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::DELETE);
 }
-static void SwitchToRotateTool(Button& button, void* infoPointer) {
+
+void PlayerInput::SwitchToRotateTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::ROTATE);
 }
 #pragma endregion
 
 #pragma region OTHER UI FUNCTIONS
 
-static void ClearPhysicsObjects(Button& button, void* infoPointer)
+void PlayerInput::ClearPhysicsObjects(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
 	program->ResetPhysics();
@@ -59,7 +62,7 @@ static void ClearPhysicsObjects(Button& button, void* infoPointer)
 
 //static bool updateCollision = false;
 
-static void PauseUnpause(Button& button, void* infoPointer)
+void PlayerInput::PauseUnpause(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
 
@@ -84,7 +87,8 @@ static void PauseUnpause(Button& button, void* infoPointer)
 	program->SetPauseState(!paused);
 }
 
-static void StepOnce(Button& button, void* infoPointer)
+
+void PlayerInput::StepOnce(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
 
@@ -96,7 +100,7 @@ static void StepOnce(Button& button, void* infoPointer)
 	//updateCollision = !updateCollision;
 }
 
-static void SpeedUnspeed(Button& button, void* infoPointer)
+void PlayerInput::SpeedUnspeed(Button& button, void* infoPointer)
 {
 	static bool capped = false;
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
@@ -118,7 +122,8 @@ static void SpeedUnspeed(Button& button, void* infoPointer)
 
 	capped = !capped;
 }
-static void RadiusChanged(Slider& slider, void* infoPointer, float value)
+
+void PlayerInput::RadiusChanged(Slider& slider, void* infoPointer, float value)
 {
 	PlayerInput* playerInput = (PlayerInput*)infoPointer;
 	playerInput->SetShapeRadius(value);
@@ -136,10 +141,10 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	const UIObject::ANCHOR_POINT anchor = UIObject::ANCHOR_POINT::TOP_RIGHT;
 
 	
-	Button* speedUpButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 110), UIObject::ANCHOR_POINT::TOP_LEFT, ">>", textColour, backgroundColour, program, 0, 8, edgeColour));
+	speedUpButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 110), UIObject::ANCHOR_POINT::TOP_LEFT, ">>", textColour, backgroundColour, program, 0, 8, edgeColour));
 	speedUpButton->SetOnClick(SpeedUnspeed, &program);
 
-	Button* pauseButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 70), UIObject::ANCHOR_POINT::TOP_LEFT, "I I", textColour, backgroundColour, program, 0, 8, edgeColour));
+	pauseButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 70), UIObject::ANCHOR_POINT::TOP_LEFT, "I I", textColour, backgroundColour, program, 0, 8, edgeColour));
 	pauseButton->SetOnClick(PauseUnpause, &program);
 	stepForwardButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(70, 70), UIObject::ANCHOR_POINT::TOP_LEFT, ">", textColour, backgroundColour, program, 0, 8, edgeColour));
 	stepForwardButton->SetEnabled(false);
@@ -174,22 +179,22 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 
 	i++;
 	Slider* radiusSlider = (Slider*)program.AddUIObject(
-		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, backgroundColour, textColour * 0.3f, program
-			, 4, true, true, "Radius: ", textColour));
+		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, textColour * 0.5f, backgroundColour, edgeColour, program
+			, 4, true, true, "Radius: ", edgeColour));
 	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
 
 	edgeColour = Vector3(0, 0, 1);
 	startPos.x += size.x + 5;
 	// MODIFIER TOOL BUTTONS
 	i = 0;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Launch", textColour, backgroundColour, program, 0, 8, edgeColour));
-	modifierButtons.push_back(newButton);
-	modifierButtons[i]->SetOnClick(SwitchToLaunchTool, this);
-	newButton->DisableButton(disabledColour);
-	i++;
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Grab", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToGrabTool, this);
+	newButton->DisableButton(disabledColour);
+	i++;
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Launch", textColour, backgroundColour, program, 0, 8, edgeColour));
+	modifierButtons.push_back(newButton);
+	modifierButtons[i]->SetOnClick(SwitchToLaunchTool, this);
 	i++;
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Rotate", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
@@ -198,19 +203,32 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Delete", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToDeleteTool, this);
-	
-	
-	
-
 }
 
 void PlayerInput::Update()
 {
-	
+	if (!usingTool)
+	{
+		auto* newHighlightedObject = program.GetGameObjectUnderPoint(program.GetCursorPos());
+		if (newHighlightedObject != highlighted)
+		{
+			if (highlighted != nullptr)
+				highlighted->colour = afterCreatedColour;
+
+			if (newHighlightedObject != nullptr)
+			{
+				newHighlightedObject->colour = highlightedColour;
+			}
+			highlighted = newHighlightedObject;
+		}
+
+	}
 }
 
 float GetAngleOfVector2(Vector2 vec) 
 {
+	if (isnan(vec.x) || isnan(vec.y))
+		vec = Vector2(0, 1);
 	//angle between 0,1 and vector
 	return atan2(-vec.x, vec.y);
 }
@@ -234,7 +252,7 @@ void PlayerInput::Render()
 
 				float angle = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
 
-				heldShape->RenderShape(Transform(startingPosition, angle), program, heldColour);
+				PhysicsProgram::DrawShape(heldShape, Transform(startingPosition, angle), heldColour, &program);
 				break;
 			}
 			case HELD_SHAPE_TOOL::LINE:
@@ -242,8 +260,9 @@ void PlayerInput::Render()
 				break;
 			case HELD_SHAPE_TOOL::CAPSULE:
 				auto t = Transform(Vector2(0, 0), 0);
-				CapsuleShape(startingPosition, program.GetCursorPos(), shapeRadius)
-					.RenderShape(program, t, heldColour);
+				CapsuleShape shape = CapsuleShape(startingPosition, program.GetCursorPos(), shapeRadius);
+
+				PhysicsProgram::DrawShape(&shape, t, heldColour, &program);
 				break;
 			}
 		}
@@ -252,16 +271,26 @@ void PlayerInput::Render()
 			switch (heldModifierTool)
 			{
 			case HELD_MODIFIER_TOOL::LAUNCH:
+				if (heldObject != nullptr)
+				{
+					program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
+					//grabbedObject->GetTransform().rotation = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
+				}
 				break;
 			case HELD_MODIFIER_TOOL::GRAB:
-				if (grabbedObject != nullptr)
+				if (heldObject != nullptr)
 				{
-					Vector2 startPos = grabbedObject->GetTransform().TransformPoint(startingPosition);
+					Vector2 startPos = heldObject->GetTransform().TransformPoint(startingPosition);
 					program.GetLineRenderer().DrawLineSegment(startPos, program.GetCursorPos(), heldColour);
-					grabbedObject->AddForceAtPosition(10.0f * (program.GetCursorPos() - startPos), startPos);
+					heldObject->AddVelocityAtPosition(program.GetDeltaTime() * (program.GetCursorPos() - startPos), startPos);
 				}
 				break;
 			case HELD_MODIFIER_TOOL::ROTATE:
+				if (heldObject != nullptr)
+				{
+					program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
+					heldObject->GetTransform().rotation = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
+				}
 				break;
 			case HELD_MODIFIER_TOOL::DELETE:
 				break;
@@ -313,20 +342,32 @@ void PlayerInput::OnMouseClick(int mouseButton)
 
 				switch (heldModifierTool)
 				{
+				case HELD_MODIFIER_TOOL::ROTATE:
 				case HELD_MODIFIER_TOOL::LAUNCH:
-					break;
-				case HELD_MODIFIER_TOOL::GRAB:
-					//grab tool startingPosition will be relative to physicsObject transform, so it can be updated over time
-					//do something like program.GetCollisionManager().PointCast(startingPosition) to get an object under the cursor
-					grabbedObject = program.GetObjectUnderPoint(startingPosition, false);
-					if (grabbedObject == nullptr)
+					heldObject = program.GetObjectUnderPoint(startingPosition, false);
+					if (heldObject == nullptr)
 					{
 						usingTool = false;
 						return;
 					}
-					startingPosition = grabbedObject->GetTransform().InverseTransformPoint(startingPosition);
+					
+					lastMass = heldObject->GetMass();
+					lastInertia = heldObject->GetInertia();
+					heldObject->SetInverseMass(0);
+					heldObject->SetInverseInertia(0);
+					heldObject->SetVelocity(Vector2(0, 0));
+					heldObject->SetAngularVelocity(0);
 					break;
-				case HELD_MODIFIER_TOOL::ROTATE:
+				case HELD_MODIFIER_TOOL::GRAB:
+					//grab tool startingPosition will be relative to physicsObject transform, so it can be updated over time
+					//do something like program.GetCollisionManager().PointCast(startingPosition) to get an object under the cursor
+					heldObject = program.GetObjectUnderPoint(startingPosition, false);
+					if (heldObject == nullptr)
+					{
+						usingTool = false;
+						return;
+					}
+					startingPosition = heldObject->GetTransform().InverseTransformPoint(startingPosition);
 					break;
 				case HELD_MODIFIER_TOOL::DELETE:
 					break;
@@ -355,7 +396,7 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 			case HELD_SHAPE_TOOL::CIRCLE: //pass through
 			case HELD_SHAPE_TOOL::POLYGON:
 			{
-				auto* collider = new Collider(heldShape, 1.0f, afterCreatedColour);
+				auto* collider = new Collider(heldShape, 1.0f);
 				PhysicsData data = PhysicsData(
 					startingPosition,
 					GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition)),
@@ -364,7 +405,8 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 
 				heldShape = nullptr;
 
-				program.AddPhysicsObject(PhysicsObject(data, collider)).AddVelocity( (program.GetCursorPos() - startingPosition));
+				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour)
+					->body->AddVelocity( (program.GetCursorPos() - startingPosition));
 			}
 			break;
 			case HELD_SHAPE_TOOL::LINE:
@@ -374,8 +416,8 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 					0,
 					false,
 					false);
-				auto* collider = new Collider(new CapsuleShape(startingPosition, program.GetCursorPos()), 1.0f, afterCreatedColour);
-				program.AddPhysicsObject(PhysicsObject(data, collider));
+				auto* collider = new Collider(new CapsuleShape(startingPosition, program.GetCursorPos()), 1.0f);
+				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour);
 			}
 			break;
 			case HELD_SHAPE_TOOL::CAPSULE:
@@ -392,14 +434,13 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 				Collider* collider;
 				if (delta.x == 52 && delta.y == 0) //capsules NEED pA to be different from pB or they will not collide properly
 				{
-					collider = new Collider(new CircleShape(shapeRadius, Vector2(0,0)), 1.0f, afterCreatedColour);
+					collider = new Collider(new CircleShape(shapeRadius, Vector2(0,0)), 1.0f);
 				}
 				else {
-					collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f, afterCreatedColour);
+					collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f);
 				}
 
-				
-				program.AddPhysicsObject(PhysicsObject(data, collider));
+				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour);
 			}
 			break;
 			
@@ -423,10 +464,17 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 			switch (heldModifierTool)
 			{
 			case HELD_MODIFIER_TOOL::LAUNCH:
+				heldObject->SetInverseMass(lastMass);
+				heldObject->SetInverseInertia(lastInertia);
+				heldObject->AddImpulseAtPosition((program.GetCursorPos() - startingPosition) / heldObject->GetInverseMass(), program.GetCursorPos());
+				heldObject = nullptr;
 				break;
 			case HELD_MODIFIER_TOOL::GRAB:
 				break;
 			case HELD_MODIFIER_TOOL::ROTATE:
+				heldObject->SetInverseMass(lastMass);
+				heldObject->SetInverseInertia(lastInertia);
+				heldObject = nullptr;
 				break;
 			case HELD_MODIFIER_TOOL::DELETE:
 				break;
@@ -470,6 +518,15 @@ void PlayerInput::SetHeldModifierTool(HELD_MODIFIER_TOOL type)
 	}
 }
 
+PlayerInput::~PlayerInput()
+{
+	if (heldShape != nullptr)
+	{
+		delete heldShape;
+		heldShape = nullptr;
+	}
+}
+
 void PlayerInput::SetShapeRadius(float rad)
 {
 	shapeRadius = rad;
@@ -477,13 +534,26 @@ void PlayerInput::SetShapeRadius(float rad)
 
 void PlayerInput::OnKeyPressed(int key)
 {
+	switch (key)
+	{
+	case GLFW_KEY_ESCAPE:
+		SetHeldShapeTool(heldShapeTool);
+		SetHeldModifierTool(heldModifierTool);
+		break;
+	case GLFW_KEY_SPACE:
+		PauseUnpause(*pauseButton, &program);
+		break;
+	case GLFW_KEY_RIGHT_SHIFT:
+	case GLFW_KEY_LEFT_SHIFT:
+		SpeedUnspeed(*speedUpButton, &program);
+		break;
+	case GLFW_KEY_SLASH:
+		StepOnce(*speedUpButton, &program);
+		break;
+	}
 }
 
 void PlayerInput::OnKeyReleased(int key)
 {
-	if (key == GLFW_KEY_ESCAPE)
-	{
-		SetHeldShapeTool(heldShapeTool);
-		SetHeldModifierTool(heldModifierTool);
-	}
+	
 }

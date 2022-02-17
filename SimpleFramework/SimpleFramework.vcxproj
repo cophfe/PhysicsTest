@@ -163,6 +163,7 @@
     <ClCompile Include="EntryPoint.cpp" />
     <ClCompile Include="Example.cpp" />
     <ClCompile Include="ExtraMath.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="GLFWCallbacks.cpp" />
@@ -198,6 +199,7 @@
     <ClInclude Include="CollisionManager.h" />
     <ClInclude Include="Example.h" />
     <ClInclude Include="ExtraMath.hpp" />
+    <ClInclude Include="GameObject.h" />
     <ClInclude Include="PhysicsObject.h" />
     <ClInclude Include="glad.h" />
     <ClInclude Include="GLFWCallbacks.h" />

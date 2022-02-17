@@ -23,7 +23,7 @@ struct PhysicsData
 	float dynamicFriction;
 	PhysicsData() = default;
 	PhysicsData(Vector2 position, float rotation, bool isDynamic = true, bool isRotatable = true, float bounciness = 0.2f, 
-		float drag = 0, float angularDrag = 0, float mass = -1, float staticFriction = 0.9f, float dynamicFriction = 0.5f)
+		float drag = 0.1f, float angularDrag = 0.1f, float mass = -1, float staticFriction = 0.9f, float dynamicFriction = 0.5f)
 		: position(position), rotation(rotation), isDynamic(isDynamic), isRotatable(isRotatable), bounciness(bounciness), drag(drag), angularDrag(angularDrag), mass(mass), staticFriction(staticFriction), dynamicFriction(dynamicFriction)
 	{}
 };
@@ -36,7 +36,6 @@ public:
 	PhysicsObject(PhysicsData& data, Collider* collider);
 	
 	void Update(float deltaTime);
-	void Render(PhysicsProgram& program);
 	void GenerateAABB();
 
 	//getters
@@ -53,9 +52,9 @@ public:
 	inline float		GetDrag()					{ return drag; }
 	inline float		GetAngularDrag()			{ return angularDrag; }
 	inline float		GetMass()					{ return 1.0f / iMass; }
-	inline float		GetInertia()				{ return 1.0f / iMomentOfInertia; }
+	inline float		GetInertia()				{ return 1.0f / iInertia; }
 	inline float		GetInverseMass()			{ return iMass; }
-	inline float		GetInverseInertia()			{ return iMomentOfInertia; }
+	inline float		GetInverseInertia()			{ return iInertia; }
 	inline Transform&	GetTransform()				{ return transform; }
 
 	//setters
@@ -71,7 +70,9 @@ public:
 	inline void	SetDrag(float drag)					{ this->drag = drag; }
 	inline void	SetAngularDrag(float aDrag)			{ this->angularDrag = aDrag;}
 	inline void	SetMass(float mass)					{ this->iMass = 1.0f/mass; }
-	inline void	SetMomentOfInertia(float mOI)		{ iMomentOfInertia = 1.0f/mOI; }
+	inline void	SetInertia(float mOI)				{ iInertia = 1.0f/mOI; }
+	inline void	SetInverseMass(float iMass)			{ this->iMass = iMass; }
+	inline void	SetInverseInertia(float iMOI){ iInertia = iMOI; }
 
 	//adders?
 	inline void AddPosition(Vector2 position)		{ transform.position += position;  }
@@ -80,7 +81,7 @@ public:
 	inline void AddVelocity(Vector2 velocity)		{ this->velocity += velocity;  }
 	inline void AddAngularVelocity(float velocity)	{ angularVelocity += velocity;  }
 	inline void AddImpulse(Vector2 impulse)			{ velocity += impulse * iMass;  }
-	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iMomentOfInertia;  }
+	inline void AddAngularImpulse(float impulse)	{ angularVelocity += impulse * iInertia;  }
 	void AddForceAtPosition(Vector2 force, Vector2 point);
 	void AddImpulseAtPosition(Vector2 force, Vector2 point);
 	void AddVelocityAtPosition(Vector2 impulse, Vector2 point);
@@ -118,7 +119,7 @@ protected:
 	float staticFriction;
 	float dynamicFriction;
 	//the mass moment of inertia
-	float iMomentOfInertia;
+	float iInertia;
 
 
 	//(just in case something is not moving, so no movement calculations have to be done)

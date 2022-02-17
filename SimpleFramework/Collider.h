@@ -7,17 +7,19 @@ class PhysicsObject;
 class CollisionManager;
 class Transform;
 
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// BASE COLLIDER CLASS
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//struct ShapeData 
+//{
+//	Shape* shape;
+//	float iMass;
+//	float iInertia;
+//};
+
 class Collider
 {
 
 public:
-	Collider(Shape* shape, float density = 1, Vector3 colour = Vector3(1.0f, 1.0f, 1.0f));
-	Collider(Shape** shapes, int shapeCount, float density = 1, Vector3 colour = Vector3(1.0f, 1.0f, 1.0f));
-
-	void RenderShape(PhysicsProgram& program);
+	Collider(Shape* shape, float density = 1);
+	Collider(Shape** shapes, int shapeCount, float density = 1);
 
 	//calculaters
 	void CalculateMass(float& massVar, float& inertiaVar);
@@ -38,7 +40,7 @@ private:
 	friend PhysicsObject;
 	
 	//centres collider about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
-	//returns the offset from rotation
+	//returns the applied offset (could be used to keep the collider's shapes in the same worldspace position
 	Vector2 CentreShapeAboutZero();
 
 	void SetAttached(PhysicsObject* attached) { this->attached = attached; }
@@ -49,6 +51,4 @@ private:
 
 	Shape** shapes;
 	int shapeCount;
-
-	Vector3 colour;
 };

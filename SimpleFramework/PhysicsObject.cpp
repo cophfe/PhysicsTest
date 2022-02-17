@@ -12,11 +12,11 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 	if (!data.isDynamic)
 	{
 		iMass = 0;
-		iMomentOfInertia = 0;
+		iInertia = 0;
 	}
 	else if (!data.isRotatable)
 	{
-		iMomentOfInertia = 0;
+		iInertia = 0;
 	}
 	else if (data.mass == -1) 
 	{
@@ -29,13 +29,13 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 				iMass = 1 / mass;
 
 			if (inertia == 0)
-				iMomentOfInertia = 0;
+				iInertia = 0;
 			else
-				iMomentOfInertia = 1 / inertia;
+				iInertia = 1 / inertia;
 		}
 		else {
 			iMass = 0;
-			iMomentOfInertia = 0;
+			iInertia = 0;
 		}
 	}
 	
@@ -46,14 +46,10 @@ PhysicsObject::PhysicsObject(PhysicsData& data, Collider* collider) : transform(
 		if (!collider->CanBeDynamic()) 
 		{
 			iMass = 0;
-			iMomentOfInertia = 0;
+			iInertia = 0;
 		}
 		collider->CalculateAABB(transform);
 	}
-	
-
-
-	
 }
 
 void PhysicsObject::Update(float deltaTime)
@@ -65,25 +61,15 @@ void PhysicsObject::Update(float deltaTime)
 	transform.UpdateData();
 	
 	velocity += force * iMass * deltaTime;
-	angularVelocity += torque * iMomentOfInertia * deltaTime;
+	angularVelocity += torque * iInertia * deltaTime;
+	
+	//based on box2d's drag method
+	velocity /= (1.0f + drag * deltaTime);
+	angularVelocity /= (1.0f + angularDrag * deltaTime);
 
 	//clear force stuff
 	force = Vector2(0, 0);
 	torque = 0;
-}
-
-void PhysicsObject::Render(PhysicsProgram& program)
-{
-	if (collider) {
-		collider->RenderShape(program);
-
-		//auto& aABB = collider->aABB;
-		//program.GetLineRenderer().DrawLineSegment(aABB.max, Vector2(aABB.max.x, aABB.min.y));
-		//program.GetLineRenderer().DrawLineSegment(Vector2(aABB.max.x, aABB.min.y), aABB.min);
-		//program.GetLineRenderer().DrawLineSegment(aABB.min, Vector2(aABB.min.x, aABB.max.y));
-		//program.GetLineRenderer().DrawLineSegment(Vector2(aABB.min.x, aABB.max.y), aABB.max);
-
-	}
 }
 
 void PhysicsObject::GenerateAABB() {
@@ -104,7 +90,7 @@ void PhysicsObject::AddImpulseAtPosition(Vector2 impulse, Vector2 point)
 	this->velocity += impulse * iMass;
 
 	//transform.position should be the centre of mass
-	this->angularVelocity += em::Cross(point - transform.position, impulse) * iMomentOfInertia;
+	this->angularVelocity += em::Cross(point - transform.position, impulse) * iInertia;
 }
 
 void PhysicsObject::AddVelocityAtPosition(Vector2 velocity, Vector2 point)
@@ -135,7 +121,7 @@ PhysicsObject::PhysicsObject(const PhysicsObject& other) : staticFriction(other.
 	drag = other.drag;
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
-	iMomentOfInertia = other.iMomentOfInertia;
+	iInertia = other.iInertia;
 }
 
 PhysicsObject::PhysicsObject(PhysicsObject&& other) : staticFriction(other.staticFriction), dynamicFriction(other.dynamicFriction)
@@ -154,7 +140,7 @@ PhysicsObject::PhysicsObject(PhysicsObject&& other) : staticFriction(other.stati
 	drag = other.drag;
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
-	iMomentOfInertia = other.iMomentOfInertia;
+	iInertia = other.iInertia;
 }
 
 PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
@@ -174,7 +160,7 @@ PhysicsObject& PhysicsObject::operator=(const PhysicsObject& other)
 	drag = other.drag;
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
-	iMomentOfInertia = other.iMomentOfInertia;
+	iInertia = other.iInertia;
 
 	return *this;
 }
@@ -197,7 +183,7 @@ PhysicsObject& PhysicsObject::operator=(PhysicsObject&& other)
 	drag = other.drag;
 	angularDrag = other.angularDrag;
 	iMass = other.iMass;
-	iMomentOfInertia = other.iMomentOfInertia;
+	iInertia = other.iInertia;
 
 	return *this;
 }

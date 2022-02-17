@@ -1,13 +1,16 @@
+#define _CRTDBG_MAP_ALLOC
 #include <iostream>
+#include <stdlib.h>
+#include <crtdbg.h>
 
-
-//Include the necessary header file here for your game type
 #include "PhysicsProgram.h"
 
 
 int main()
 {
-	PhysicsProgram program;	//Make the type of this variable your game application and you'll be good to go.
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+
+	PhysicsProgram program;
 
 	while (program.IsRunning())
 	{

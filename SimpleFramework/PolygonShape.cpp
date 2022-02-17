@@ -31,7 +31,6 @@ bool PolygonShape::PointCast(Vector2 point, Transform& transform)
 
 	}
 
-	std::cout << "Point cast returned " << intersectCount << "\n";
 	return intersectCount == 1;
 
 }
@@ -65,16 +64,6 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia = in; //- mass * em::SquareLength(centrePoint);//(translate mass moment of inertia to be relative to centrepoint)
 }
 
-void PolygonShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
-{
-	auto& lines = program.GetLineRenderer();
-	for (size_t i = 0; i < pointCount; i++)
-	{
-		lines.AddPointToLine(transform.TransformPoint(points[i]), colour);
-	}
-	lines.FinishLineLoop();
-}
-
 AABB PolygonShape::CalculateAABB(Transform& transform)
 {
 	Vector2 point = transform.TransformPoint(points[0]);
@@ -100,6 +89,11 @@ AABB PolygonShape::CalculateAABB(Transform& transform)
 SHAPE_TYPE PolygonShape::GetType()
 {
 	return SHAPE_TYPE::POLYGON;
+}
+
+Vector2 PolygonShape::GetCentrePoint()
+{
+    return Vector2();
 }
 
 Shape* PolygonShape::Clone()

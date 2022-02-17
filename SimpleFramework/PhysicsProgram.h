@@ -1,6 +1,6 @@
 #pragma once
 #include "GameBase.h"
-#include "PhysicsObject.h"
+#include "GameObject.h"
 #include "CollisionManager.h"
 #include "PlayerInput.h"
 #include <forward_list>
@@ -21,14 +21,15 @@ public:
 	void OnKeyPressed(int key);
 	void OnKeyReleased(int key);
 
-	PhysicsObject& AddPhysicsObject(PhysicsObject&& pObject);
+	GameObject* AddGameObject(GameObject* object);
+	GameObject* AddGameObject(PhysicsObject* pObject, Vector3 colour);
 	UIObject* AddUIObject(UIObject* uiObject);
 
 	//set
 	void SetUIInputEnabled(bool enabled) { uiEnabled = enabled; }
 	void SetPauseState(bool state) { paused = state; }
 	//get
-	PlayerInput GetPlayerInput() { return playerInput; }
+	PlayerInput& GetPlayerInput() { return playerInput; }
 	bool GetPauseState() { return paused; }
 	inline const float GetDeltaTime() { return deltaTime; }
 	inline LineRenderer& GetLineRenderer() { return lines; }
@@ -45,12 +46,27 @@ public:
 	void OnWindowResize(int width, int height);
 	void ResetPhysics();
 	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false);
+	GameObject* GetGameObjectUnderPoint(Vector2 point, bool includeStatic = false);
 
 	void ResolveCollisions();
+
+	//shape render callbacks
+	static void DrawShape(Shape* shape, Transform shapeTransform, Vector3 shapeColour, void* physicsProgram);
+	static void DrawCircle(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
+	static void DrawPolygon(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
+	static void DrawCapsule(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
+	static void DrawPlane(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
+
+	~PhysicsProgram();
+	PhysicsProgram(const PhysicsProgram& other) = delete;
+	PhysicsProgram& operator= (const PhysicsProgram& other) = delete;
+
 private:
+
 	friend CollisionManager;
 	static std::vector<Vector2> collisionPoints;
 
+	std::vector<GameObject*> gameObjects;
 	std::vector<UIObject*> uiObjects;
 	bool uiHeldDown;
 	bool uiEnabled = true;

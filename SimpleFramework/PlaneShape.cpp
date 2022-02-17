@@ -35,19 +35,6 @@ void PlaneShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia = 0;
 }
 
-void PlaneShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
-{
-	auto& lR = program.GetLineRenderer();
-
-	Vector2 tNormal = transform.TransformDirection(normal);
-
-	Vector2 tPlanePoint = transform.TransformPoint(normal * distance);
-	float tDist = glm::dot(normal, tPlanePoint);
-
-	Vector2 tangent = 1000.0f * Vector2{ tNormal.y, -tNormal.x };
-	lR.DrawLineSegment(tPlanePoint + tangent, tPlanePoint - tangent, colour);
-}
-
 AABB PlaneShape::CalculateAABB(Transform& transform)
 {
 	return AABB{ Vector2{INFINITY, INFINITY}, Vector2{-INFINITY, -INFINITY} };
@@ -61,4 +48,9 @@ SHAPE_TYPE PlaneShape::GetType()
 Shape* PlaneShape::Clone()
 {
 	return new PlaneShape(*this);
+}
+
+Vector2 PlaneShape::GetCentrePoint()
+{
+    return normal * distance; 
 }

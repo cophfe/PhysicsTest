@@ -3,10 +3,10 @@
 #include <format>
 
 Slider::Slider(Vector2 size, ANCHOR_POINT anchor, Vector2 anchoredPosition, float minFill, float maxFill,
-	float currentFill, Vector3 fillColour, Vector3 backgroundColour, PhysicsProgram& program, float fillPadding,
+	float currentFill, Vector3 fillColour, Vector3 backgroundColour, Vector3 edgeColour, PhysicsProgram& program, float fillPadding,
 	bool fillDirectionIsLeft, bool useText, std::string label, Vector3 textColour, float textScale, float textPadding)
 	: fillPadding(Vector2(fillPadding, fillPadding)), textScale(textScale), textPadding(Vector2(textPadding, textPadding)), textColour(textColour)
-	, fillMin(minFill), backgroundColour(backgroundColour), fillColour(fillColour), useText(useText), label(label)
+	, fillMin(minFill), backgroundColour(backgroundColour), fillColour(fillColour), useText(useText), label(label), edgeColour(edgeColour)
 {
 	fillOffset = maxFill - minFill;
 	currentFill = glm::clamp(currentFill, minFill, maxFill);
@@ -75,12 +75,18 @@ void Slider::Draw(PhysicsProgram& program)
 
 	auto& triR = program.GetTriangleRenderer();
 	//bg
-	triR.QueueBox(fillAABB.min - fillPadding, fillAABB.max + fillPadding, backgroundColour);
+	AABB backgroundAABB = AABB{ fillAABB.max + fillPadding, fillAABB.min - fillPadding };
+	triR.QueueBox(backgroundAABB.min, backgroundAABB.max, backgroundColour);
 	//fill
 	triR.QueueBox(fillAABB.min, Vector2(fillAABB.min.x + fillAmount * (fillAABB.max.x - fillAABB.min.x), fillAABB.max.y), currentFillColour);
 
-	auto& texR = program.GetTextRenderer();
+	auto& lineR = program.GetUILineRenderer();
+	lineR.DrawLineSegment(backgroundAABB.max, Vector2(backgroundAABB.max.x, backgroundAABB.min.y), edgeColour);
+	lineR.DrawLineSegment(Vector2(backgroundAABB.max.x, backgroundAABB.min.y), backgroundAABB.min, edgeColour);
+	lineR.DrawLineSegment(backgroundAABB.min, Vector2(backgroundAABB.min.x, backgroundAABB.max.y), edgeColour);
+	lineR.DrawLineSegment(Vector2(backgroundAABB.min.x, backgroundAABB.max.y), backgroundAABB.max, edgeColour);
 
+	auto& texR = program.GetTextRenderer();
 	std::string numText = std::to_string((fillAmount * fillOffset + fillMin));
 	numText = numText.substr(0, numText.find(".") + 3); //format with 2 decimal points (rounds down)
 	texR.QueueText(label + numText, fillAABB.min + fillPadding + textPadding, textScale, textColour);

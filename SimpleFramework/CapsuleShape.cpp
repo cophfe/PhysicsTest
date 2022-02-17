@@ -26,24 +26,7 @@ bool CapsuleShape::PointCast(Vector2 point, Transform& transform)
 	point = transform.InverseTransformPoint(point);
 
 	//if point is inside the two circles, it is colliding
-	if (em::SquareLength(pointA - point) > radius * radius || em::SquareLength(pointB - point) > radius * radius)
-		return true;
-
-	//if the point is inside the oriented bounding box, it is colliding
-	Vector2 tangent = glm::normalize(pointA - pointB);
-	Vector2 normal = { -tangent.y, tangent.x };
-
-	//y axis, with 0 being the min of the OBB
-	float distanceFromLine = glm::dot(normal, point) - glm::dot(normal, pointA);
-	//x axis, 0 being the min of the OBB
-	float distanceAlongLine = glm::dot(tangent, point) - glm::dot(tangent, pointA);
-
-	if (glm::abs(distanceFromLine) < radius
-		&& distanceAlongLine > 0 && distanceAlongLine < glm::dot(tangent, pointB))
-	{
-		return true;
-	}
-	else return false;
+	return glm::length(em::ClosestPointOnLine(pointA, pointB, point) - point) <= radius;
 }
 
 void CapsuleShape::CalculateMass(float& mass, float& inertia, float density)
@@ -72,31 +55,6 @@ void CapsuleShape::CalculateMass(float& mass, float& inertia, float density)
 
 	//success! (probably, I have no idea how to check)
 
-
-}
-
-void CapsuleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
-{
-	//if the buffer is big enough, this is a capsule, otherwise treat it as a line
-	if (radius > 0.01f)
-	{
-		Vector2 a = transform.TransformPoint(pointA);
-		Vector2 b = transform.TransformPoint(pointB);
-		auto& lR = program.GetLineRenderer();
-		lR.DrawCircle(a, radius, colour, 32);
-		lR.DrawCircle(b, radius, colour, 32);
-
-		Vector2 radiusAddition = glm::normalize(a - b) * radius;
-		radiusAddition = { radiusAddition.y, -radiusAddition.x };
-
-		lR.DrawLineSegment(a + radiusAddition, b + radiusAddition, colour);
-		lR.DrawLineSegment(a - radiusAddition, b - radiusAddition, colour);
-	}
-	else {
-		LineRenderer& lR = program.GetLineRenderer();
-		lR.DrawLineSegment(transform.TransformPoint(pointA),
-			transform.TransformPoint(pointB), colour);
-	}
 
 }
 
@@ -135,4 +93,9 @@ SHAPE_TYPE CapsuleShape::GetType()
 Shape* CapsuleShape::Clone()
 {
 	return new CapsuleShape(*this);
+}
+
+Vector2 CapsuleShape::GetCentrePoint()
+{
+	return (pointA + pointB) * 0.5f;
 }

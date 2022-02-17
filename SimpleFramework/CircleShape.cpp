@@ -29,12 +29,6 @@ void CircleShape::CalculateMass(float& mass, float& inertia, float density)
 	inertia += mass * em::SquareLength(centrePoint);
 }
 
-void CircleShape::RenderShape(PhysicsProgram& program, Transform& transform, Vector3 colour)
-{
-	program.GetLineRenderer().DrawCircle(transform.TransformPoint(centrePoint), radius, colour);
-	program.GetLineRenderer().DrawLineSegment(transform.TransformPoint(Vector2(0, radius)), transform.TransformPoint(Vector2(0, radius * 0.5f)), colour);
-}
-
 AABB CircleShape::CalculateAABB(Transform& transform)
 {
 	AABB aABB;
@@ -54,4 +48,9 @@ SHAPE_TYPE CircleShape::GetType()
 Shape* CircleShape::Clone()
 {
 	return new CircleShape(*this);
+}
+
+Vector2 CircleShape::GetCentrePoint()
+{
+	return Vector2();
 }

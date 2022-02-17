@@ -3,29 +3,19 @@
 #include "CollisionManager.h"
 #include "PhysicsObject.h"
 
-Collider::Collider(Shape* shape, float density, Vector3 colour)
+Collider::Collider(Shape* shape, float density)
 {
 	shapes = new Shape *[1];
 	shapes[0] = shape;
 	shapeCount = 1;
 	this->density = density;
-	this->colour = colour;
 }
 
-Collider::Collider(Shape** shapes, int shapeCount, float density, Vector3 colour)
+Collider::Collider(Shape** shapes, int shapeCount, float density)
 {
 	this->shapes = shapes;
 	this->shapeCount = shapeCount;
 	this->density = density;
-	this->colour = colour;
-}
-
-void Collider::RenderShape(PhysicsProgram& program) {
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		shapes[i]->RenderShape(attached->transform, program, colour);
-		
-	}
 }
 
 void Collider::CalculateMass(float& massVar, float& inertiaVar)
@@ -94,7 +84,6 @@ Collider::Collider(Collider& other)
 	shapeCount = other.shapeCount;
 	attached = other.attached;
 	density = other.density;
-	colour = other.colour;
 
 	shapes = new Shape*[shapeCount];
 	for (size_t i = 0; i < shapeCount; i++)
@@ -115,7 +104,6 @@ Collider& Collider::operator=(Collider& other)
 	shapeCount = other.shapeCount;
 	attached = other.attached;
 	density = other.density;
-	colour = other.colour;
 
 	shapes = new Shape * [shapeCount];
 	for (size_t i = 0; i < shapeCount; i++)
@@ -124,6 +112,11 @@ Collider& Collider::operator=(Collider& other)
 	}
 
 	return *this;
+}
+
+Vector2 Collider::CentreShapeAboutZero()
+{
+	return Vector2();
 }
 
 bool Collider::CanBeDynamic()
