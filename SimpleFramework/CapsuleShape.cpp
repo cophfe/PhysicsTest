@@ -95,6 +95,13 @@ Shape* CapsuleShape::Clone()
 	return new CapsuleShape(*this);
 }
 
+Vector2 CapsuleShape::Support(Vector2 v, Transform& transform)
+{
+	v = transform.InverseTransformDirection(v);
+
+    return transform.TransformPoint((glm::dot(v, pointA) > glm::dot(v, pointB) ? pointA : pointB) + v * radius);
+}
+
 Vector2 CapsuleShape::GetCentrePoint()
 {
 	return (pointA + pointB) * 0.5f;

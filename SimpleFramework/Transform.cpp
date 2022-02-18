@@ -33,7 +33,7 @@ Vector2 Transform::TransformDirection(Vector2 direction)
 
 Vector2 Transform::InverseTransformDirection(Vector2 direction)
 {
-	return -Vector2(direction.x * -c + direction.y * s, direction.y * -c - direction.x * s);
+	return Vector2(direction.x * c + direction.y * s, direction.y * c - direction.x * s);
 }
 
 Matrix3x3 Transform::GetTransformationMatrix()

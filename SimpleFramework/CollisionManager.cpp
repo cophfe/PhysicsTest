@@ -32,6 +32,7 @@ void CollisionManager::ResolveCollisions()
 
 	for (int i = 0; i < bodies.size() - 1; i++)
 	{
+		//int cc1 = bodies[i]->GetColliderCount();
 		//skip over if is not active
 		if (bodies[i]->GetColliderCount() == 0)
 		{
@@ -40,18 +41,33 @@ void CollisionManager::ResolveCollisions()
 
 		for (int j = i + 1; j < bodies.size(); j++)
 		{
-			if (bodies[i]->GetColliderCount() > 0)
-			{
-				//broad phase
-				//this checks if the AABBs are colliding
+			//int cc2 = bodies[i]->GetColliderCount();
+			if (bodies[i]->GetColliderCount() == 0)
+				continue;
 
-				if (CheckAABBCollision(bodies[i]->GetAABB(), bodies[j]->GetAABB()))
-				{
-					//in this case we need to check if collision is valid, and if so, resolve it
-					//we add it to collisions for this frame
-					collisions.emplace_back(CollisionData(bodies[i], bodies[j]));
-				}
+			//broad phase
+			//this checks if the AABBs are colliding
+
+			if (CheckAABBCollision(bodies[i]->GetAABB(), bodies[j]->GetAABB()))
+			{
+				//in this case we need to check if collision is valid, and if so, resolve it
+				//we add it to collisions for this frame
+				collisions.emplace_back(CollisionData(bodies[i], bodies[j]));
 			}
+
+			//alternate collisionData
+			/*for (int u = 0; u < cc1; u++)
+			{
+				for (int v = 0; u < cc2; u++)
+				{
+					Collider& c1 = bodies[i]->GetCollider(u);
+					Collider& c2 = bodies[j]->GetCollider(v);
+					if (CheckAABBCollision(c1.aABB, c2.aABB))
+					{
+						collisions.emplace_back(CollisionData(bodies[i], bodies[j], cc1, cc2));
+					}
+				}
+			}*/
 		}
 	}
 
@@ -252,7 +268,7 @@ void CollisionManager::ResolveCollision(CollisionData& manifold)
 bool CollisionManager::EvaluateCollision(CollisionData& data)
 {
 	int x = (int)data.a->GetCollider(data.colliderIndexA).GetShape()->GetType();
-	int y = (int)data.b->GetCollider(data.colliderIndexB). GetShape()->GetType();
+	int y = (int)data.b->GetCollider(data.colliderIndexB).GetShape()->GetType();
 	return (collisionFunctions[x][y])(data);
 }
 

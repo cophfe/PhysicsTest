@@ -14,6 +14,7 @@ public:
 		GRAB,
 		ROTATE,
 		DELETE,
+		TRANSLATE,
 		COUNT
 	};
 	enum class HELD_SHAPE_TOOL {
@@ -85,6 +86,7 @@ private:
 
 	static void SwitchToGrabTool(Button& button, void* infoPointer);
 	static void SwitchToLaunchTool(Button& button, void* infoPointer);
+	static void SwitchToTranslateTool(Button& button, void* infoPointer);
 	static void SwitchToDeleteTool(Button& button, void* infoPointer);
 	static void SwitchToRotateTool(Button& button, void* infoPointer);
 	

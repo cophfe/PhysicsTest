@@ -50,7 +50,14 @@ Shape* CircleShape::Clone()
 	return new CircleShape(*this);
 }
 
+Vector2 CircleShape::Support(Vector2 v, Transform& transform)
+{
+	v = transform.InverseTransformDirection(v);
+
+	return transform.TransformPoint(v * radius);
+}
+
 Vector2 CircleShape::GetCentrePoint()
 {
-	return Vector2();
+	return centrePoint;
 }

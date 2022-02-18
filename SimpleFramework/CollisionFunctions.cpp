@@ -1,7 +1,10 @@
 #include "Collision.h"
 #include "ExtraMath.hpp"
+#include "CollisionManager.h"
+#include <iostream>
 
-bool CollideCircleCircle(CollisionData& data)
+#pragma region Circle
+bool CollisionManager::CollideCircleCircle(CollisionData& data)
 {
 	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	CircleShape* b = (CircleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -23,40 +26,7 @@ bool CollideCircleCircle(CollisionData& data)
 	return false;
 }
 
-bool CollideCirclePolygon(CollisionData& data)
-{
-	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
-	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
-
-	Vector2 circlePoint = data.b->GetTransform().TransformPoint(a->centrePoint);
-
-	float minDistanceSqr = a->radius * a->radius;
-	Vector2 normal;
-
-	for (size_t i = 0; i < b->pointCount; i++)
-	{
-		Vector2 point = data.a->GetTransform().TransformPoint(b->points[i]);
-		float distSqr = em::SquareLength(point - circlePoint);
-
-		if (distSqr < minDistanceSqr)
-		{
-			minDistanceSqr = distSqr;
-			normal = point - circlePoint;
-		}
-	}
-
-	if (minDistanceSqr < a->radius * a->radius)
-	{
-		minDistanceSqr = sqrtf(minDistanceSqr);
-		data.penetration = a->radius - minDistanceSqr;
-		data.collisionNormal = normal / minDistanceSqr;
-		data.collisionPoints[0] = circlePoint + data.collisionNormal * a->radius;
-		return true;
-	}
-	return false;
-}
-
-bool CollideCircleCapsule(CollisionData& data)
+bool CollisionManager::CollideCircleCapsule(CollisionData& data)
 {
 	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -84,7 +54,7 @@ bool CollideCircleCapsule(CollisionData& data)
 	return false;
 }
 
-bool CollideCirclePlane(CollisionData& data)
+bool CollisionManager::CollideCirclePlane(CollisionData& data)
 {
 	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -109,55 +79,155 @@ bool CollideCirclePlane(CollisionData& data)
 
 	return false;
 }
+#pragma endregion
 
-bool CollidePolygonPolygon(CollisionData& data)
+#pragma region Polygon
+
+Vector2 GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
 {
+	//triple cross method in 2d
+	Vector2 delta = b - a;
+	float cross = em::Cross(delta, -a);
+	return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
+}
+
+bool ContainsOrigin(Vector2 a, Vector2 b, Vector2 c)
+{
+	Vector2 v = GetPerpendicularTowardOrigin(a, b);
+	if (glm::dot(-a, v) > 0)
+		return false;
+	v = GetPerpendicularTowardOrigin(a, c);
+	if (glm::dot(-a, v) < 0)
+		return false;
+	return true;
+}
+
+inline Vector2 GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d)
+{
+	return a->Support(d, tA) - b->Support(-d, tB);
+}
+
+struct Simplex 
+{
+	Vector2 a, b, c;
+	Vector2 dir;
+};
+
+//GJK function
+//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4
+static bool Intersection(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
+{
+	Simplex tri;
+	//first direction can be anything 
+	tri.dir = glm::normalize(tB.position - tA.position);
+	tri.a = GetSupport(a, b, tA, tB, tri.dir);
+	tri.dir = glm::normalize(- tri.a);
+	tri.b = GetSupport(a, b, tA, tB, tri.dir);
+
+	//line case
+	if (glm::dot(tri.b, tri.dir) < 0)
+		return false;
+	tri.dir = GetPerpendicularTowardOrigin(tri.a, tri.b);
+
+	while (true)
+	{
+		tri.c = GetSupport(a, b, tA, tB, tri.dir);
+		if (glm::dot(tri.c, tri.dir) < 0)
+			return false;
+
+		//check if inside the triangle defined by a,b,c
+		//this method is based on voronoi regions and uses our previous knowledge about the shape to simplify the calculations
+		Vector2 v = GetPerpendicularTowardOrigin(tri.c, tri.b);
+		if (glm::dot(v, tri.c) > 0)
+		{
+			tri.dir = v;
+			tri.a = tri.b;
+			tri.b = tri.c;
+			continue;
+		}
+		v = GetPerpendicularTowardOrigin(tri.c, tri.a);
+		if (glm::dot(v, tri.c) > 0)
+		{
+			tri.dir = v;
+			tri.b = tri.c;
+			continue;
+		}
+		//the triangle MUST contain the origin at this point, so it it colliding
+
+		if (finalSimplex != nullptr)
+			*finalSimplex = tri; //return final simplex for EPA
+
+		return true;
+	}
+}
+
+bool CollisionManager::CollideCirclePolygon(CollisionData& data)
+{
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+	Vector2 circlePoint = data.b->GetTransform().TransformPoint(a->centrePoint);
+
+
 	return false;
 }
 
-bool CollidePolygonCapsule(CollisionData& data)
+bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
+{
+	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+	std::cout << "Do polygons collide: " << Intersection(a, b, data.a->transform, data.b->transform, nullptr)
+		<< std::endl;
+	return false;
+}
+
+bool CollisionManager::CollidePolygonCapsule(CollisionData& data)
 {
 	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
-	Vector2 stadPointA = data.b->GetTransform().TransformPoint(b->pointA),
-		stadPointB = data.b->GetTransform().TransformPoint(b->pointB);
-	//Vector2 stadTangent = glm::normalize(stadPointA - stadPointB);
-	//Vector2 stadNormal = { -stadTangent.y, stadTangent.x };
+	//PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	//CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
-	float minDistanceSqr = b->radius * b->radius + 1;
-	Vector2 collisionPoint;
-	Vector2 normal;
+	//Vector2 stadPointA = data.b->GetTransform().TransformPoint(b->pointA),
+	//	stadPointB = data.b->GetTransform().TransformPoint(b->pointB);
+	////Vector2 stadTangent = glm::normalize(stadPointA - stadPointB);
+	////Vector2 stadNormal = { -stadTangent.y, stadTangent.x };
 
-	for (size_t i = 0; i < a->pointCount; i++)
-	{
-		Vector2 point = data.a->GetTransform().TransformPoint(a->points[i]);
-		Vector2 linePoint = em::ClosestPointOnLine(stadPointA, stadPointB, point);
-		float distSqr = em::SquareLength(point - linePoint);
+	//float minDistanceSqr = b->radius * b->radius + 1;
+	//Vector2 collisionPoint;
+	//Vector2 normal;
 
-		if (distSqr < minDistanceSqr)
-		{
-			collisionPoint = linePoint;
-			minDistanceSqr = distSqr;
-			normal = point - linePoint;
-		}
-	}
+	//for (size_t i = 0; i < a->pointCount; i++)
+	//{
+	//	Vector2 point = data.a->GetTransform().TransformPoint(a->points[i]);
+	//	Vector2 linePoint = em::ClosestPointOnLine(stadPointA, stadPointB, point);
+	//	float distSqr = em::SquareLength(point - linePoint);
 
-	if (minDistanceSqr < b->radius * b->radius)
-	{
-		minDistanceSqr = sqrtf(minDistanceSqr);
+	//	if (distSqr < minDistanceSqr)
+	//	{
+	//		collisionPoint = linePoint;
+	//		minDistanceSqr = distSqr;
+	//		normal = point - linePoint;
+	//	}
+	//}
 
-		data.penetration = b->radius - minDistanceSqr;
-		data.collisionNormal = normal / minDistanceSqr;
-		data.collisionPoints[0] = collisionPoint + data.collisionNormal * b->radius; // this is wrong!!!!
-		return true;
-	}
+	//if (minDistanceSqr < b->radius * b->radius)
+	//{
+	//	minDistanceSqr = sqrtf(minDistanceSqr);
+
+	//	data.penetration = b->radius - minDistanceSqr;
+	//	data.collisionNormal = normal / minDistanceSqr;
+	//	data.collisionPoints[0] = collisionPoint + data.collisionNormal * b->radius; // this is wrong!!!!
+	//	return true;
+	//}
 
 
 	return false;
 }
 
-bool CollidePolygonPlane(CollisionData& data) 
+bool CollisionManager::CollidePolygonPlane(CollisionData& data) 
 {
 	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -188,8 +258,10 @@ bool CollidePolygonPlane(CollisionData& data)
 	}
 	return false;
 }
+#pragma endregion
 
-bool CollideCapsuleCapsule(CollisionData& data)
+#pragma region Capsule
+bool CollisionManager::CollideCapsuleCapsule(CollisionData& data)
 {
 	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -237,7 +309,7 @@ bool CollideCapsuleCapsule(CollisionData& data)
 		}
 
 		//since we know they are intersecting there is no need to perform a check here
-		float sign = glm::sign(p1);
+		float sign = glm::sign(p1); //<-- could probably get rid of this somehow with the triple cross product check thing
 		data.collisionNormal = sign * -normal;
 		data.penetration = sign * p1 + a->radius + b->radius;
 		data.collisionPoints[0] = intersection + data.collisionNormal * a->radius;
@@ -300,7 +372,7 @@ bool CollideCapsuleCapsule(CollisionData& data)
 	return false;
 }
 
-bool CollideCapsulePlane(CollisionData& data)
+bool CollisionManager::CollideCapsulePlane(CollisionData& data)
 {
 	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -335,15 +407,15 @@ bool CollideCapsulePlane(CollisionData& data)
 	return false;
 }
 
-bool CollideInvalid(CollisionData& data)
+bool CollisionManager::CollideInvalid(CollisionData& data)
 {
 	return false;
 }
-
+#pragma endregion
 
 #pragma region Flipped Functions
 
-bool CollidePolygonCircle(CollisionData& data)
+bool CollisionManager::CollidePolygonCircle(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;
@@ -351,7 +423,7 @@ bool CollidePolygonCircle(CollisionData& data)
 	return CollideCirclePolygon(data);
 }
 
-bool CollideCapsuleCircle(CollisionData& data)
+bool CollisionManager::CollideCapsuleCircle(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;
@@ -359,7 +431,7 @@ bool CollideCapsuleCircle(CollisionData& data)
 	return CollideCircleCapsule(data);
 }
 
-bool CollidePlaneCircle(CollisionData& data)
+bool CollisionManager::CollidePlaneCircle(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;
@@ -367,7 +439,7 @@ bool CollidePlaneCircle(CollisionData& data)
 	return CollideCirclePlane(data);
 }
 
-bool CollideCapsulePolygon(CollisionData& data)
+bool CollisionManager::CollideCapsulePolygon(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;
@@ -375,7 +447,7 @@ bool CollideCapsulePolygon(CollisionData& data)
 	return CollidePolygonCapsule(data);
 }
 
-bool CollidePlanePolygon(CollisionData& data)
+bool CollisionManager::CollidePlanePolygon(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;
@@ -383,7 +455,7 @@ bool CollidePlanePolygon(CollisionData& data)
 	return CollidePolygonPlane(data);
 }
 
-bool CollidePlaneCapsule(CollisionData& data)
+bool CollisionManager::CollidePlaneCapsule(CollisionData& data)
 {
 	auto temp = data.a;
 	data.a = data.b;

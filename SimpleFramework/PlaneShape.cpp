@@ -50,6 +50,16 @@ Shape* PlaneShape::Clone()
 	return new PlaneShape(*this);
 }
 
+Vector2 PlaneShape::Support(Vector2 v, Transform& transform)
+{
+	v = transform.InverseTransformDirection(v);
+
+	if (v == normal)
+		return transform.TransformPoint(distance * v);
+	else
+		return Vector2(INFINITY, INFINITY);
+}
+
 Vector2 PlaneShape::GetCentrePoint()
 {
     return normal * distance; 

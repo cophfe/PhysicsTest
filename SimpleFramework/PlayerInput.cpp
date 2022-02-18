@@ -43,6 +43,10 @@ void PlayerInput::SwitchToLaunchTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::LAUNCH);
 }
 
+void PlayerInput::SwitchToTranslateTool(Button& button, void* infoPointer) {
+	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::TRANSLATE);
+}
+
 void PlayerInput::SwitchToDeleteTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::DELETE);
 }
@@ -178,6 +182,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	buttons[i]->SetOnClick(SwitchToPlane, this);*/
 
 	i++;
+	i++;
 	Slider* radiusSlider = (Slider*)program.AddUIObject(
 		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, textColour * 0.5f, backgroundColour, edgeColour, program
 			, 4, true, true, "Radius: ", edgeColour));
@@ -195,6 +200,10 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Launch", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToLaunchTool, this);
+	i++;
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Translate", textColour, backgroundColour, program, 0, 8, edgeColour));
+	modifierButtons.push_back(newButton);
+	modifierButtons[i]->SetOnClick(SwitchToTranslateTool, this);
 	i++;
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Rotate", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
@@ -285,11 +294,18 @@ void PlayerInput::Render()
 					heldObject->AddVelocityAtPosition(program.GetDeltaTime() * (program.GetCursorPos() - startPos), startPos);
 				}
 				break;
+			case HELD_MODIFIER_TOOL::TRANSLATE:
+				if (heldObject != nullptr)
+				{
+					heldObject->SetPosition(program.GetCursorPos() + startingPosition);
+				}
+				break;
 			case HELD_MODIFIER_TOOL::ROTATE:
 				if (heldObject != nullptr)
 				{
 					program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
 					heldObject->GetTransform().rotation = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
+					heldObject->GetTransform().UpdateData();
 				}
 				break;
 			case HELD_MODIFIER_TOOL::DELETE:
@@ -342,6 +358,23 @@ void PlayerInput::OnMouseClick(int mouseButton)
 
 				switch (heldModifierTool)
 				{
+				case HELD_MODIFIER_TOOL::TRANSLATE:
+					heldObject = program.GetObjectUnderPoint(startingPosition, false);
+					if (heldObject == nullptr)
+					{
+						usingTool = false;
+						return;
+					}
+
+					lastMass = heldObject->GetMass();
+					lastInertia = heldObject->GetInertia();
+					heldObject->SetInverseMass(0);
+					heldObject->SetInverseInertia(0);
+					heldObject->SetVelocity(Vector2(0, 0));
+					heldObject->SetAngularVelocity(0);
+					startingPosition = heldObject->GetPosition() - startingPosition;
+					break;
+
 				case HELD_MODIFIER_TOOL::ROTATE:
 				case HELD_MODIFIER_TOOL::LAUNCH:
 					heldObject = program.GetObjectUnderPoint(startingPosition, false);
@@ -475,6 +508,7 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 				break;
 			case HELD_MODIFIER_TOOL::GRAB:
 				break;
+			case HELD_MODIFIER_TOOL::TRANSLATE:
 			case HELD_MODIFIER_TOOL::ROTATE:
 				heldObject->SetInverseMass(lastMass);
 				heldObject->SetInverseInertia(lastInertia);

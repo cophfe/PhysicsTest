@@ -41,6 +41,7 @@ public:
 	virtual AABB CalculateAABB(Transform& transform) = 0;
 	virtual SHAPE_TYPE GetType() = 0;
 	virtual Shape* Clone() = 0;
+	virtual Vector2 Support(Vector2 v, Transform& transform) = 0;
 
 private:
 	friend CollisionManager;
@@ -63,6 +64,8 @@ public:
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
+	Vector2 Support(Vector2 v, Transform& transform);
+
 	static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
 
 	Vector2 points[max_vertices];
@@ -94,6 +97,7 @@ public:
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
+	Vector2 Support(Vector2 v, Transform& transform);
 
 	float radius;
 	Vector2 centrePoint;
@@ -118,7 +122,7 @@ public:
 	Vector2 GetCentrePoint();
 	SHAPE_TYPE GetType();
 	Shape* Clone();
-
+	Vector2 Support(Vector2 v, Transform& transform);
 
 	float radius;
 	Vector2 pointA;
@@ -132,7 +136,7 @@ private:
 // PLANE CLASS
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-class PlaneShape : public Shape 
+class PlaneShape : public Shape
 {
 public:
 	PlaneShape(Vector2 normal, float d);
@@ -145,7 +149,7 @@ public:
 	AABB CalculateAABB(Transform& transform);
 	SHAPE_TYPE GetType();
 	Shape* Clone();
-
+	Vector2 Support(Vector2 v, Transform& transform);
 
 	Vector2 normal;
 	float distance;

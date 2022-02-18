@@ -13,6 +13,8 @@ namespace em
 	bool CalculateIntersectionPoint(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Vector2& intersectionPoint);
 	Vector2 GetPerpendicularClockwise(Vector2 v);
 	Vector2 GetPerpendicularCounterClockwise(Vector2 v);
+	Vector2 GetPerpendicularTowardsPoint(Vector2 a, Vector2 b, Vector2 point);
+	Vector2 Normalize(Vector2 v);
 };
 
 

@@ -19,7 +19,9 @@ enum class COLLISION_TYPE
 struct CollisionData
 {
 	CollisionData() { a = nullptr; b = nullptr; penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; colliderIndexA = 0; colliderIndexB = 0; }
-	CollisionData(PhysicsObject* a, PhysicsObject* b) : a(a), b(b) { penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; colliderIndexA = 0; colliderIndexB = 0; }
+	CollisionData(PhysicsObject* a, PhysicsObject* b, char colliderIndexA = 0, char colliderIndexB = 0) 
+		: a(a), b(b), colliderIndexA(colliderIndexA), colliderIndexB(colliderIndexB)
+	{ penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; }
 
 	PhysicsObject* a;
 	PhysicsObject* b;
@@ -32,22 +34,3 @@ struct CollisionData
 	COLLISION_TYPE type;
 };
 
-//return true if collision occured
-bool CollideCircleCircle(CollisionData& data);
-bool CollideCirclePolygon(CollisionData& data);
-bool CollideCircleCapsule(CollisionData& data);
-bool CollideCirclePlane(CollisionData& data);
-bool CollidePolygonPolygon(CollisionData& data);
-bool CollidePolygonCapsule(CollisionData& data);
-bool CollidePolygonPlane(CollisionData& data);
-bool CollideCapsuleCapsule(CollisionData& data);
-bool CollideCapsulePlane(CollisionData& data);
-bool CollideInvalid(CollisionData& data);
-
-//flipped functions
-bool CollidePolygonCircle(CollisionData& data);
-bool CollideCapsuleCircle(CollisionData& data);
-bool CollidePlaneCircle(CollisionData& data);
-bool CollideCapsulePolygon(CollisionData& data);
-bool CollidePlanePolygon(CollisionData& data);
-bool CollidePlaneCapsule(CollisionData& data);

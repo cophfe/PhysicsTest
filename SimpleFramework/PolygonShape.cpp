@@ -66,6 +66,8 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 
 AABB PolygonShape::CalculateAABB(Transform& transform)
 {
+	return AABB{ Vector2{INFINITY, INFINITY}, Vector2{-INFINITY, -INFINITY} };
+
 	Vector2 point = transform.TransformPoint(points[0]);
 
 	float xMax = point.x;
@@ -93,12 +95,33 @@ SHAPE_TYPE PolygonShape::GetType()
 
 Vector2 PolygonShape::GetCentrePoint()
 {
-    return Vector2();
+    return centrePoint;
 }
 
 Shape* PolygonShape::Clone()
 {
 	return new PolygonShape(*this);
+}
+
+Vector2 PolygonShape::Support(Vector2 v, Transform& transform)
+{
+	v = transform.InverseTransformDirection(v);
+
+	Vector2 p = points[0];
+	float d = glm::dot(v, p);
+	float d1;
+
+	for (char i = 1; i < pointCount; i++)
+	{
+		d1 = glm::dot(v, points[i]);
+		if (d1 > d)
+		{
+			p = points[i];
+			d = d1;
+		}
+	}
+
+	return transform.TransformPoint(p);
 }
 
 PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)

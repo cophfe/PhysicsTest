@@ -94,6 +94,27 @@ private:
 	//PhysicsDrawer drawer;
 	PhysicsProgram* program;
 	static CollideFunction collisionFunctions[4][4];
+
+	//return true if collision occured
+	static bool CollideCircleCircle(CollisionData& data);
+	static bool CollideCirclePolygon(CollisionData& data);
+	static bool CollideCircleCapsule(CollisionData& data);
+	static bool CollideCirclePlane(CollisionData& data);
+	static bool CollidePolygonPolygon(CollisionData& data);
+	static bool CollidePolygonCapsule(CollisionData& data);
+	static bool CollidePolygonPlane(CollisionData& data);
+	static bool CollideCapsuleCapsule(CollisionData& data);
+	static bool CollideCapsulePlane(CollisionData& data);
+	static bool CollideInvalid(CollisionData& data);
+
+	//flipped functions
+	static bool CollidePolygonCircle(CollisionData& data);
+	static bool CollideCapsuleCircle(CollisionData& data);
+	static bool CollidePlaneCircle(CollisionData& data);
+	static bool CollideCapsulePolygon(CollisionData& data);
+	static bool CollidePlanePolygon(CollisionData& data);
+	static bool CollidePlaneCapsule(CollisionData& data);
+
 };
 
 

@@ -15,10 +15,32 @@ namespace em
 		return Cross(b - a, c - a);
 	}
 
-	//This isn't technically the cross product, its the z component of the cross product of two 3D vectors when the z component of both vectors is zero 
-	//it is really useful a lot of the time
+	//Cross product of a x b is:
+	// ( a.y * b.z - a.z * b.y,
+	//   a.z * b.x - a.x * b.z,
+	//	 a.x * b.y - a.y * a.x )
+
+
+	//This isn't technically the cross product, its the z component of the cross product of two 3D vectors
+	// the x and y components are always zero when a and b have z values of zero (like when we use Vector2s)
+	//it is useful a lot of the time
 	float Cross(Vector2 a, Vector2 b) {
 		return (a.x * b.y - b.x * a.y);;
+	}
+
+	Vector2 GetPerpendicularTowardsPoint(Vector2 a, Vector2 b, Vector2 point)
+	{
+		//triple cross method in 2d
+		Vector2 delta = b-a;
+		float cross = em::Cross(delta, point-a);
+		return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
+	}
+
+	//safe normalize
+	Vector2 Normalize(Vector2 v)
+	{
+		float len = glm::length(v);
+		return len == 0 ? Vector2(0,1) : v/len;
 	}
 
 	float SquareLength(Vector2 v) {
