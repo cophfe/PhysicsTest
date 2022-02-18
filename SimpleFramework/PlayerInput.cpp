@@ -396,17 +396,21 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 			case HELD_SHAPE_TOOL::CIRCLE: //pass through
 			case HELD_SHAPE_TOOL::POLYGON:
 			{
-				auto* collider = new Collider(heldShape, 1.0f);
+				if (heldShape == nullptr)
+					break;
+
 				PhysicsData data = PhysicsData(
 					startingPosition,
 					GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition)),
 					true,
 					true);
 
-				heldShape = nullptr;
 
-				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour)
-					->body->AddVelocity( (program.GetCursorPos() - startingPosition));
+				auto* pO = program.CreateGameObject(data, afterCreatedColour)->GetPhysicsObject();
+
+				pO->AddCollider(heldShape);
+				pO->AddVelocity((program.GetCursorPos() - startingPosition));
+				heldShape = nullptr;
 			}
 			break;
 			case HELD_SHAPE_TOOL::LINE:
@@ -416,8 +420,8 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 					0,
 					false,
 					false);
-				auto* collider = new Collider(new CapsuleShape(startingPosition, program.GetCursorPos()), 1.0f);
-				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour);
+				program.CreateGameObject(data, afterCreatedColour)->GetPhysicsObject()->AddCollider(new CapsuleShape(startingPosition, program.GetCursorPos()));
+
 			}
 			break;
 			case HELD_SHAPE_TOOL::CAPSULE:
@@ -431,16 +435,16 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 					GetAngleOfVector2(delta),
 					true,
 					true);
-				Collider* collider;
+				Shape* shape;
 				if (delta.x == 52 && delta.y == 0) //capsules NEED pA to be different from pB or they will not collide properly
 				{
-					collider = new Collider(new CircleShape(shapeRadius, Vector2(0,0)), 1.0f);
+					shape = new CircleShape(shapeRadius, Vector2(0,0));
 				}
 				else {
-					collider = new Collider(new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius), 1.0f);
+					shape = new CapsuleShape(Vector2(0, distance), -Vector2(0, distance), shapeRadius);
 				}
 
-				program.AddGameObject(new PhysicsObject(data, collider), afterCreatedColour);
+				program.CreateGameObject(data, afterCreatedColour)->GetPhysicsObject()->AddCollider(shape);
 			}
 			break;
 			

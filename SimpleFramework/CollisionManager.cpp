@@ -33,20 +33,19 @@ void CollisionManager::ResolveCollisions()
 	for (int i = 0; i < bodies.size() - 1; i++)
 	{
 		//skip over if is not active
-		if (bodies[i]->GetCollider() == nullptr)
+		if (bodies[i]->GetColliderCount() == 0)
 		{
 			continue;
 		}
 
 		for (int j = i + 1; j < bodies.size(); j++)
 		{
-			//check if the objects are compatible layer wise, if collider exists, and 
-			if (bodies[i]->GetCollider() != nullptr)
+			if (bodies[i]->GetColliderCount() > 0)
 			{
 				//broad phase
 				//this checks if the AABBs are colliding
 
-				if (CheckAABBCollision(bodies[i]->collider->aABB, bodies[j]->collider->aABB))
+				if (CheckAABBCollision(bodies[i]->GetAABB(), bodies[j]->GetAABB()))
 				{
 					//in this case we need to check if collision is valid, and if so, resolve it
 					//we add it to collisions for this frame
@@ -67,15 +66,11 @@ PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic)
 {
 	for (size_t i = 0; i < bodies.size(); i++)
 	{
-		if (bodies[i]->collider)
+		for (size_t j = 0; j < bodies[i]->GetColliderCount(); j++)
 		{
-			for (size_t j = 0; j < bodies[i]->collider->shapeCount; j++)
+			if ((includeStatic || bodies[i]->iMass != 0) && bodies[i]->GetCollider(j).GetShape()->PointCast(point, bodies[i]->transform))
 			{
-				if ((includeStatic || bodies[i]->iMass != 0) && bodies[i]->collider->shapes[j]->PointCast(point, bodies[i]->transform))
-				{
-					std::cout << "Grabbed object with mass " << bodies[i]->iMass << std::endl;
-					return bodies[i];
-				}
+				return bodies[i];
 			}
 		}
 	}
@@ -121,10 +116,20 @@ void CollisionManager::UpdatePhysics()
 	}
 }
 
-PhysicsObject* CollisionManager::AddPhysicsObject(PhysicsObject* body)
+PhysicsObject* CollisionManager::CreatePhysicsObject(PhysicsData& data)
 {
+	PhysicsObject* body = new PhysicsObject(data);
 	bodies.push_back(body);
 	return bodies[bodies.size() - 1];
+}
+
+void CollisionManager::DeletePhysicsBody(PhysicsObject* body)
+{
+	if (!body) return;
+
+	auto it = std::remove(bodies.begin(), bodies.end(), body);
+	delete body;
+	std::cout << "removed\n";
 }
 
 void CollisionManager::ClearPhysicsBodies()
@@ -246,18 +251,23 @@ void CollisionManager::ResolveCollision(CollisionData& manifold)
 
 bool CollisionManager::EvaluateCollision(CollisionData& data)
 {
-	int x = (int)data.a->GetCollider()->GetShape(data.shapeIndexA)->GetType();
-	int y = (int)data.b->GetCollider()->GetShape(data.shapeIndexB)->GetType();
+	int x = (int)data.a->GetCollider(data.colliderIndexA).GetShape()->GetType();
+	int y = (int)data.b->GetCollider(data.colliderIndexB). GetShape()->GetType();
 	return (collisionFunctions[x][y])(data);
 }
 
-CollisionManager::~CollisionManager()
+void CollisionManager::Destroy()
 {
 	for (size_t i = 0; i < bodies.size(); i++)
 	{
 		delete bodies[i];
 		bodies[i] = nullptr;
 	}
+}
+
+CollisionManager::~CollisionManager()
+{
+	
 }
 
 bool CollisionManager::CheckAABBCollision(AABB& a, AABB& b)

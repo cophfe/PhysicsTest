@@ -11,17 +11,20 @@ PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionMan
 	//collisionManager.SetPhysicsDrawer(PhysicsDrawer(DrawCircle, DrawPolygon, DrawCapsule, DrawPlane, this));
 	//multiple shapes in 1 physics object aren't supported JUST yet
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(1, 0), -gridLimits))), Vector3(1,1,1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, 1), -gridLimits))), Vector3(1,1,1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(-1, 0), -gridLimits))), Vector3(1,1,1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, -1), -gridLimits))), Vector3(1,1,1));
+	CreateGameObject(data, Vector3(1, 1, 1))
+		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(1, 0), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))
+		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, 1), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))
+		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(-1, 0), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))
+		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, -1), -gridLimits));
 }
 
 void PhysicsProgram::Update()
 {
 	GameBase::Update();
 
-	playerInput.Update();
 	uiHeldDown = false;
 	if (uiEnabled) {
 		for (size_t i = 0; i < uiObjects.size(); i++)
@@ -35,6 +38,8 @@ void PhysicsProgram::Update()
 		UpdatePhysics();
 		collisionManager.ResolveCollisions();
 	}
+
+	playerInput.Update();
 }
 
 void PhysicsProgram::UpdatePhysics()
@@ -116,18 +121,14 @@ void PhysicsProgram::OnKeyReleased(int key)
 	playerInput.OnKeyReleased(key);
 }
 
-GameObject* PhysicsProgram::AddGameObject(GameObject* object)
+void PhysicsProgram::DeleteGameObject(GameObject* object)
 {
-	collisionManager.AddPhysicsObject(object->body);
-	gameObjects.push_back(object);
-	return gameObjects[gameObjects.size() - 1];
+	std::remove(gameObjects.begin(), gameObjects.end(), object);
 }
 
-GameObject* PhysicsProgram::AddGameObject(PhysicsObject* pObject, Vector3 colour)
+GameObject* PhysicsProgram::CreateGameObject(PhysicsData data, Vector3 colour)
 {
-	auto* pO = collisionManager.AddPhysicsObject(pObject);
-	auto* gObject = new GameObject(pO, colour);
-	gameObjects.push_back(gObject);
+	gameObjects.push_back(new GameObject(data, &collisionManager, colour));
 	return gameObjects[gameObjects.size() - 1];
 }
 
@@ -148,15 +149,16 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 
 void PhysicsProgram::ResetPhysics()
 {
+	//should delete gameObjects
 	gameObjects.clear();
 	collisionManager.ClearPhysicsBodies();
 	collisionPoints.clear();
 
 	PhysicsData data = PhysicsData(Vector2(0, 0), 0, false);
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(1, 0), -gridLimits))), Vector3(1,1,1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, 1), -gridLimits))), Vector3(1, 1, 1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(-1, 0), -gridLimits))), Vector3(1, 1, 1));
-	AddGameObject(new PhysicsObject(data, new Collider(new PlaneShape(Vector2(0, -1), -gridLimits))), Vector3(1, 1, 1));
+	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(1, 0), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, 1), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(-1, 0), -gridLimits));
+	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, -1), -gridLimits));
 }
 
 PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)
@@ -168,15 +170,13 @@ GameObject* PhysicsProgram::GetGameObjectUnderPoint(Vector2 point, bool includeS
 {
 	for (auto* gameObject : gameObjects)
 	{
-		Collider* c = gameObject->body->GetCollider();
-		if (c != nullptr)
+		for (size_t j = 0; j < gameObject->GetPhysicsObject()->GetColliderCount(); j++)
 		{
-			for (size_t j = 0; j < c->GetShapeCount(); j++)
+			Collider&  c = gameObject->GetPhysicsObject()->GetCollider(j);
+
+			if ((includeStatic || gameObject->GetPhysicsObject()->GetInverseMass() != 0) && c.GetShape()->PointCast(point, gameObject->GetPhysicsObject()->GetTransform()))
 			{
-				if ((includeStatic || gameObject->body->GetInverseMass() != 0) && c->GetShape(j)->PointCast(point, gameObject->body->GetTransform()))
-				{
-					return gameObject;
-				}
+				return gameObject;
 			}
 		}
 	}
@@ -280,6 +280,8 @@ PhysicsProgram::~PhysicsProgram()
 		delete uiObjects[i];
 		uiObjects[i] = nullptr;
 	}
+
+	collisionManager.Destroy();
 
 	for (size_t i = 0; i < gameObjects.size(); i++)
 	{

@@ -20,9 +20,9 @@ public:
 	void OnMouseRelease(int mouseButton);
 	void OnKeyPressed(int key);
 	void OnKeyReleased(int key);
+	void DeleteGameObject(GameObject* object);
 
-	GameObject* AddGameObject(GameObject* object);
-	GameObject* AddGameObject(PhysicsObject* pObject, Vector3 colour);
+	GameObject* CreateGameObject(PhysicsData data, Vector3 colour);
 	UIObject* AddUIObject(UIObject* uiObject);
 
 	//set

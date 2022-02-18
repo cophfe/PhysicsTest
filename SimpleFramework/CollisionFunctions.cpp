@@ -3,8 +3,8 @@
 
 bool CollideCircleCircle(CollisionData& data)
 {
-	CircleShape* a = (CircleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	CircleShape* b = (CircleShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	CircleShape* b = (CircleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 pA = data.a->GetTransform().TransformPoint(a->centrePoint), pB = data.b->GetTransform().TransformPoint(b->centrePoint);
 	Vector2 delta = pA - pB;
@@ -25,8 +25,8 @@ bool CollideCircleCircle(CollisionData& data)
 
 bool CollideCirclePolygon(CollisionData& data)
 {
-	CircleShape* a = (CircleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	PolygonShape* b = (PolygonShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 circlePoint = data.b->GetTransform().TransformPoint(a->centrePoint);
 
@@ -58,8 +58,8 @@ bool CollideCirclePolygon(CollisionData& data)
 
 bool CollideCircleCapsule(CollisionData& data)
 {
-	CircleShape* a = (CircleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	//transform to global
 	Vector2 pA = data.b->GetTransform().TransformPoint(b->pointA), pB = data.b->GetTransform().TransformPoint(b->pointB);
@@ -86,8 +86,8 @@ bool CollideCircleCapsule(CollisionData& data)
 
 bool CollideCirclePlane(CollisionData& data)
 {
-	CircleShape* a = (CircleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	PlaneShape* b = (PlaneShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	//transform to global
 	Vector2 centre = data.a->GetTransform().TransformPoint(a->centrePoint);
@@ -117,8 +117,8 @@ bool CollidePolygonPolygon(CollisionData& data)
 
 bool CollidePolygonCapsule(CollisionData& data)
 {
-	PolygonShape* a = (PolygonShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 stadPointA = data.b->GetTransform().TransformPoint(b->pointA),
 		stadPointB = data.b->GetTransform().TransformPoint(b->pointB);
@@ -159,8 +159,8 @@ bool CollidePolygonCapsule(CollisionData& data)
 
 bool CollidePolygonPlane(CollisionData& data) 
 {
-	PolygonShape* a = (PolygonShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	PlaneShape* b = (PlaneShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 planeNormal = data.b->GetTransform().TransformPoint(b->normal);
 	float planeDistance = glm::dot(data.b->GetTransform().TransformPoint(b->distance * b->normal), planeNormal);
@@ -191,8 +191,8 @@ bool CollidePolygonPlane(CollisionData& data)
 
 bool CollideCapsuleCapsule(CollisionData& data)
 {
-	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 aPointA = data.a->GetTransform().TransformPoint(a->pointA),
 		aPointB = data.a->GetTransform().TransformPoint(a->pointB)
@@ -302,8 +302,8 @@ bool CollideCapsuleCapsule(CollisionData& data)
 
 bool CollideCapsulePlane(CollisionData& data)
 {
-	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider()->GetShape(data.shapeIndexA);
-	PlaneShape* b = (PlaneShape*)data.b->GetCollider()->GetShape(data.shapeIndexB);
+	CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Vector2 pointA = data.a->GetTransform().TransformPoint(a->pointA), pointB = data.a->GetTransform().TransformPoint(a->pointB);
 	Vector2 planeDirection = data.b->GetTransform().TransformDirection(b->normal);

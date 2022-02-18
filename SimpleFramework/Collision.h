@@ -18,13 +18,13 @@ enum class COLLISION_TYPE
 
 struct CollisionData
 {
-	CollisionData() { a = nullptr; b = nullptr; penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; shapeIndexA = 0; shapeIndexB = 0; }
-	CollisionData(PhysicsObject* a, PhysicsObject* b) : a(a), b(b) { penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; shapeIndexA = 0; shapeIndexB = 0; }
+	CollisionData() { a = nullptr; b = nullptr; penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; colliderIndexA = 0; colliderIndexB = 0; }
+	CollisionData(PhysicsObject* a, PhysicsObject* b) : a(a), b(b) { penetration = 0; type = (COLLISION_TYPE)0; pointCount = 1; colliderIndexA = 0; colliderIndexB = 0; }
 
 	PhysicsObject* a;
 	PhysicsObject* b;
-	char shapeIndexA;
-	char shapeIndexB;
+	char colliderIndexA;
+	char colliderIndexB;
 	Vector2 collisionPoints[MAX_COLLISION_POINTS];
 	char pointCount;//pointCount is 1 unless explicitly set to something else
 	Vector2 collisionNormal;

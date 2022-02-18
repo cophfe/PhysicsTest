@@ -5,130 +5,69 @@
 
 Collider::Collider(Shape* shape, float density)
 {
-	shapes = new Shape *[1];
-	shapes[0] = shape;
-	shapeCount = 1;
+	this->shape = shape;
 	this->density = density;
-}
 
-Collider::Collider(Shape** shapes, int shapeCount, float density)
-{
-	this->shapes = shapes;
-	this->shapeCount = shapeCount;
-	this->density = density;
+	float massVar, inertiaVar;
+	CalculateMass(massVar, inertiaVar);
 }
 
 void Collider::CalculateMass(float& massVar, float& inertiaVar)
 {
-	float mass = 0;
-	float inertia = 0;
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		float shapeMass = 0;
-		float shapeInertia = 0; //looks like the MOI of a composite shape is the sum of the individual parts MOI
-		shapes[i]->CalculateMass(shapeMass, shapeInertia, density);
-		mass += shapeMass;
-		inertia += shapeInertia;
-	}
+	shape->CalculateMass(massVar, inertiaVar, density);
 
-	massVar = mass;
-	inertiaVar = inertia;
+	iInertia = inertiaVar == 0 ? 0 : 1.0f/inertiaVar;
+	iMass = massVar == 0 ? 0 : 1.0f/massVar;
 }
 
-void Collider::CalculateAABB(Transform& transform)
+AABB& Collider::CalculateAABB(Transform& transform)
 {
-	switch (shapeCount) {
-	case 0:
-		return;
-	case 1:
-		aABB = shapes[0]->CalculateAABB(transform);
-		return;
-	default:
-	{
-		AABB* aabbs = new AABB[shapeCount];
-		aabbs[0] = shapes[0]->CalculateAABB(transform);
-		aABB = aabbs[0];
-
-		for (size_t i = 1; i < shapeCount; i++)
-		{
-			aabbs[i] = shapes[i]->CalculateAABB(transform);
-
-			if (aabbs[i].max.x > aABB.max.x)
-				aABB.max.x = aabbs[i].max.x;
-			if (aabbs[i].min.x < aABB.min.x)
-				aABB.min.x = aabbs[i].min.x;
-			if (aabbs[i].max.y > aABB.max.y)
-				aABB.max.y = aabbs[i].max.y;
-			if (aabbs[i].min.y > aABB.min.y)
-				aABB.min.y = aabbs[i].min.y;
-		}
-	}
-	}
-	
+	aABB = shape->CalculateAABB(transform);
+	return aABB;
 }
 
 Collider::~Collider()
 {
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		delete shapes[i];
-		shapes[i] = nullptr;
-	}
-	delete[] shapes;
-	shapes = nullptr;
+	delete shape;
+	shape = nullptr;
 }
 
-Collider::Collider(Collider& other)
+Collider::Collider(const Collider& other)
 {
 	aABB = other.aABB;
-	shapeCount = other.shapeCount;
-	attached = other.attached;
+	shape = other.shape->Clone();
+	//attached = other.attached;
 	density = other.density;
-
-	shapes = new Shape*[shapeCount];
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		shapes[i] = other.shapes[i]->Clone();
-	}
 }
 
-Collider& Collider::operator=(Collider& other)
+Collider& Collider::operator=(const Collider& other)
 {
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		delete shapes[i];
-	}
-	delete[] shapes;
+	delete shape;
+	shape = other.shape->Clone();
 
 	aABB = other.aABB;
-	shapeCount = other.shapeCount;
-	attached = other.attached;
+	//attached = other.attached;
 	density = other.density;
-
-	shapes = new Shape * [shapeCount];
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		shapes[i] = other.shapes[i]->Clone();
-	}
 
 	return *this;
 }
 
-Vector2 Collider::CentreShapeAboutZero()
+Collider& Collider::operator=(Collider&& other)
 {
-	return Vector2();
+	shape = other.shape;
+	other.shape = nullptr;
+
+	aABB = other.aABB;
+	//attached = other.attached;
+	density = other.density;
+	
+	return *this;
 }
 
 bool Collider::CanBeDynamic()
 {
 	//planes cannot be dynamic, because they don't have any mass and it dont make sense.
-
-	for (size_t i = 0; i < shapeCount; i++)
-	{
-		if (shapes[i]->GetType() == SHAPE_TYPE::PLANE)
-			return false;
-	}
-	return true;
+	return shape->GetType() != SHAPE_TYPE::PLANE;
 }
 
 

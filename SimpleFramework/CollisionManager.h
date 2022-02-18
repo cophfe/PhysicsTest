@@ -61,9 +61,9 @@ public:
 
 	void ResolveCollisions();
 	void UpdatePhysics();
-	PhysicsObject* AddPhysicsObject(PhysicsObject* body);
+	PhysicsObject* CreatePhysicsObject(PhysicsData& data);
+	void DeletePhysicsBody(PhysicsObject* body);
 	void ClearPhysicsBodies();
-
 
 	inline float GetDeltaTime() { return deltaTime; }
 	inline void SetDeltaTime(float newDeltaTime) { deltaTime = newDeltaTime; }
@@ -71,6 +71,8 @@ public:
 	//inline void SetPhysicsDrawer(PhysicsDrawer drawer) { this->drawer = drawer; };
 	//inline PhysicsDrawer& GetPhysicsDrawer() { return drawer; };
 
+	//seperate function from destructor just so it is clear what order things are destroyed in
+	void Destroy();
 	~CollisionManager();
 	CollisionManager(const CollisionManager& other) = delete;
 	CollisionManager& operator=(const CollisionManager& other) = delete;

@@ -9,17 +9,49 @@ GameObject::DrawFunction GameObject::drawFunctions[4] =
 	PhysicsProgram::DrawPlane
 };
 
+GameObject::GameObject(PhysicsData object, CollisionManager* manager, Vector3 colour)
+	: colour(colour), manager(manager)
+{
+	body = manager->CreatePhysicsObject(object);
+	body->SetPointer(&body);
+}
+
 void GameObject::Render(PhysicsProgram* program)
 {
-	Collider* collider = body->GetCollider();
-	if (collider != nullptr)
+	for (int i = 0; i < body->GetColliderCount(); i++)
 	{
-		int shapeCount = collider->GetShapeCount();
-		for (int i = 0; i < shapeCount; i++)
-		{
-			Shape* shape = collider->GetShape(i);
-			int type = (int)shape->GetType();
-			(drawFunctions[type])(shape, body->GetTransform(), colour, program);
-		}
+		Shape* shape = body->GetCollider(i).GetShape();
+		int type = (int)shape->GetType();
+		(drawFunctions[type])(shape, body->GetTransform(), colour, program);
 	}
+}
+
+GameObject::~GameObject()
+{
+	if (manager && body)
+	{
+		body->SetPointer(nullptr);
+		manager->DeletePhysicsBody(body);
+		body = nullptr;
+	}
+	
+}
+
+GameObject::GameObject(GameObject&& other)
+{
+	body = other.body;
+	colour = other.colour;
+	manager = other.manager;
+	other.body = nullptr;
+
+}
+
+GameObject& GameObject::operator=(GameObject&& other)
+{
+	body = other.body;
+	colour = other.colour;
+	manager = other.manager;
+	other.body = nullptr;
+
+	return *this;
 }

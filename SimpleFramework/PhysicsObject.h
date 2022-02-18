@@ -33,13 +33,14 @@ struct PhysicsData
 class PhysicsObject
 {
 public:
-	PhysicsObject(PhysicsData& data, Collider* collider);
 	
 	void Update(float deltaTime);
 	void GenerateAABB();
 
 	//getters
-	inline Collider*	GetCollider()				{ return collider; }
+	inline Collider&	GetCollider(int index)		{ return colliders[index]; }
+	inline int			GetColliderCount()			{ return colliderCount; }
+	inline AABB&		GetAABB()					{ return colliderAABB; }
 	inline Vector2		GetPosition()				{ return transform.position; }
 	inline float		GetRotation()				{ return transform.rotation; }
 	
@@ -73,6 +74,7 @@ public:
 	inline void	SetInertia(float mOI)				{ iInertia = 1.0f/mOI; }
 	inline void	SetInverseMass(float iMass)			{ this->iMass = iMass; }
 	inline void	SetInverseInertia(float iMOI){ iInertia = iMOI; }
+	void SetPointer(PhysicsObject** ptr);
 
 	//adders?
 	inline void AddPosition(Vector2 position)		{ transform.position += position;  }
@@ -85,21 +87,28 @@ public:
 	void AddForceAtPosition(Vector2 force, Vector2 point);
 	void AddImpulseAtPosition(Vector2 force, Vector2 point);
 	void AddVelocityAtPosition(Vector2 impulse, Vector2 point);
+	void AddCollider(Shape* shape, float density = 1.0f, bool recalculateMass = true);
 
 	//rule o' 5
-	~PhysicsObject(); //destructor
 	PhysicsObject(const PhysicsObject& other); //copy constructor
 	PhysicsObject(PhysicsObject&& other); //move constructor
 	PhysicsObject& operator= (const PhysicsObject& other); //copy assignment
 	PhysicsObject& operator= (PhysicsObject&& other); //move assignment
 
-
 protected:
+	PhysicsObject(PhysicsData& data);
+	~PhysicsObject(); //destructor
+	
+	//centres collider about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
+	//returns the applied offset (could be used to keep the collider's shapes in the same worldspace position
+	void CentreShapesAboutZero();
+
 	friend CollisionManager;
 	friend Collider;
 
-	//is ptr so it can be null
-	Collider* collider = nullptr;
+	AABB colliderAABB;
+	Collider* colliders;
+	int colliderCount;
 
 	//position values
 	//should be no problem with vec2 scale since there are no child objects
@@ -111,6 +120,9 @@ protected:
 	Vector2 force = Vector2(0,0);
 	float torque = 0;
 
+	void CalculateMass();
+	bool CanBeDynamic();
+
 	//movement constants
 	float bounciness;
 	float drag;
@@ -121,6 +133,11 @@ protected:
 	//the mass moment of inertia
 	float iInertia;
 
+	bool isDynamic;
+	bool isRotatable;
+
+	//pointer to this object
+	PhysicsObject** pointer;
 
 	//(just in case something is not moving, so no movement calculations have to be done)
 	//bool 
