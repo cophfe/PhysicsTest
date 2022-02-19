@@ -32,5 +32,7 @@ struct CollisionData
 	Vector2 collisionNormal;
 	float penetration;
 	COLLISION_TYPE type;
+
+
 };
 

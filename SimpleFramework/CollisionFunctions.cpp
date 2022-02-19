@@ -83,40 +83,56 @@ bool CollisionManager::CollideCirclePlane(CollisionData& data)
 
 #pragma region Polygon
 
-#pragma region GJK Functions
-Vector2 GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
-{
-	//triple cross method in 2d
-	Vector2 delta = b - a;
-	float cross = em::Cross(delta, -a);
-	return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
-}
+#pragma region GJK Stuff
+constexpr float DISTANCE_TOLERANCE = 0.0001f;
 
-bool ContainsOrigin(Vector2 a, Vector2 b, Vector2 c)
-{
-	Vector2 v = GetPerpendicularTowardOrigin(a, b);
-	if (glm::dot(-a, v) > 0)
-		return false;
-	v = GetPerpendicularTowardOrigin(a, c);
-	if (glm::dot(-a, v) < 0)
-		return false;
-	return true;
-}
-
-inline Vector2 GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d)
-{
-	return a->Support(d, tA) - b->Support(-d, tB);
-}
-
-struct Simplex 
+struct Simplex
 {
 	Vector2 a, b, c;
 	Vector2 dir;
 };
 
-//GJK function
-//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4 and this page: https://dyn4j.org/2010/04/gjk-distance-closest-points/
-static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
+Vector2 GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
+{
+	//triple cross method in 2d, returns a vector perpendicular to line AB, orientaded towards a point
+	// ((b-a) x ((0,0)-a)) x (b-a)
+
+	Vector2 delta = b - a;
+	float cross = em::Cross(delta, -a);
+	return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
+	
+	//triple cross product can be converted into dot product. kinda cool.
+	//(a x b) x c == b * (c.a) - a * (c.b)
+	//Vector2 delta = b - a;
+	//return glm::normalize(-a * glm::dot(delta, delta) - delta * glm::dot(delta, -a));
+	//simplified:
+	//return glm::normalize(delta * (glm::dot(delta, a) - a * delta));
+}
+
+Vector2 GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
+{
+	//is perpendicular to line, facing in the direction of direction
+	// (direction x line) x line
+
+	float cross = em::Cross(direction, line);
+	return glm::normalize(Vector2(-cross * line.y, cross * line.x));
+}
+
+
+static inline Vector2 GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d)
+{
+	return a->Support(d, tA) - b->Support(-d, tB);
+}
+
+
+static inline Vector2 ClosestPointToOrigin(Vector2 a, Vector2 b)
+{
+	return em::SquareLength(a) < em::SquareLength(b) ? a : b;
+}
+
+// GJK function
+//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4
+static bool GJK(Shape * a, Shape * b, Transform & tA, Transform & tB, Simplex * finalSimplex)
 {
 	//GJK checks if the minkowski difference of two shapes encloses the origin or not.
 	//if the minkowski difference does enclose the origin it means the two shapes are intersecting, because it means at least one point in the area inclosed by shape a is in the same position as a point in the area inclosed by shape b.
@@ -125,11 +141,11 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 	Simplex tri;
 	//first direction can be anything, but is often the direction from shape a to b (it is probably more efficient on average then a random direction, idk)
 	tri.dir = glm::normalize(tB.position - tA.position);
-	
+
 	//get furthest point on the minkowski difference in the direction of tri.dir
 	tri.a = GetSupport(a, b, tA, tB, tri.dir);
 	//the best next direction to choose is towards the origin
-	tri.dir = glm::normalize(- tri.a);
+	tri.dir = glm::normalize(-tri.a);
 	//get furthest point in the direction of the origin from point a
 	tri.b = GetSupport(a, b, tA, tB, tri.dir);
 
@@ -138,8 +154,8 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 	if (glm::dot(tri.b, tri.dir) < 0)
 		return false;
 
-	//from now on the new support point direction will be perpendicular to point a and b, towards the origin. 
-	//This is because all the points on the other side of the line AB are further away from the origin than
+	//the new support point direction will be perpendicular to point a and b, towards the origin. 
+	//This is because all the points on the other side of the line AB are moving away from the origin 
 	tri.dir = GetPerpendicularTowardOrigin(tri.a, tri.b);
 
 	while (true)
@@ -150,12 +166,14 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 		if (glm::dot(tri.c, tri.dir) < 0)
 			return false;
 
+		Vector2 lineCA = tri.a - tri.c;
+		Vector2 lineCB = tri.b - tri.c;
+
 		//check if inside the triangle defined by a,b,c
 		//this method is based on voronoi regions and uses our previous knowledge about the shape to simplify the calculations
-
 		//check if point is in voronoi region defined by line CB
-		Vector2 v = GetPerpendicularTowardOrigin(tri.c, tri.b);
-		if (glm::dot(v, tri.c) > 0)
+		Vector2 v = GetPerpendicularFacingInDirection(lineCB, lineCA);
+		if (glm::dot(v, tri.c) < 0)
 		{
 			//in this case, origin is in the region in the direction v from the triangle we created.
 			//set the tri.dir vector to this direction, and remove point a from the triangle
@@ -165,8 +183,8 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 			continue;
 		}
 		//check if point is in voronoi region defined by line CA
-		v = GetPerpendicularTowardOrigin(tri.c, tri.a);
-		if (glm::dot(v, tri.c) > 0)
+		v = GetPerpendicularFacingInDirection(lineCA, lineCB);
+		if (glm::dot(v, tri.c) < 0)
 		{
 			//in this case, origin is in the region in the direction v from the triangle we created.
 			//set the tri.dir vector to this direction, and remove point b from the triangle
@@ -182,19 +200,82 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 	}
 }
 
-struct Edge {
-	Vector2 a, b;
+struct EPACollisionData
+{
+	float depth;
+	Vector2 collisionNormal; //Is from A to B right now (opposite of regular collision data)
 };
 
-Edge FindClosestEdge()
+//the final version of this function is based on this video: https://www.youtube.com/watch?v=0XQ2FSz3EK8 and this page: https://dyn4j.org/2010/04/gjk-distance-closest-points/
+static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionData* data)
 {
+	Simplex gjkSimplex;
+	if (!GJK(a, b, tA, tB, &gjkSimplex))
+	{
+		return false; //gjk returned false
+	}
 	
+	//the expanding polytope algorythm intends to 
+	// find the edge closest to the origin on the minkowski difference/sum/whatever
+	// it does this by adding support points to the GJK simplex, approaching the origin, until a suitible edge has been found
+
+	//the polytope array is an array of ordered support points on the minkowski difference/sum/whatever 
+	std::vector<Vector2> polytope;
+	polytope.push_back(gjkSimplex.a);
+	polytope.push_back(gjkSimplex.b);
+	polytope.push_back(gjkSimplex.c);
+	
+	//temp variables containing edge information
+	Vector2 edgeNormal;
+	float dist;
+	int index;
+
+	while (true)
+	{
+		//find the edge on the current polytope
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+		dist = INFINITY;
+
+		int i = polytope.size() - 1;
+		for (int j = 0; j < polytope.size(); j++)
+		{
+
+			Vector2 delta = polytope[j] - polytope[i];
+			Vector2 norm = glm::normalize(em::TripleCross(delta, polytope[i], delta));
+			float d = glm::dot(norm, polytope[i]);
+			if (d < dist)
+			{
+				//distance
+				dist = d;
+				//the normal to the edge pointing out
+				edgeNormal = norm;
+				//the second point on the edge, also the index at which a support point found using edgeNormal would need to be inserted into the polytope array
+				index = j;
+			}
+			i = j;
+		}
+		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		Vector2 support = GetSupport(a, b, tA, tB, edgeNormal);
+
+		float depth = glm::dot(support, edgeNormal);
+		if (depth - dist < DISTANCE_TOLERANCE)
+		{
+			//we have found the edge nearest the origin (or something close to it)
+			//using that we can return collision info.
+			data->collisionNormal = edgeNormal;
+			data->depth = depth;
+			return true;
+		}
+		else 
+		{
+			//otherwise we haven't found the closest edge
+			//add the support point into the polytope vector, in between the points that created the edge
+			polytope.insert(polytope.begin() + index, support);
+		}
+	}
 }
 
-void EPA(Simplex gjkTri, Shape* a, Shape* b, Transform& tA, Transform& tB)
-{
-
-}
 
 #pragma endregion
 
@@ -203,11 +284,13 @@ bool CollisionManager::CollideCirclePolygon(CollisionData& data)
 	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
-	Simplex tri;
-	if (GJK(a, b, data.a->transform, data.b->transform, &tri))
+	EPACollisionData epaData;
+	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
 	{
-		Vector2 circlePoint = data.b->GetTransform().TransformPoint(a->centrePoint);
-
+		data.collisionNormal = -epaData.collisionNormal;
+		data.penetration = epaData.depth;
+		data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) + a->radius * epaData.collisionNormal;
+		return true;
 	}
 
 	return false;
@@ -221,27 +304,13 @@ bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
 	/*std::cout << "Do polygons collide: " << Intersection(a, b, data.a->transform, data.b->transform, nullptr)
 		<< std::endl;*/
 
-	Simplex tri;
-	if (GJK(a, b, data.a->transform, data.b->transform, &tri))
+	EPACollisionData epaData;
+	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
 	{
-		/*while (true)
-		{*/
-			struct
-			{
-				Vector2 start,
-					end;
-			} closestEdge;
-
-			std::cout << "Intersection: (point A), penetration: " << glm::length(tri.a) <<
-			"\n\t(point B), penetration: " << glm::dot(tri.b) <<
-			"(point C), penetration: " << glm::length(tri.c) << "\n";
-				
-		//}
-	}
-	else
-	{
-		std::cout << "Intersection: 0\n";
-
+		data.collisionNormal = -epaData.collisionNormal;
+		data.penetration = epaData.depth;
+		data.collisionPoints[0] = 0.5f * (data.a->transform.position + data.b->transform.position); //<-- interesting how well this works even though it's not at all accurate.
+		return true;
 	}
 
 	return false;
@@ -252,6 +321,15 @@ bool CollisionManager::CollidePolygonCapsule(CollisionData& data)
 	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
+	EPACollisionData epaData;
+	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
+	{
+		data.collisionNormal = -epaData.collisionNormal;
+		data.penetration = epaData.depth;
+		data.collisionPoints[0] = em::ClosestPointOnLine(data.b->transform.TransformPoint(b->pointA), data.b->transform.TransformPoint(b->pointB),
+			data.a->transform.TransformPoint(a->centrePoint)) + b->radius * data.collisionNormal; //<-- once again, this works really well for something that is not accurate.
+		return true;
+	}
 	//PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	//CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
@@ -296,7 +374,7 @@ bool CollisionManager::CollidePolygonPlane(CollisionData& data)
 {
 	PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
-
+	
 	Vector2 planeNormal = data.b->GetTransform().TransformPoint(b->normal);
 	float planeDistance = glm::dot(data.b->GetTransform().TransformPoint(b->distance * b->normal), planeNormal);
 

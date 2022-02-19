@@ -15,6 +15,7 @@ namespace em
 	Vector2 GetPerpendicularCounterClockwise(Vector2 v);
 	Vector2 GetPerpendicularTowardsPoint(Vector2 a, Vector2 b, Vector2 point);
 	Vector2 Normalize(Vector2 v);
+	Vector2 TripleCross(Vector2 a, Vector2 b, Vector2 c);
 };
 
 

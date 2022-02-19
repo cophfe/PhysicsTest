@@ -578,6 +578,11 @@ void PlayerInput::OnKeyPressed(int key)
 		SetHeldShapeTool(heldShapeTool);
 		SetHeldModifierTool(heldModifierTool);
 		break;
+	case GLFW_KEY_R:
+		SetHeldShapeTool(heldShapeTool);
+		SetHeldModifierTool(heldModifierTool);
+		ClearPhysicsObjects(*speedUpButton, &program);
+		break;
 	case GLFW_KEY_SPACE:
 		PauseUnpause(*pauseButton, &program);
 		break;

@@ -31,9 +31,16 @@ namespace em
 	Vector2 GetPerpendicularTowardsPoint(Vector2 a, Vector2 b, Vector2 point)
 	{
 		//triple cross method in 2d
-		Vector2 delta = b-a;
-		float cross = em::Cross(delta, point-a);
-		return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
+		Vector2 AB = b-a;
+		float cross = em::Cross(AB, point-a);
+		return glm::normalize(Vector2(-cross * AB.y, cross * AB.x));
+	}
+
+	Vector2 TripleCross(Vector2 a, Vector2 b, Vector2 c)
+	{
+		//just a more transparent version of GetPerpindicularTowardsPoint, literaly just (a x b) x c
+		float cross = em::Cross(a, b);
+		return glm::normalize(Vector2(-cross * c.y, cross * c.x));
 	}
 
 	//safe normalize
@@ -51,7 +58,7 @@ namespace em
 	{
 		Vector2 lineDelta = b - a;
 		float t = glm::dot(point - a, lineDelta) / SquareLength(lineDelta); //div by lineDelta means nothing needs to be normalised
-		return a + glm::min(glm::max(t, 0.0f), 1.0f) * lineDelta;
+		return a + (glm::min(glm::max(t, 0.0f), 1.0f) * lineDelta);
 	}
 
 	Vector2 ClosestPointOnPlane(Vector2 planeNormal, float distance, Vector2 point)

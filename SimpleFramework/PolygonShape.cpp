@@ -66,7 +66,7 @@ void PolygonShape::CalculateMass(float& mass, float& inertia, float density)
 
 AABB PolygonShape::CalculateAABB(Transform& transform)
 {
-	return AABB{ Vector2{INFINITY, INFINITY}, Vector2{-INFINITY, -INFINITY} };
+	//return AABB{ Vector2{INFINITY, INFINITY}, Vector2{-INFINITY, -INFINITY} };
 
 	Vector2 point = transform.TransformPoint(points[0]);
 
