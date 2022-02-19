@@ -115,8 +115,8 @@ struct Simplex
 };
 
 //GJK function
-//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4 and this page: https://dyn4j.org/2010/04/gjk-distance-closest-points/
-static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
+//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4
+static bool Intersection(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
 {
 	//GJK checks if the minkowski difference of two shapes encloses the origin or not.
 	//if the minkowski difference does enclose the origin it means the two shapes are intersecting, because it means at least one point in the area inclosed by shape a is in the same position as a point in the area inclosed by shape b.
@@ -144,58 +144,35 @@ static bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* final
 
 	while (true)
 	{
-		//at this point in the loop, tri.c is always undefined.
 		tri.c = GetSupport(a, b, tA, tB, tri.dir);
-
 		if (glm::dot(tri.c, tri.dir) < 0)
 			return false;
 
 		//check if inside the triangle defined by a,b,c
 		//this method is based on voronoi regions and uses our previous knowledge about the shape to simplify the calculations
-
-		//check if point is in voronoi region defined by line CB
 		Vector2 v = GetPerpendicularTowardOrigin(tri.c, tri.b);
 		if (glm::dot(v, tri.c) > 0)
 		{
-			//in this case, origin is in the region in the direction v from the triangle we created.
-			//set the tri.dir vector to this direction, and remove point a from the triangle
 			tri.dir = v;
 			tri.a = tri.b;
 			tri.b = tri.c;
 			continue;
 		}
-		//check if point is in voronoi region defined by line CA
 		v = GetPerpendicularTowardOrigin(tri.c, tri.a);
 		if (glm::dot(v, tri.c) > 0)
 		{
-			//in this case, origin is in the region in the direction v from the triangle we created.
-			//set the tri.dir vector to this direction, and remove point b from the triangle
 			tri.dir = v;
 			tri.b = tri.c;
 			continue;
 		}
-		//if not in those regions, the triangle MUST contain the origin, so it it colliding
+		//the triangle MUST contain the origin at this point, so it it colliding
+
 		if (finalSimplex != nullptr)
 			*finalSimplex = tri; //return final simplex for EPA
 
 		return true;
 	}
 }
-
-struct Edge {
-	Vector2 a, b;
-};
-
-Edge FindClosestEdge()
-{
-	
-}
-
-void EPA(Simplex gjkTri, Shape* a, Shape* b, Transform& tA, Transform& tB)
-{
-
-}
-
 #pragma endregion
 
 bool CollisionManager::CollideCirclePolygon(CollisionData& data)
@@ -204,7 +181,7 @@ bool CollisionManager::CollideCirclePolygon(CollisionData& data)
 	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
 	Simplex tri;
-	if (GJK(a, b, data.a->transform, data.b->transform, &tri))
+	if (Intersection(a, b, data.a->transform, data.b->transform, &tri))
 	{
 		Vector2 circlePoint = data.b->GetTransform().TransformPoint(a->centrePoint);
 
@@ -222,7 +199,7 @@ bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
 		<< std::endl;*/
 
 	Simplex tri;
-	if (GJK(a, b, data.a->transform, data.b->transform, &tri))
+	if (Intersection(a, b, data.a->transform, data.b->transform, &tri))
 	{
 		/*while (true)
 		{*/
@@ -233,7 +210,7 @@ bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
 			} closestEdge;
 
 			std::cout << "Intersection: (point A), penetration: " << glm::length(tri.a) <<
-			"\n\t(point B), penetration: " << glm::dot(tri.b) <<
+			"\n\t(point B), penetration: " << glm::length(tri.b) <<
 			"(point C), penetration: " << glm::length(tri.c) << "\n";
 				
 		//}

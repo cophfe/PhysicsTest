@@ -52,9 +52,7 @@ Shape* CircleShape::Clone()
 
 Vector2 CircleShape::Support(Vector2 v, Transform& transform)
 {
-	v = transform.InverseTransformDirection(v);
-
-	return transform.TransformPoint(v * radius);
+	return transform.TransformPoint(centrePoint) + v * radius;
 }
 
 Vector2 CircleShape::GetCentrePoint()
