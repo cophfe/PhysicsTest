@@ -1,7 +1,7 @@
 #include "CollisionManager.h"
 #include "ExtraMath.hpp"
 #include "PhysicsProgram.h"
-#define COLLISION_ITERATIONS 5
+#define COLLISION_ITERATIONS 10
 
 #ifndef COLLISIONROTATION
 #define COLLISIONROTATION
@@ -128,7 +128,7 @@ void CollisionManager::DeletePhysicsBody(PhysicsObject* body)
 {
 	if (!body) return;
 
-	auto it = std::remove(bodies.begin(), bodies.end(), body);
+	bodies.erase(std::remove(bodies.begin(), bodies.end(), body));
 	delete body;
 }
 

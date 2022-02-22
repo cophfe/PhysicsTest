@@ -404,7 +404,8 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					break;
 				case HELD_MODIFIER_TOOL::DELETE:
 					GameObject* gO = program.GetGameObjectUnderPoint(startingPosition, true);
-					program.DeleteGameObject(gO);
+					if (gO)
+						program.DeleteGameObject(gO);
 					break;
 				}
 			}
@@ -577,12 +578,20 @@ void PlayerInput::OnKeyPressed(int key)
 	switch (key)
 	{
 	case GLFW_KEY_ESCAPE:
-		SetHeldShapeTool(heldShapeTool);
-		SetHeldModifierTool(heldModifierTool);
+		if (heldShape != nullptr)
+		{
+			delete heldShape;
+			heldShape = nullptr;
+		}
+		usingTool = false;
 		break;
 	case GLFW_KEY_R:
-		SetHeldShapeTool(heldShapeTool);
-		SetHeldModifierTool(heldModifierTool);
+		if (heldShape != nullptr)
+		{
+			delete heldShape;
+			heldShape = nullptr;
+		}
+		usingTool = false;
 		ClearPhysicsObjects(*speedUpButton, &program);
 		break;
 	case GLFW_KEY_SPACE:

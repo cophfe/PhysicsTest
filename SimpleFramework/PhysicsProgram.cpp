@@ -68,7 +68,6 @@ void PhysicsProgram::Render()
 	
 	lastTime = time;
 
-	//no I will not make these render functions consistant with each other, i will keep them as the messes they are
 	for (auto* gO : gameObjects)
 	{
 		gO->Render(this);
@@ -76,6 +75,7 @@ void PhysicsProgram::Render()
 	playerInput.Render();
 	for (size_t i = 0; i < uiObjects.size(); i++)
 	{
+		//no I will not make these render functions consistant with each other, i will keep them as the messes they are
 		uiObjects[i]->Draw(*this);
 	}
 
@@ -124,7 +124,7 @@ void PhysicsProgram::OnKeyReleased(int key)
 void PhysicsProgram::DeleteGameObject(GameObject* object)
 {
 	delete object;
-	std::remove(gameObjects.begin(), gameObjects.end(), object);
+	gameObjects.erase(std::remove(gameObjects.begin(), gameObjects.end(), object));
 }
 
 GameObject* PhysicsProgram::CreateGameObject(PhysicsData data, Vector3 colour)
@@ -150,6 +150,7 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 
 void PhysicsProgram::ResetPhysics()
 {
+	//resets stuff
 	for (size_t i = 0; i < gameObjects.size(); i++)
 	{
 		delete gameObjects[i];
@@ -163,6 +164,13 @@ void PhysicsProgram::ResetPhysics()
 	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, 1), -gridLimits));
 	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(-1, 0), -gridLimits));
 	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, -1), -gridLimits));
+
+	//testing for physics problems
+	data = PhysicsData(Vector2(5, -13), glm::radians(45.0f));
+	CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
+	data.position.y += 2.1f;
+	CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
+
 }
 
 PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)

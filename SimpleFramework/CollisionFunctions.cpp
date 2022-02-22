@@ -112,7 +112,13 @@ Vector2 GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
 	// (direction x line) x line
 
 	float cross = em::Cross(direction, line);
-	return glm::normalize(Vector2(-cross * line.y, cross * line.x));
+
+	Vector2 tripleCross = Vector2(-cross * line.y, cross * line.x);
+	float len = glm::length(tripleCross);
+	
+	if (len == 0)
+		return em::normalize(em::GetPerpendicularCounterClockwise(line + Vector2(0.001f,0)));
+	return tripleCross/len;
 }
 
 
@@ -137,12 +143,12 @@ static bool GJK(Shape * a, Shape * b, Transform & tA, Transform & tB, Simplex * 
 	//the triangles chosen are composed of 3 points on the minkowski difference, and those three points are chosen intelligently to minimise the tri checks
 	Simplex tri;
 	//first direction can be anything, but is often the direction from shape a to b (it is probably more efficient on average then a random direction, idk)
-	tri.dir = glm::normalize(tB.position - tA.position);
+	tri.dir = em::normalize(tB.position - tA.position);
 
 	//get furthest point on the minkowski difference in the direction of tri.dir
 	tri.a = GetSupport(a, b, tA, tB, tri.dir);
 	//the best next direction to choose is towards the origin
-	tri.dir = glm::normalize(-tri.a);
+	tri.dir = em::normalize(-tri.a);
 	//get furthest point in the direction of the origin from point a
 	tri.b = GetSupport(a, b, tA, tB, tri.dir);
 
@@ -209,6 +215,7 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 	Simplex gjkSimplex;
 	if (!GJK(a, b, tA, tB, &gjkSimplex))
 	{
+		std::cout << "NO COLLISION\n";
 		return false; //gjk returned false
 	}
 	
@@ -253,6 +260,9 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 			i = j;
 		}
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+		if (dist == INFINITY)
+			std::cout << "THIS IS BAD\n";
 
 		Vector2 support = GetSupport(a, b, tA, tB, edgeNormal);
 
