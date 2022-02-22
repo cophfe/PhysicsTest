@@ -77,9 +77,6 @@
     <ClCompile Include="Slider.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
-    <ClCompile Include="ExtraMath.cpp">
-      <Filter>Engine\MyAdditions</Filter>
-    </ClCompile>
     <ClCompile Include="Transform.cpp">
       <Filter>Game\Physics</Filter>
     </ClCompile>
@@ -99,6 +96,9 @@
       <Filter>Game\Physics</Filter>
     </ClCompile>
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="ExtraMath.cpp">
+      <Filter>Game\Physics</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -194,9 +194,6 @@
     <ClInclude Include="Slider.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="ExtraMath.hpp">
-      <Filter>Engine\MyAdditions</Filter>
-    </ClInclude>
     <ClInclude Include="Transform.h">
       <Filter>Game\Physics</Filter>
     </ClInclude>
@@ -204,6 +201,9 @@
       <Filter>Game\Physics</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.h" />
+    <ClInclude Include="ExtraMath.hpp">
+      <Filter>Game\Physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Engine">

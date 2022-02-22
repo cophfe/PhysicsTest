@@ -131,7 +131,8 @@ PhysicsObject::~PhysicsObject()
 	if (colliders)
 		delete[] colliders;
 	colliders = nullptr;
-	*pointer = nullptr;
+	if (pointer)
+		*pointer = nullptr;
 }
 
 void PhysicsObject::CalculateMass()

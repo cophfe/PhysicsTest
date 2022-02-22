@@ -43,11 +43,15 @@ namespace em
 		return glm::normalize(Vector2(-cross * c.y, cross * c.x));
 	}
 
-	//safe normalize
-	Vector2 Normalize(Vector2 v)
+	float Sq(float f)
+	{
+		return f*f;
+	}
+
+	Vector2 NormalizeSafe(Vector2 v, Vector2 ifZero)
 	{
 		float len = glm::length(v);
-		return len == 0 ? Vector2(0,1) : v/len;
+		return isnan(len) ? ifZero : v / len;
 	}
 
 	float SquareLength(Vector2 v) {

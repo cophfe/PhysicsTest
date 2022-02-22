@@ -48,8 +48,8 @@ public:
 	Button* GetStepForwardButton() { return stepForwardButton; };
 
 	~PlayerInput();
-	PlayerInput(const PlayerInput& other) = delete;
-	PlayerInput& operator= (const PlayerInput& other) = delete;
+	//PlayerInput(const PlayerInput& other) = delete;
+	//PlayerInput& operator= (const PlayerInput& other) = delete;
 private:
 	bool usingTool = false;
 	bool isToolTypeShape = true;

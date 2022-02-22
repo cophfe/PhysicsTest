@@ -126,14 +126,13 @@ Vector2 PolygonShape::Support(Vector2 v, Transform& transform)
 
 PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
 {
-
 	if (pointCount > max_vertices) {
 
-		std::cout << "Error: Polygons have a max vertex count of " << max_vertices;
+		std::cout << "Error: Polygons have a max vertex count of " << max_vertices << std::endl;
 		pointCount = max_vertices;
 	}
 
-	Vector2* points = new Vector2[pointCount];
+	Vector2 points[max_vertices];
 
 	float iPointCount = glm::two_pi<float>() / pointCount;
 	for (size_t i = 0; i < pointCount; i++)
@@ -142,7 +141,6 @@ PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCou
 	}
 
 	return new PolygonShape(points, pointCount);
-	delete[] points;
 }
 
 bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)

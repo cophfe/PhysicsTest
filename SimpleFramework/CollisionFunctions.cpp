@@ -83,8 +83,9 @@ bool CollisionManager::CollideCirclePlane(CollisionData& data)
 
 #pragma region Polygon
 
-#pragma region GJK Stuff
+#pragma region GJK + EPA Stuff
 constexpr float DISTANCE_TOLERANCE = 0.0001f;
+constexpr float CLIP_TOLERANCE = 0.001f;
 
 struct Simplex
 {
@@ -94,19 +95,15 @@ struct Simplex
 
 Vector2 GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
 {
-	//triple cross method in 2d, returns a vector perpendicular to line AB, orientaded towards a point
+	//triple cross method in 2d, returns a vector perpendicular to line AB, orientated towards a point
 	// ((b-a) x ((0,0)-a)) x (b-a)
 
 	Vector2 delta = b - a;
 	float cross = em::Cross(delta, -a);
 	return glm::normalize(Vector2(-cross * delta.y, cross * delta.x));
 	
-	//triple cross product can be converted into dot product. kinda cool.
+	//triple cross product can be converted into dot product. kinda cool
 	//(a x b) x c == b * (c.a) - a * (c.b)
-	//Vector2 delta = b - a;
-	//return glm::normalize(-a * glm::dot(delta, delta) - delta * glm::dot(delta, -a));
-	//simplified:
-	//return glm::normalize(delta * (glm::dot(delta, a) - a * delta));
 }
 
 Vector2 GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
@@ -203,7 +200,7 @@ static bool GJK(Shape * a, Shape * b, Transform & tA, Transform & tB, Simplex * 
 struct EPACollisionData
 {
 	float depth;
-	Vector2 collisionNormal; //Is from A to B right now (opposite of regular collision data)
+	Vector2 collisionNormal;
 };
 
 //the final version of this function is based on this video: https://www.youtube.com/watch?v=0XQ2FSz3EK8 and this page: https://dyn4j.org/2010/04/gjk-distance-closest-points/
@@ -226,13 +223,13 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 	polytope.push_back(gjkSimplex.c);
 	
 	//temp variables containing edge information
-	Vector2 edgeNormal;
+	Vector2 edgeNormal = Vector2(0,0);
 	float dist;
 	int index;
 
 	while (true)
 	{
-		//find the edge on the current polytope
+		//find the closest edge to the centrepoint on the current polytope
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 		dist = INFINITY;
 
@@ -242,6 +239,7 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 
 			Vector2 delta = polytope[j] - polytope[i];
 			Vector2 norm = glm::normalize(em::TripleCross(delta, polytope[i], delta));
+
 			float d = glm::dot(norm, polytope[i]);
 			if (d < dist)
 			{
@@ -263,7 +261,7 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 		{
 			//we have found the edge nearest the origin (or something close to it)
 			//using that we can return collision info.
-			data->collisionNormal = edgeNormal;
+			data->collisionNormal = -edgeNormal; //negate so that it is from b to a
 			data->depth = depth;
 			return true;
 		}
@@ -287,13 +285,96 @@ bool CollisionManager::CollideCirclePolygon(CollisionData& data)
 	EPACollisionData epaData;
 	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
 	{
-		data.collisionNormal = -epaData.collisionNormal;
+		data.collisionNormal = epaData.collisionNormal;
 		data.penetration = epaData.depth;
-		data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) + a->radius * epaData.collisionNormal;
+		data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) - a->radius * epaData.collisionNormal;
 		return true;
 	}
 
 	return false;
+}
+
+struct PolygonEdge {
+	Vector2 pA,
+		pB;
+
+	Vector2 maxProjectionVertex;
+};
+//returns index 
+PolygonEdge FindPolygonCollisionEdge(PolygonShape* pS, Transform& t, Vector2 normal)
+{
+	//Get the point furthest along the collision normal
+	Vector2 collisionNormal = t.InverseTransformDirection(normal);
+	int pointIndex = 0;
+	float d = glm::dot(collisionNormal, pS->points[0]);
+	float d1;
+
+	for (char i = 1; i < pS->pointCount; i++)
+	{
+		d1 = glm::dot(collisionNormal, pS->points[i]);
+		if (d1 > d)
+		{
+			pointIndex = i;
+			d = d1;
+		}
+	}
+
+	//now see which of the two edges connected to this vertex are most perpendicular to the normal (aka the one with the dot product closest to zero
+	Vector2 pointBack = pS->points[pointIndex == 0 ? pS->pointCount - 1 : pointIndex - 1];
+	Vector2 pointFront = pS->points[pointIndex + 1 == pS->pointCount ? 0 : pointIndex + 1];
+
+	Vector2 backLine = glm::normalize(pS->points[pointIndex] - pointBack);
+	Vector2 frontLine = glm::normalize(pS->points[pointIndex] - pointFront);
+
+	Vector2 transformedMaxVert = t.TransformPoint(pS->points[pointIndex]);
+
+	if (glm::dot(backLine, collisionNormal) <= glm::dot(frontLine, collisionNormal))
+	{
+		return { t.TransformPoint(pointBack), transformedMaxVert , transformedMaxVert };
+	}
+	else
+		return { transformedMaxVert, t.TransformPoint(pointFront),transformedMaxVert };
+}
+
+struct ClipInfo
+{
+	Vector2 points[2];
+	int pointCount;
+};
+//clips 2 points so that they are more than or equal to clip distance along the clipping normal
+ClipInfo Clip(Vector2 pointToClip1, Vector2 pointToClip2, Vector2 clippingNormal, float clipDist)
+{
+	ClipInfo c;
+	c.pointCount = 0;
+
+	//along normal relative to clipDist
+	float point1AlongNormal = glm::dot(clippingNormal, pointToClip1) - clipDist;
+	float point2AlongNormal = glm::dot(clippingNormal, pointToClip2) - clipDist;
+
+	//the point is more than
+	if (point1AlongNormal >= 0)
+	{
+		c.points[0] = pointToClip1;
+		c.pointCount++;
+	}
+	if (point2AlongNormal >= 0)
+	{
+		c.points[c.pointCount] = pointToClip2;
+		c.pointCount++;
+	}
+
+	//if point1 is on the left and p2 is on the right of clip dist
+	if (point1AlongNormal * point2AlongNormal < 0)
+	{
+		Vector2 line = pointToClip2 - pointToClip1;
+		//percentage along the line (uncapped, so it's not between 0 and 1)
+		float t = point1AlongNormal / (point1AlongNormal - point2AlongNormal);
+		Vector2 point = line * t + pointToClip1;
+		c.points[c.pointCount] = point; //<-- ignore warning, this will not overrun
+		c.pointCount++;
+	}
+
+	return c;
 }
 
 bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
@@ -307,9 +388,60 @@ bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
 	EPACollisionData epaData;
 	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
 	{
-		data.collisionNormal = -epaData.collisionNormal;
+		//now find the collision points using the clipping method.
+		PolygonEdge reference = FindPolygonCollisionEdge(a, data.a->transform, -epaData.collisionNormal); 
+		PolygonEdge incident = FindPolygonCollisionEdge(b, data.b->transform, epaData.collisionNormal);
+		
+		//reference edge: this edge clips the incident edge to get the contact points
+
+		//the edge most perpendicular to the normal (the one with the dot product closest to zero) is the reference edge, the other is the incident edge
+		bool flipEdges = em::Sq(glm::dot(reference.pB - reference.pA, epaData.collisionNormal)) > em::Sq(glm::dot(incident.pB - incident.pA, epaData.collisionNormal));
+		if (flipEdges)
+		{
+			PolygonEdge temp = reference;
+			reference = incident;
+			incident = temp;
+		}
+
+		Vector2 referenceTangent = glm::normalize(reference.pB - reference.pA);
+
+		float referenceStart = glm::dot(reference.pA, referenceTangent);
+		ClipInfo c;
+		/*c.pointCount = 2;
+		c.points[0] = incident.pA;
+		c.points[1] = incident.pB;*/
+		c = Clip(incident.pA, incident.pB, referenceTangent, referenceStart);
+		if (c.pointCount < 2) return false;
+		
+		float referenceEnd = glm::dot(reference.pB, referenceTangent);
+		c = Clip(c.points[0], c.points[1], -referenceTangent, -referenceEnd);
+		if (c.pointCount < 2) return false;
+
+		//delete vertices that are above the edge
+		Vector2 referenceNormal = em::GetPerpendicularClockwise(referenceTangent);
+		//if (flipEdges)
+		//	referenceNormal = -referenceNormal;
+
+		float max = glm::dot(reference.maxProjectionVertex, referenceNormal);
+		if (glm::dot(c.points[0], referenceNormal) > max)
+		{
+			if (c.pointCount > 1)
+				c.points[0] = c.points[1];
+			c.pointCount--;
+		}
+		if (glm::dot(c.points[1], referenceNormal) > max)
+		{
+			c.pointCount--;
+		}
+		if (c.pointCount < 1) return false;
+
+		data.collisionNormal = epaData.collisionNormal;
 		data.penetration = epaData.depth;
-		data.collisionPoints[0] = 0.5f * (data.a->transform.position + data.b->transform.position); //<-- interesting how well this works even though it's not at all accurate.
+		data.collisionPoints[0] = c.points[0];
+		data.collisionPoints[1] = c.points[1];
+		data.pointCount = c.pointCount;
+
+
 		return true;
 	}
 
@@ -324,12 +456,13 @@ bool CollisionManager::CollidePolygonCapsule(CollisionData& data)
 	EPACollisionData epaData;
 	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
 	{
-		data.collisionNormal = -epaData.collisionNormal;
+		data.collisionNormal = epaData.collisionNormal;
 		data.penetration = epaData.depth;
 		data.collisionPoints[0] = em::ClosestPointOnLine(data.b->transform.TransformPoint(b->pointA), data.b->transform.TransformPoint(b->pointB),
-			data.a->transform.TransformPoint(a->centrePoint)) + b->radius * data.collisionNormal; //<-- once again, this works really well for something that is not accurate.
+			data.a->transform.TransformPoint(a->centrePoint)) - b->radius * data.collisionNormal; //<-- once again, this works really well for something that is not accurate.
 		return true;
 	}
+
 	//PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 	//CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
 
@@ -397,7 +530,28 @@ bool CollisionManager::CollidePolygonPlane(CollisionData& data)
 		data.collisionNormal = planeNormal;
 		data.penetration = -minPenetration;
 		data.collisionPoints[0] = collisionPoint;
-		return true;
+
+		data.pointCount = 0;
+		//now find collision points
+		//now find the collision points using the clipping method.
+		PolygonEdge incident = FindPolygonCollisionEdge(a, data.a->transform, -planeNormal);
+		//the reference edge is perpendicular to the plane normal
+
+		//add vertices that aren't above the plane
+		if ( glm::dot(incident.pA, planeNormal) <= planeDistance)
+		{
+			data.collisionPoints[0] = incident.pA;
+			data.pointCount++;
+		}
+		if ( glm::dot(incident.pB, planeNormal) <= planeDistance)
+		{
+			data.collisionPoints[data.pointCount] = incident.pB;
+			data.pointCount++;
+		}
+		if (data.pointCount < 1)
+			return false;
+		else
+			return true;
 	}
 	return false;
 }

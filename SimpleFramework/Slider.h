@@ -17,6 +17,7 @@ public:
 	void SetPosition(Vector2 newPosition);
 	Vector2 GetPosition();
 	void SetOnValueChangedCallback(void(*function)(Slider& slider, void* infoPtr, float value), void* infoPtr);
+	TYPE GetType() { return TYPE::SLIDER; }
 
 	Vector3 fillColour;
 	Vector3 fillColourOnHover;
@@ -26,6 +27,7 @@ public:
 
 	//fill amount is between 0 and 1
 	float GetFillAmount() { return fillAmount * fillOffset + fillMin; }
+	virtual ~Slider() = default;
 
 private:
 	AABB fillAABB;

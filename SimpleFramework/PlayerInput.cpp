@@ -359,7 +359,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 				switch (heldModifierTool)
 				{
 				case HELD_MODIFIER_TOOL::TRANSLATE:
-					heldObject = program.GetObjectUnderPoint(startingPosition, false);
+					heldObject = program.GetObjectUnderPoint(startingPosition, true);
 					if (heldObject == nullptr)
 					{
 						usingTool = false;
@@ -403,6 +403,8 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					startingPosition = heldObject->GetTransform().InverseTransformPoint(startingPosition);
 					break;
 				case HELD_MODIFIER_TOOL::DELETE:
+					GameObject* gO = program.GetGameObjectUnderPoint(startingPosition, true);
+					program.DeleteGameObject(gO);
 					break;
 				}
 			}

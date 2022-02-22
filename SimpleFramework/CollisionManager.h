@@ -9,47 +9,6 @@ typedef bool (*CollideFunction)(CollisionData& data);
 
 constexpr int DEFAULT_GRAVITY = 5;
 
-//typedef void (*PhysicsDrawFunction)(Shape* shape, Transform& transform, void* infoPointer);
-//struct PhysicsDrawer
-//{
-//	PhysicsDrawer() : callbacks({ DefaultDrawFunction, DefaultDrawFunction, DefaultDrawFunction, DefaultDrawFunction })
-//	{
-//		infoPointer = nullptr; drawingEnabled = false; 
-//	}
-//
-//	PhysicsDrawer(PhysicsDrawFunction circle, PhysicsDrawFunction polygon, PhysicsDrawFunction capsule, PhysicsDrawFunction plane, void* infoPointer)
-//		: infoPointer(infoPointer), drawingEnabled(true),
-//		callbacks({ circle ? circle : DefaultDrawFunction, polygon ? polygon : DefaultDrawFunction, capsule ? capsule : DefaultDrawFunction, plane ? plane : DefaultDrawFunction })
-//	{}
-//
-//	PhysicsDrawer& operator=(const PhysicsDrawer& other) 
-//	{
-//		memcpy(this, &other, sizeof(other));
-//		return *this;
-//	};
-//
-//	union {
-//		struct {
-//			const PhysicsDrawFunction circle;
-//			const PhysicsDrawFunction polygon;
-//			const PhysicsDrawFunction capsule;
-//			const PhysicsDrawFunction plane;
-//		} const callbacks;
-//		const PhysicsDrawFunction shapes[4];
-//	};
-//
-//	void CallDraw(Shape* shape, Transform& transform) 
-//	{
-//		int type = (int)shape->GetType();
-//		(shapes[type])(shape, transform, infoPointer);
-//	}
-//
-//	static void DefaultDrawFunction(Shape* shape, Transform& transform, void* infoPointer) {}
-//
-//	void* infoPointer;
-//	bool drawingEnabled;
-//};
-
 class CollisionManager
 {
 public:

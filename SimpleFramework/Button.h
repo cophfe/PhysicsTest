@@ -6,8 +6,6 @@ class PhysicsProgram;
 class Button : public UIObject
 {
 public:
-	
-
 	Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale = 0.0f, float padding = 2.0f, Vector3 edgeColour = Vector3(0,0,0));
 	
 	void Update(PhysicsProgram& program);
@@ -27,6 +25,8 @@ public:
 	const std::string& GetText() { return text; }
 	void SetPosition(Vector2 pos);
 	Vector2 GetPosition();
+	TYPE GetType() { return TYPE::BUTTON; }
+	~Button() = default;
 
 	Vector3 textColour; 
 	Vector3 colour;

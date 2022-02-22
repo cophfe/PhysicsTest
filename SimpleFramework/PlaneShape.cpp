@@ -26,7 +26,7 @@ PlaneShape::PlaneShape(Vector2 pointA, Vector2 pointB, void* null)
 
 bool PlaneShape::PointCast(Vector2 point, Transform& transform)
 {
-	return glm::dot(transform.InverseTransformPoint(point), normal) < distance;
+	return false;// glm::dot(transform.InverseTransformPoint(point), normal) < distance;
 }
 
 void PlaneShape::CalculateMass(float& mass, float& inertia, float density)

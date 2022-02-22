@@ -123,6 +123,7 @@ void PhysicsProgram::OnKeyReleased(int key)
 
 void PhysicsProgram::DeleteGameObject(GameObject* object)
 {
+	delete object;
 	std::remove(gameObjects.begin(), gameObjects.end(), object);
 }
 
@@ -149,7 +150,10 @@ void PhysicsProgram::OnWindowResize(int width, int height)
 
 void PhysicsProgram::ResetPhysics()
 {
-	//should delete gameObjects
+	for (size_t i = 0; i < gameObjects.size(); i++)
+	{
+		delete gameObjects[i];
+	}
 	gameObjects.clear();
 	collisionManager.ClearPhysicsBodies();
 	collisionPoints.clear();

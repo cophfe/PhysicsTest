@@ -42,7 +42,8 @@ public:
 	virtual SHAPE_TYPE GetType() = 0;
 	virtual Shape* Clone() = 0;
 	virtual Vector2 Support(Vector2 v, Transform& transform) = 0;
-
+	
+	virtual ~Shape() = default;
 private:
 	friend CollisionManager;
 
@@ -73,6 +74,8 @@ public:
 	char pointCount;
 	Vector2 centrePoint;
 
+	~PolygonShape() = default;
+
 private:
 	friend CollisionManager;
 	void CalculateNormals();
@@ -101,6 +104,9 @@ public:
 
 	float radius;
 	Vector2 centrePoint;
+
+	~CircleShape() = default;
+
 private:
 	friend CollisionManager;
 
@@ -127,6 +133,9 @@ public:
 	float radius;
 	Vector2 pointA;
 	Vector2 pointB;
+
+	~CapsuleShape() = default;
+
 private:
 	friend CollisionManager;
 
@@ -154,33 +163,7 @@ public:
 	Vector2 normal;
 	float distance;
 
+	~PlaneShape() = default;
 private:
 	friend CollisionManager;
-
 };
-
-
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-// CAPSULE CLASS
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-//is cheap because it is a line segment with a radius, like how a circle is a point with a radius
-//class SausageShape : public Shape 
-//{
-//public:
-//
-//	SausageShape(float radius, float height);
-//	void CalculateMass(float& mass, float& inertia, float density);
-//	void RenderShape(PhysicsProgram& program, Transform& transform);
-//	AABB CalculateAABB(Transform& transform);
-//	SHAPE_TYPE GetType();
-//	Shape* Clone();
-//
-//private:
-//	float radius;
-//	//(can construct a line from this and the centrepoint)
-//	Vector2 pointA;
-//	Vector2 pointB;
-//};
-

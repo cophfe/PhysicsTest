@@ -28,12 +28,7 @@ void GameObject::Render(PhysicsProgram* program)
 
 GameObject::~GameObject()
 {
-	if (manager && body)
-	{
-		body->SetPointer(nullptr);
-		manager->DeletePhysicsBody(body);
-		body = nullptr;
-	}
+	
 	
 }
 
