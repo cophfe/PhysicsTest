@@ -123,8 +123,9 @@ void PhysicsProgram::OnKeyReleased(int key)
 
 void PhysicsProgram::DeleteGameObject(GameObject* object)
 {
-	delete object;
 	gameObjects.erase(std::remove(gameObjects.begin(), gameObjects.end(), object));
+	collisionManager.DeletePhysicsBody(object->body);
+	delete object;
 }
 
 GameObject* PhysicsProgram::CreateGameObject(PhysicsData data, Vector3 colour)
@@ -166,10 +167,10 @@ void PhysicsProgram::ResetPhysics()
 	CreateGameObject(data, Vector3(1, 1, 1))->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, -1), -gridLimits));
 
 	//testing for physics problems
-	data = PhysicsData(Vector2(5, -13), glm::radians(45.0f));
-	CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
-	data.position.y += 2.1f;
-	CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
+	//data = PhysicsData(Vector2(5, -13), glm::radians(45.0f));
+	//CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
+	//data.position.y += 2.1f;
+	//CreateGameObject(data, Vector3(1, 0, 0))->GetPhysicsObject()->AddCollider(PolygonShape::GetRegularPolygonCollider(1, 4));
 
 }
 

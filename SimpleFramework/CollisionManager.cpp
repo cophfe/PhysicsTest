@@ -156,7 +156,8 @@ static Vector2 GetVelocityAtPoint(Vector2 centre, Vector2 point, float angularVe
 void CollisionManager::ResolveCollision(CollisionData& data)
 {
 	//if collision happened (data is added into manifold about collision)
-	if (EvaluateCollision(data) && (data.a->iMass + data.b->iMass != 0))
+	if ((data.a->iMass + data.b->iMass != 0) && 
+		EvaluateCollision(data))
 	{
 		if (data.pointCount == 2)
 		{
@@ -173,79 +174,88 @@ void CollisionManager::ResolveCollision(CollisionData& data)
 			- (data.a->GetVelocity() + angularVelocityA);
 
 		float projectedRV = glm::dot(data.collisionNormal, rV);
-		//bounciness is average of the two
-		float e = 0.5f * (data.a->bounciness + data.b->bounciness);
+		
+		if (projectedRV > 0) // this check stops objects from 'sticking' together
+		{
+			//bounciness is average of the two
+			float e = 0.5f * (data.a->bounciness + data.b->bounciness);
 
-		float rACrossN = em::Cross(radiusA, data.collisionNormal);
-		float rBCrossN = em::Cross(radiusB, data.collisionNormal);
+			float rACrossN = em::Cross(radiusA, data.collisionNormal);
+			float rBCrossN = em::Cross(radiusB, data.collisionNormal);
 
-		float massDistribution = 1.0f/(data.a->iMass + data.b->iMass
-			+ (rACrossN * rACrossN * data.a->iInertia) + (rBCrossN * rBCrossN * data.b->iInertia));
-		float impulseMagnitude = (-(1 + e) * projectedRV) * massDistribution;
+			float massDistribution = 1.0f / (data.a->iMass + data.b->iMass
+				+ (rACrossN * rACrossN * data.a->iInertia) + (rBCrossN * rBCrossN * data.b->iInertia));
+			float impulseMagnitude = (-(1 + e) * projectedRV) * massDistribution;
 
-		//turn into vector
-		Vector2 impulse = data.collisionNormal * impulseMagnitude;
+			//turn into vector
+			Vector2 impulse = data.collisionNormal * impulseMagnitude;
 
-		//calculate impulse to add
-		data.a->AddImpulseAtPosition(-impulse, data.collisionPoints[0]);
-		data.b->AddImpulseAtPosition(impulse, data.collisionPoints[0]);
+			//calculate impulse to add
+			data.a->AddImpulseAtPosition(-impulse, data.collisionPoints[0]);
+			data.b->AddImpulseAtPosition(impulse, data.collisionPoints[0]);
 
 #ifdef FRICTION
-		//FRICTION
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//FRICTION
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		//this is how box2D calculates friction coefficients (so that low coefficients seriously lower overall friction)
-		float staticFriction = sqrtf(data.a->staticFriction * data.b->staticFriction);
-		float dynamicFriction = sqrtf(data.a->dynamicFriction * data.b->dynamicFriction);
+			//this is how box2D calculates friction coefficients (so that low coefficients seriously lower overall friction)
+			float staticFriction = sqrtf(data.a->staticFriction * data.b->staticFriction);
+			float dynamicFriction = sqrtf(data.a->dynamicFriction * data.b->dynamicFriction);
 
-		
-		Vector2 tangent;
-		//calculate the tangent here. if there is no relative velocity than there is zero friction too (or at least zero friction that can be modelled using the coloumb model)
-		Vector2 t = rV - projectedRV * data.collisionNormal;
-		if (t == Vector2(0, 0))
-			tangent = Vector2(0, 0);
-		else
-			tangent = glm::normalize(t);
-		float tangentRV = glm::dot(tangent, rV);
-		
-		float rACrossT = em::Cross(radiusA, tangent);
-		float rBCrossT = em::Cross(radiusB, tangent);
-		massDistribution = 1.0f	/ (data.a->iMass + data.b->iMass
+
+			Vector2 tangent;
+			//calculate the tangent here. if there is no relative velocity than there is zero friction too (or at least zero friction that can be modelled using the coloumb model)
+			Vector2 t = rV - projectedRV * data.collisionNormal;
+			if (t == Vector2(0, 0))
+				tangent = Vector2(0, 0);
+			else
+				tangent = glm::normalize(t);
+			float tangentRV = glm::dot(tangent, rV);
+
+			float rACrossT = em::Cross(radiusA, tangent);
+			float rBCrossT = em::Cross(radiusB, tangent);
+			massDistribution = 1.0f / (data.a->iMass + data.b->iMass
 				+ (rACrossT * rACrossT * data.a->iInertia) + (rBCrossT * rBCrossT * data.b->iInertia));
 
-		//the magnitude of friction in a static friction situation
-		float frictionMagnitude = dynamicFriction * -tangentRV * massDistribution;
-		//if overcomes static friction, set to dynamic friction
-		// impulseMag is always negative, so the comparer is flipped into less than from more than 
-		if (frictionMagnitude <= staticFriction * impulseMagnitude) 
-			frictionMagnitude = dynamicFriction * impulseMagnitude;
-		
-		data.a->AddImpulseAtPosition(-frictionMagnitude * tangent, data.collisionPoints[0]);
-		data.b->AddImpulseAtPosition(frictionMagnitude * tangent, data.collisionPoints[0]);
-		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+			//the magnitude of friction in a static friction situation
+			float frictionMagnitude = dynamicFriction * -tangentRV * massDistribution;
+			//if overcomes static friction, set to dynamic friction
+			// impulseMag is always negative, so the comparer is flipped into less than from more than 
+			if (frictionMagnitude <= staticFriction * impulseMagnitude)
+				frictionMagnitude = dynamicFriction * impulseMagnitude;
+
+			data.a->AddImpulseAtPosition(-frictionMagnitude * tangent, data.collisionPoints[0]);
+			data.b->AddImpulseAtPosition(frictionMagnitude * tangent, data.collisionPoints[0]);
+			//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #endif
 #else
 		//resolve collision
 		Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity();
-		
+
 		float projectedRV = glm::dot(manifold.collisionNormal, rV);
-		//bounciness is average of the two
-		float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
 
-		//calculate impulse magnitude
-		float impulseMagnitude = -(1 + e) * projectedRV;
-		impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());
+		if (projectedRV > 0)
+		{
+			//bounciness is average of the two
+			float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
 
-		//turn into vector
-		Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
+			//calculate impulse magnitude
+			float impulseMagnitude = -(1 + e) * projectedRV;
+			impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());
 
-		manifold.a->AddImpulse(-impulse);
-		manifold.b->AddImpulse(impulse);
+			//turn into vector
+			Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
+
+			manifold.a->AddImpulse(-impulse);
+			manifold.b->AddImpulse(impulse);
 #endif
+		}
 
 		//teleport shapes out of each other based on mass
-		data.a->SetPosition(data.a->GetPosition() + data.collisionNormal * (data.penetration * data.a->GetInverseMass() / (data.a->GetInverseMass() + data.b->GetInverseMass())));
-		data.b->SetPosition(data.b->GetPosition() - data.collisionNormal * (data.penetration * data.b->GetInverseMass() / (data.a->GetInverseMass() + data.b->GetInverseMass())));
+		Vector2 offsetA = data.collisionNormal * (data.penetration * data.a->GetInverseMass() / (data.a->GetInverseMass() + data.b->GetInverseMass()));
+		data.a->SetPosition(data.a->GetPosition() + offsetA);
+		Vector2 offsetB = -data.collisionNormal * (data.penetration * data.b->GetInverseMass() / (data.a->GetInverseMass() + data.b->GetInverseMass()));
+		data.b->SetPosition(data.b->GetPosition() + offsetB);
 	
 		//[debug] add collision point for rendering
 		program->collisionPoints.push_back(data.collisionPoints[0]);

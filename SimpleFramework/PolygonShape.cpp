@@ -13,7 +13,7 @@ PolygonShape::PolygonShape(Vector2* vertices, int vertexCount)
 	//(this function organises vertices, calculates concave hull and centerpoint)
 	OrganisePoints(vertices, vertexCount);
 
-	CalculateNormals();
+	//CalculateNormals();
 }
 
 bool PolygonShape::PointCast(Vector2 point, Transform& transform)
@@ -194,17 +194,17 @@ bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
 }
 
 //WINDING ORDER: COUNTER CLOCKWISE
-void PolygonShape::CalculateNormals()
-{
-	//calculate normals, assuming counter clockwise order
-	for (size_t i = 0; i < pointCount; i++)
-	{
-		int j = (i + 1) % pointCount;
-		Vector2 delta = glm::normalize(points[i] - points[j]);
-		delta = Vector2(-delta.y, delta.x);
-		normals[i] = delta;
-	}
-}
+//void PolygonShape::CalculateNormals()
+//{
+//	//calculate normals, assuming counter clockwise order
+//	for (size_t i = 0; i < pointCount; i++)
+//	{
+//		int j = (i + 1) % pointCount;
+//		Vector2 delta = glm::normalize(points[i] - points[j]);
+//		delta = Vector2(-delta.y, delta.x);
+//		normals[i] = delta;
+//	}
+//}
 
 void PolygonShape::CalculateCentrePoint()
 {

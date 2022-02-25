@@ -70,7 +70,7 @@ public:
 	static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
 
 	Vector2 points[max_vertices];
-	Vector2 normals[max_vertices];
+	//Vector2 normals[max_vertices];
 	char pointCount;
 	Vector2 centrePoint;
 
@@ -78,7 +78,7 @@ public:
 
 private:
 	friend CollisionManager;
-	void CalculateNormals();
+	//void CalculateNormals();
 	void CalculateCentrePoint();
 	bool OrganisePoints(Vector2* points, int pointCount);
 

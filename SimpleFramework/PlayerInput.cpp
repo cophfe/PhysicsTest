@@ -144,7 +144,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	Vector3 edgeColour(1, 1, 1);
 	const UIObject::ANCHOR_POINT anchor = UIObject::ANCHOR_POINT::TOP_RIGHT;
 
-	
+
 	speedUpButton = (Button*)program.AddUIObject(new Button(Vector2(30, 30), Vector2(30, 110), UIObject::ANCHOR_POINT::TOP_LEFT, ">>", textColour, backgroundColour, program, 0, 8, edgeColour));
 	speedUpButton->SetOnClick(SpeedUnspeed, &program);
 
@@ -159,6 +159,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 
 	edgeColour = Vector3(0, 1, 0);
 	// SHAPE TOOL BUTTONS
+	startPos.x += size.x + 5;
 	int i = 0;
 	Button* newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Circle", textColour, backgroundColour, program, 0, 8, edgeColour));
 	shapeButtons.push_back(newButton);
@@ -183,13 +184,13 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 
 	i++;
 	i++;
+	startPos.x -= size.x + 5;
 	Slider* radiusSlider = (Slider*)program.AddUIObject(
 		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, textColour * 0.5f, backgroundColour, edgeColour, program
 			, 4, true, true, "Radius: ", edgeColour));
 	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
 
 	edgeColour = Vector3(0, 0, 1);
-	startPos.x += size.x + 5;
 	// MODIFIER TOOL BUTTONS
 	i = 0;
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Grab", textColour, backgroundColour, program, 0, 8, edgeColour));

@@ -83,9 +83,10 @@ bool CollisionManager::CollideCirclePlane(CollisionData& data)
 
 #pragma region Polygon
 
-#pragma region GJK + EPA Stuff
+#pragma region GJK + EPA + Clipping Stuff
 constexpr float DISTANCE_TOLERANCE = 0.0001f;
 constexpr float CLIP_TOLERANCE = 0.001f;
+constexpr int MAXMINKOWSKIPOINTS = 50;
 
 struct Simplex
 {
@@ -116,8 +117,13 @@ Vector2 GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
 	Vector2 tripleCross = Vector2(-cross * line.y, cross * line.x);
 	float len = glm::length(tripleCross);
 	
+	//this happens when line and direction are exactly parallel and when direction or line are 0,0
 	if (len == 0)
-		return em::normalize(em::GetPerpendicularCounterClockwise(line + Vector2(0.001f,0)));
+	{
+		//std::cout << "this is suspicious\n";
+		//this should work if direction is 0,0 AND if line and direction are exactly parallel
+		return glm::normalize(GetPerpendicularFacingInDirection(line + Vector2(0.0001f, 0.0f), direction + Vector2(0.0f, 0.0001f))); //em::normalize(em::GetPerpendicularCounterClockwise(line + Vector2(0.001f, 0)));
+	}
 	return tripleCross/len;
 }
 
@@ -215,7 +221,6 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 	Simplex gjkSimplex;
 	if (!GJK(a, b, tA, tB, &gjkSimplex))
 	{
-		std::cout << "NO COLLISION\n";
 		return false; //gjk returned false
 	}
 	
@@ -230,6 +235,7 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 	polytope.push_back(gjkSimplex.c);
 	
 	//temp variables containing edge information
+	float lastDepth = INFINITY;
 	Vector2 edgeNormal = Vector2(0,0);
 	float dist;
 	int index;
@@ -261,8 +267,14 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 		}
 		//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-		if (dist == INFINITY)
-			std::cout << "THIS IS BAD\n";
+		if ((dist == INFINITY) )
+		{
+			//could not find anything. mostly happens only when all support points are on 0,0
+			data->depth = 0.1f;
+			data->collisionNormal = Vector2(0, 1);
+			return true;
+		}
+		lastDepth = dist;
 
 		Vector2 support = GetSupport(a, b, tA, tB, edgeNormal);
 
@@ -275,33 +287,22 @@ static bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionDa
 			data->depth = depth;
 			return true;
 		}
-		else 
+		else
 		{
 			//otherwise we haven't found the closest edge
 			//add the support point into the polytope vector, in between the points that created the edge
 			polytope.insert(polytope.begin() + index, support);
+
+			if (polytope.size() > MAXMINKOWSKIPOINTS)
+			{
+				data->depth = 0.1f;
+				
+				data->collisionNormal = isnan(edgeNormal.x) ? Vector2(1,0) : edgeNormal;
+				std::cout << "went over maximum\n";
+				return true;
+			}
 		}
 	}
-}
-
-
-#pragma endregion
-
-bool CollisionManager::CollideCirclePolygon(CollisionData& data)
-{
-	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
-	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
-
-	EPACollisionData epaData;
-	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
-	{
-		data.collisionNormal = epaData.collisionNormal;
-		data.penetration = epaData.depth;
-		data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) - a->radius * epaData.collisionNormal;
-		return true;
-	}
-
-	return false;
 }
 
 struct PolygonEdge {
@@ -386,6 +387,26 @@ ClipInfo Clip(Vector2 pointToClip1, Vector2 pointToClip2, Vector2 clippingNormal
 
 	return c;
 }
+#pragma endregion
+
+bool CollisionManager::CollideCirclePolygon(CollisionData& data)
+{
+	CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+	PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+	EPACollisionData epaData;
+	if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
+	{
+		data.collisionNormal = epaData.collisionNormal;
+		data.penetration = epaData.depth;
+		data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) - a->radius * epaData.collisionNormal;
+		return true;
+	}
+
+	return false;
+}
+
+
 
 bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
 {
@@ -468,46 +489,36 @@ bool CollisionManager::CollidePolygonCapsule(CollisionData& data)
 	{
 		data.collisionNormal = epaData.collisionNormal;
 		data.penetration = epaData.depth;
-		data.collisionPoints[0] = em::ClosestPointOnLine(data.b->transform.TransformPoint(b->pointA), data.b->transform.TransformPoint(b->pointB),
-			data.a->transform.TransformPoint(a->centrePoint)) - b->radius * data.collisionNormal; //<-- once again, this works really well for something that is not accurate.
+		
+		//data.collisionPoints[0] = em::ClosestPointOnLine(data.b->transform.TransformPoint(b->pointA), data.b->transform.TransformPoint(b->pointB),
+		//	data.a->transform.TransformPoint(a->centrePoint)) - b->radius * data.collisionNormal; //<-- once again, this works really well for something that is not accurate.
+		
+		//Now find collision point by comparing 
+		PolygonEdge aEdge = FindPolygonCollisionEdge(a, data.a->transform, -data.collisionNormal);
+		Vector2 bPointA = data.b->GetTransform().TransformPoint(b->pointA),
+			bPointB = data.b->GetTransform().TransformPoint(b->pointB);
+
+		Vector2 intersectionPoint;
+		/*if (em::CalculateIntersectionPoint(aEdge.pA, aEdge.pB, bPointA, bPointB, intersectionPoint))
+		{
+			//in this case, when both polygon edge points are on the opposite side of the capsule centre line than the normal direction,
+			//it probably returns the wrong value. but idk it's hard to say
+		}*/
+		//((b-a) x ((0,0)-a)) x (b-a)
+		Vector2 bNormal = em::GetPerpendicularCounterClockwise(bPointB - bPointA);//, data.a->transform.position);
+		bNormal = GetPerpendicularFacingInDirection(bPointB - bPointA, -data.collisionNormal);
+		float stadiumDistance = glm::dot(bNormal, bPointA);
+
+		float pA = glm::dot(aEdge.pA, bNormal);
+		float pB = glm::dot(aEdge.pB, bNormal);
+		if (pA - stadiumDistance < pB - stadiumDistance )
+		{
+			data.collisionPoints[0] = em::ClosestPointOnLine(bPointA, bPointB, aEdge.pA) + b->radius * data.collisionNormal;
+		}
+		else
+			data.collisionPoints[0] = em::ClosestPointOnLine(bPointA, bPointB, aEdge.pB) + b->radius * data.collisionNormal;
 		return true;
 	}
-
-	//PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
-	//CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
-
-	//Vector2 stadPointA = data.b->GetTransform().TransformPoint(b->pointA),
-	//	stadPointB = data.b->GetTransform().TransformPoint(b->pointB);
-	////Vector2 stadTangent = glm::normalize(stadPointA - stadPointB);
-	////Vector2 stadNormal = { -stadTangent.y, stadTangent.x };
-
-	//float minDistanceSqr = b->radius * b->radius + 1;
-	//Vector2 collisionPoint;
-	//Vector2 normal;
-
-	//for (size_t i = 0; i < a->pointCount; i++)
-	//{
-	//	Vector2 point = data.a->GetTransform().TransformPoint(a->points[i]);
-	//	Vector2 linePoint = em::ClosestPointOnLine(stadPointA, stadPointB, point);
-	//	float distSqr = em::SquareLength(point - linePoint);
-
-	//	if (distSqr < minDistanceSqr)
-	//	{
-	//		collisionPoint = linePoint;
-	//		minDistanceSqr = distSqr;
-	//		normal = point - linePoint;
-	//	}
-	//}
-
-	//if (minDistanceSqr < b->radius * b->radius)
-	//{
-	//	minDistanceSqr = sqrtf(minDistanceSqr);
-
-	//	data.penetration = b->radius - minDistanceSqr;
-	//	data.collisionNormal = normal / minDistanceSqr;
-	//	data.collisionPoints[0] = collisionPoint + data.collisionNormal * b->radius; // this is wrong!!!!
-	//	return true;
-	//}
 
 
 	return false;
@@ -616,7 +627,7 @@ bool CollisionManager::CollideCapsuleCapsule(CollisionData& data)
 		}
 
 		//since we know they are intersecting there is no need to perform a check here
-		float sign = glm::sign(p1); //<-- could probably get rid of this somehow with the triple cross product check thing
+		float sign = glm::sign(p1); //<-- could probably get rid of this somehow with the triple cross product thing
 		data.collisionNormal = sign * -normal;
 		data.penetration = sign * p1 + a->radius + b->radius;
 		data.collisionPoints[0] = intersection + data.collisionNormal * a->radius;
