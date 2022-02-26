@@ -54,14 +54,10 @@ namespace fzx
 			{
 				aabbs[1] = colliders[i].CalculateAABB(transform);
 
-				if (aabbs[1].max.x > aabbs[0].max.x)
-					aabbs[0].max.x = aabbs[1].max.x;
-				if (aabbs[1].min.x < aabbs[0].min.x)
-					aabbs[0].min.x = aabbs[1].min.x;
-				if (aabbs[1].max.y > aabbs[0].max.y)
-					aabbs[0].max.y = aabbs[1].max.y;
-				if (aabbs[1].min.y > aabbs[0].min.y)
-					aabbs[0].min.y = aabbs[1].min.y;
+				aabbs[0].max.x = glm::max(aabbs[0].max.x, aabbs[1].max.x);
+				aabbs[0].max.y = glm::max(aabbs[0].max.y, aabbs[1].max.y);
+				aabbs[0].min.x = glm::min(aabbs[0].min.x, aabbs[1].min.x);
+				aabbs[0].min.y = glm::min(aabbs[0].min.y, aabbs[1].min.y);
 			}
 
 			colliderAABB = aabbs[0];
@@ -69,22 +65,33 @@ namespace fzx
 		}
 	}
 
-	void PhysicsObject::AddCollider(Shape* shape, float density, bool recalculateMass)
+	void PhysicsObject::AddCollider(Shape* shape, float density, bool recalculateMass, bool isTrigger)
 	{
+		assert(colliderCount != UCHAR_MAX);
+		
 		if (colliders == nullptr)
 		{
-			colliders = new Collider[1]{ Collider(shape, density) };
+			colliders = new Collider[1]{ Collider(shape, density, isTrigger) };
 			colliderCount = 1;
 
 		}
 		else
 		{
-			Collider* newColliders = (Collider*)new char[sizeof(Collider) * colliderCount + 1];
+			//move colliders
+			Collider* newColliders = new Collider[colliderCount + 1];
 			memcpy(newColliders, colliders, colliderCount * sizeof(Collider));
-			newColliders[colliderCount] = Collider(shape, density);
+			newColliders[colliderCount] = Collider(shape, density, isTrigger);
 
+			//clear colliders without calling Collider delete functions (since that will cause the shapes to be deleted)
+			memset(colliders, 0, sizeof(Collider) * colliderCount);
 			delete[] colliders;
+
+			colliders = nullptr;
 			colliders = newColliders;
+
+			if (!colliders[colliderCount].CanBeDynamic())
+				isDynamic = false;
+
 			colliderCount++;
 		}
 
@@ -92,6 +99,8 @@ namespace fzx
 		{
 			CalculateMass();
 		}
+
+		CentreShapesAboutZero();
 	}
 
 	void PhysicsObject::SetPointer(PhysicsObject** ptr)
@@ -135,6 +144,61 @@ namespace fzx
 			*pointer = nullptr;
 	}
 
+	void PhysicsObject::CentreShapesAboutZero(bool translateBody)
+	{
+		//this is useful for rotation reasons only, so if not rotatable or dynamic, return early
+		if (!isDynamic || !isRotatable)
+			return;
+
+		Vector2 centrePoint = Vector2(0,0);
+
+		for (unsigned char i = 0; i < colliderCount; i++)
+		{
+			float mass = colliders[i].iMass == 0 ? 0 : 1 / colliders[i].iMass;
+			centrePoint += colliders[i].GetShape()->GetCentrePoint() * mass;
+		}
+
+		//this should get the centrepoint (probably assuming uniform density, potential bug since uniform density isn't confirmed here)
+		centrePoint *= iMass;
+		std::cout << "Centrepoint: (" << centrePoint.x << ", " << centrePoint.y << ")\n";
+
+		//if centrePoint is not zero then all shapes need to be translated until it is zero
+		for (unsigned char i = 0; i < colliderCount; i++)
+		{
+			Shape* s = colliders[i].GetShape();
+			switch (s->GetType())
+			{
+			case SHAPE_TYPE::CIRCLE:
+				((CircleShape*)s)->centrePoint -= centrePoint;
+				break;
+			case SHAPE_TYPE::CAPSULE:
+				((CapsuleShape*)s)->pointA -= centrePoint;
+				((CapsuleShape*)s)->pointB -= centrePoint;
+				break;
+			case SHAPE_TYPE::POLYGON:
+			{
+				PolygonShape* pShape = (PolygonShape*)s;
+				for (size_t i = 0; i < pShape->pointCount; i++)
+				{
+					pShape->points[i] -= centrePoint;
+				}
+			}
+				break;
+			default:
+				return;
+			}
+
+			//now translate inertia by the length of the translation of the centrepoints
+			if (iMass != 0)
+				colliders[i].iInertia -= em::SquareLength(centrePoint) / colliders[i].iMass;
+		}
+
+		if (translateBody)
+		{
+			transform.position += centrePoint;
+		}
+	}
+
 	void PhysicsObject::CalculateMass()
 	{
 		float mass = 0;
@@ -160,6 +224,11 @@ namespace fzx
 			float colliderInertia = 0;
 
 			colliders[i].CalculateMass(colliderMass, colliderInertia);
+
+			//if this collider is a trigger and the collider count is more than one, this collider's mass and inertia will not contribute toward the overall mass and inertia
+			if (colliderCount != 1 && colliders[i].GetIsTrigger())
+				continue;
+
 			mass += colliderMass;
 			inertia += colliderInertia;
 		}

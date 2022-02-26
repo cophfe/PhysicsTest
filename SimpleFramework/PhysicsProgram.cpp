@@ -1,8 +1,6 @@
 #include "PhysicsProgram.h"
 #include "CollisionManager.h"
 
-std::vector<Vector2> PhysicsProgram::collisionPoints;
-
 PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(GetDeltaTime()), GameBase()
 {
 	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
@@ -19,6 +17,8 @@ PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionMan
 		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(-1, 0), -gridLimits));
 	CreateGameObject(data, Vector3(1, 1, 1))
 		->GetPhysicsObject()->AddCollider(new PlaneShape(Vector2(0, -1), -gridLimits));
+
+	collisionManager.SetCollisionCallback(OnCollision, nullptr);
 }
 
 void PhysicsProgram::Update()
@@ -44,13 +44,6 @@ void PhysicsProgram::Update()
 
 void PhysicsProgram::UpdatePhysics()
 {
-	collisionPointUpdateTime -= deltaTime;
-	if (collisionPointUpdateTime < 0)
-	{
-		collisionPointUpdateTime = COLLISION_POINT_OFFSET;
-		collisionPoints.clear(); 
-	}
-
 	collisionManager.UpdatePhysics();
 }
 
@@ -174,12 +167,12 @@ void PhysicsProgram::ResetPhysics()
 
 }
 
-PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic)
+PhysicsObject* PhysicsProgram::GetObjectUnderPoint(Vector2 point, bool includeStatic, bool includeTriggers)
 {
-	return collisionManager.PointCast(point, includeStatic);
+	return collisionManager.PointCast(point, includeStatic, includeTriggers);
 }
 
-GameObject* PhysicsProgram::GetGameObjectUnderPoint(Vector2 point, bool includeStatic)
+GameObject* PhysicsProgram::GetGameObjectUnderPoint(Vector2 point, bool includeStatic, bool includeTriggers)
 {
 	for (auto* gameObject : gameObjects)
 	{
@@ -187,7 +180,7 @@ GameObject* PhysicsProgram::GetGameObjectUnderPoint(Vector2 point, bool includeS
 		{
 			Collider&  c = gameObject->GetPhysicsObject()->GetCollider(j);
 
-			if ((includeStatic || gameObject->GetPhysicsObject()->GetInverseMass() != 0) && c.GetShape()->PointCast(point, gameObject->GetPhysicsObject()->GetTransform()))
+			if ((includeTriggers || !c.GetIsTrigger()) && (includeStatic || gameObject->GetPhysicsObject()->GetInverseMass() != 0) && c.GetShape()->PointCast(point, gameObject->GetPhysicsObject()->GetTransform()))
 			{
 				return gameObject;
 			}
@@ -226,8 +219,9 @@ void PhysicsProgram::DrawCircle(Shape* shape, Transform& shapeTransform, Vector3
 	PhysicsProgram* program = (PhysicsProgram*)physicsProgram;
 	CircleShape* circle = (CircleShape*)shape;
 
-	program->GetLineRenderer().DrawCircle(shapeTransform.TransformPoint(circle->centrePoint), circle->radius, shapeColour);
-	program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(Vector2(0, circle->radius)), shapeTransform.TransformPoint(Vector2(0, circle->radius * 0.5f)), shapeColour);
+	Vector2 cP = shapeTransform.TransformPoint(circle->centrePoint);
+	program->GetLineRenderer().DrawCircle(cP, circle->radius, shapeColour);
+	program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius)), shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius * 0.5f)), shapeColour);
 }
 
 void PhysicsProgram::DrawPolygon(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram)
@@ -284,6 +278,21 @@ void PhysicsProgram::DrawPlane(Shape* shape, Transform& shapeTransform, Vector3 
 
 	Vector2 tangent = 1000.0f * Vector2{ tNormal.y, -tNormal.x };
 	lR.DrawLineSegment(tPlanePoint + tangent, tPlanePoint - tangent, shapeColour);
+}
+
+std::deque<Vector2> PhysicsProgram::collisionPoints;
+
+bool PhysicsProgram::OnCollision(CollisionData& data, void* infoPtr)
+{
+	if (data.pointCount == 2)
+		collisionPoints.push_back(0.5f * (data.collisionPoints[0] + data.collisionPoints[1]));
+	else
+		collisionPoints.push_back(data.collisionPoints[0]);
+
+	if (collisionPoints.size() > 300)
+		collisionPoints.pop_front();
+
+	return true;
 }
 
 PhysicsProgram::~PhysicsProgram()

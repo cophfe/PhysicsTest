@@ -2,10 +2,11 @@
 
 namespace fzx
 {
-	Collider::Collider(Shape* shape, float density)
+	Collider::Collider(Shape* shape, float density, bool isTrigger)
 	{
 		this->shape = shape;
 		this->density = density;
+		this->isTrigger = isTrigger;
 
 		float massVar, inertiaVar;
 		CalculateMass(massVar, inertiaVar);
@@ -37,6 +38,9 @@ namespace fzx
 		shape = other.shape->Clone();
 		//attached = other.attached;
 		density = other.density;
+		collisionLayer = other.collisionLayer;
+		collisionMask = other.collisionMask;
+		isTrigger = other.isTrigger;
 	}
 
 	Collider& Collider::operator=(const Collider& other)
@@ -45,8 +49,10 @@ namespace fzx
 		shape = other.shape->Clone();
 
 		aABB = other.aABB;
-		//attached = other.attached;
 		density = other.density;
+		collisionLayer = other.collisionLayer;
+		collisionMask = other.collisionMask;
+		isTrigger = other.isTrigger;
 
 		return *this;
 	}
@@ -57,8 +63,10 @@ namespace fzx
 		other.shape = nullptr;
 
 		aABB = other.aABB;
-		//attached = other.attached;
 		density = other.density;
+		collisionLayer = other.collisionLayer;
+		collisionMask = other.collisionMask;
+		isTrigger = other.isTrigger;
 
 		return *this;
 	}

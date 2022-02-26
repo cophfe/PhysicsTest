@@ -70,7 +70,6 @@ namespace fzx
 		Vector2 Support(Vector2 v, Transform& transform);
 
 		static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
-
 		Vector2 points[max_vertices];
 		//Vector2 normals[max_vertices];
 		char pointCount;

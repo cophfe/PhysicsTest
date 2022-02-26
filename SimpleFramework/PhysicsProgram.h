@@ -5,9 +5,9 @@
 #include <forward_list>
 #include "UIObject.h"
 #include "fzx.h"
+#include <deque>
 
 #define FPS_OFFSET 1
-#define COLLISION_POINT_OFFSET 1
 
 using namespace fzx;
 
@@ -47,8 +47,8 @@ public:
 	inline Vector2Int GetWindowSize() { return windowSize; }
 	void OnWindowResize(int width, int height);
 	void ResetPhysics();
-	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false);
-	GameObject* GetGameObjectUnderPoint(Vector2 point, bool includeStatic = false);
+	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
+	GameObject* GetGameObjectUnderPoint(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
 
 	void ResolveCollisions();
 
@@ -59,13 +59,16 @@ public:
 	static void DrawCapsule(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
 	static void DrawPlane(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
 
+	//collision callback
+	static bool OnCollision(CollisionData& data, void* infoPtr);
+
 	~PhysicsProgram();
 	PhysicsProgram(const PhysicsProgram& other) = delete;
 	PhysicsProgram& operator= (const PhysicsProgram& other) = delete;
 
 private:
-	static std::vector<Vector2> collisionPoints;
-
+	static std::deque<Vector2> collisionPoints;
+	
 	std::vector<GameObject*> gameObjects;
 	std::vector<UIObject*> uiObjects;
 	bool uiHeldDown;
@@ -75,7 +78,6 @@ private:
 	fzx::CollisionManager collisionManager;
 	double lastTime = 0;
 	float lastFPSUpdateTime = - FPS_OFFSET;
-	float collisionPointUpdateTime = 0;
 	std::string fpsText;
 	bool paused = false;
 };

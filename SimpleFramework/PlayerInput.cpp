@@ -51,6 +51,10 @@ void PlayerInput::SwitchToDeleteTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::DELETE);
 }
 
+void PlayerInput::SwitchToMergeTool(Button& button, void* infoPointer) {
+	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::MERGE);
+}
+
 void PlayerInput::SwitchToRotateTool(Button& button, void* infoPointer) {
 	SwitchModifierTool(button, infoPointer, PlayerInput::HELD_MODIFIER_TOOL::ROTATE);
 }
@@ -184,6 +188,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 
 	i++;
 	i++;
+	i++;
 	startPos.x -= size.x + 5;
 	Slider* radiusSlider = (Slider*)program.AddUIObject(
 		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, textColour * 0.5f, backgroundColour, edgeColour, program
@@ -210,6 +215,10 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToRotateTool, this);
 	i++;
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Merge", textColour, backgroundColour, program, 0, 8, edgeColour));
+	modifierButtons.push_back(newButton);
+	modifierButtons[i]->SetOnClick(SwitchToMergeTool, this);
+	i++;
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Delete", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToDeleteTool, this);
@@ -217,7 +226,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 
 void PlayerInput::Update()
 {
-	if (!usingTool)
+	if (!usingTool )
 	{
 		auto* newHighlightedObject = program.GetGameObjectUnderPoint(program.GetCursorPos());
 		if (newHighlightedObject != highlighted)
@@ -280,11 +289,25 @@ void PlayerInput::Render()
 		{
 			switch (heldModifierTool)
 			{
+			case HELD_MODIFIER_TOOL::MERGE:
+			{
+				auto* newHighlightedObject = program.GetGameObjectUnderPoint(program.GetCursorPos());
+				if (newHighlightedObject != secondHighlighted)
+				{
+					if (secondHighlighted != nullptr)
+						secondHighlighted->colour = afterCreatedColour;
+
+					if (newHighlightedObject != nullptr)
+					{
+						newHighlightedObject->colour = highlightedColour;
+					}
+					secondHighlighted = newHighlightedObject;
+				}
+			}
 			case HELD_MODIFIER_TOOL::LAUNCH:
 				if (heldObject != nullptr)
 				{
 					program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
-					//grabbedObject->GetTransform().rotation = GetAngleOfVector2(glm::normalize(program.GetCursorPos() - startingPosition));
 				}
 				break;
 			case HELD_MODIFIER_TOOL::GRAB:
@@ -377,6 +400,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					break;
 
 				case HELD_MODIFIER_TOOL::ROTATE:
+				case HELD_MODIFIER_TOOL::MERGE:
 				case HELD_MODIFIER_TOOL::LAUNCH:
 					heldObject = program.GetObjectUnderPoint(startingPosition, false);
 					if (heldObject == nullptr)
@@ -408,6 +432,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					if (gO)
 						program.DeleteGameObject(gO);
 					break;
+
 				}
 			}
 		}
@@ -447,6 +472,10 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 
 				pO->AddCollider(heldShape);
 				pO->AddVelocity((program.GetCursorPos() - startingPosition));
+
+				if (heldShape->GetType() == SHAPE_TYPE::POLYGON)
+				{
+				}
 				heldShape = nullptr;
 			}
 			break;
@@ -520,6 +549,77 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 				break;
 			case HELD_MODIFIER_TOOL::DELETE:
 				break;
+			case HELD_MODIFIER_TOOL::MERGE:
+			{
+				if (secondHighlighted)
+				{
+					secondHighlighted->colour = afterCreatedColour;
+					if (!heldObject) return;
+
+					secondHighlighted->GetPhysicsObject()->SetVelocity(Vector2(0, 0));
+					secondHighlighted->GetPhysicsObject()->SetAngularVelocity(0);
+					
+					if (secondHighlighted->GetPhysicsObject() == heldObject) {
+						secondHighlighted = nullptr;
+						break;
+					}
+					auto* body = secondHighlighted->GetPhysicsObject();
+					for (unsigned char i = 0; i < body->GetColliderCount(); i++)
+					{
+						Collider& c = body->GetCollider(i);
+						Shape* s;
+						switch (c.GetShape()->GetType()) {
+						case SHAPE_TYPE::CIRCLE:
+						{
+							CircleShape* cS = (CircleShape*)c.GetShape()->Clone();
+							Vector2 newCentrePoint = heldObject->GetTransform().InverseTransformPoint(body->GetTransform().TransformPoint(cS->centrePoint));
+							cS->centrePoint = newCentrePoint;
+
+							s = cS;
+						}
+							break;
+						case SHAPE_TYPE::POLYGON:
+						{
+							PolygonShape* pS = (PolygonShape*)c.GetShape()->Clone();
+							for (size_t i = 0; i < pS->pointCount; i++)
+							{
+								Vector2 newPoint = heldObject->GetTransform().InverseTransformPoint(body->GetTransform().TransformPoint(pS->points[i]));
+								pS->points[i]= newPoint;
+							}
+							Vector2 newCentrePoint = heldObject->GetTransform().InverseTransformPoint(body->GetTransform().TransformPoint(pS->centrePoint));
+							pS->centrePoint = newCentrePoint;
+							
+
+							s = pS;
+						}
+							break;
+						case SHAPE_TYPE::CAPSULE:
+						{
+							CapsuleShape* cS = (CapsuleShape*)c.GetShape()->Clone();
+							Vector2 newPoint = heldObject->GetTransform().InverseTransformPoint(body->GetTransform().TransformPoint(cS->pointA));
+							cS->pointA = newPoint;
+							newPoint = heldObject->GetTransform().InverseTransformPoint(body->GetTransform().TransformPoint(cS->pointB));
+							cS->pointB = newPoint;
+
+							s = cS;
+						}
+							break;
+						default:
+							s = c.GetShape()->Clone();
+							break;
+						}
+
+						heldObject->AddCollider(s, c.GetDensity()); //no need to check trigger since the pointCast used does not check trigger
+					}
+					program.DeleteGameObject(secondHighlighted);
+					secondHighlighted = nullptr;
+				}
+
+				if (!heldObject) return;
+				heldObject->SetInverseMass(lastMass);
+				heldObject->SetInverseInertia(lastInertia);
+				heldObject = nullptr;
+			}
 			}
 		}
 
@@ -550,6 +650,11 @@ void PlayerInput::SetHeldModifierTool(HELD_MODIFIER_TOOL type)
 	{
 		delete heldShape;
 		heldShape = nullptr;
+	}
+	if (highlighted)
+	{
+		highlighted->colour = afterCreatedColour;
+		highlighted = nullptr;
 	}
 	usingTool = false;
 

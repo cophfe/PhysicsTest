@@ -15,6 +15,7 @@ public:
 		ROTATE,
 		DELETE,
 		TRANSLATE,
+		MERGE,
 		COUNT
 	};
 	enum class HELD_SHAPE_TOOL {
@@ -76,6 +77,7 @@ private:
 	HELD_MODIFIER_TOOL heldModifierTool = HELD_MODIFIER_TOOL::GRAB;
 
 	GameObject* highlighted = nullptr;
+	GameObject* secondHighlighted = nullptr; //pretty much just used for merge tool
 	PhysicsObject* heldObject = nullptr;
 
 	static void SwitchToCircle(Button& button, void* infoPointer);
@@ -87,6 +89,7 @@ private:
 	static void SwitchToGrabTool(Button& button, void* infoPointer);
 	static void SwitchToLaunchTool(Button& button, void* infoPointer);
 	static void SwitchToTranslateTool(Button& button, void* infoPointer);
+	static void SwitchToMergeTool(Button& button, void* infoPointer);
 	static void SwitchToDeleteTool(Button& button, void* infoPointer);
 	static void SwitchToRotateTool(Button& button, void* infoPointer);
 	

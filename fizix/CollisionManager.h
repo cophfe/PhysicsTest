@@ -13,7 +13,8 @@ namespace fzx
 	{
 	public:
 		CollisionManager(float deltaTime, Vector2 gravity = Vector2{ 0, -DEFAULT_GRAVITY }) : deltaTime(deltaTime), gravity(gravity) {}
-		PhysicsObject* PointCast(Vector2 point, bool includeStatic = false);
+		
+		PhysicsObject* PointCast(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
 
 		void Update();
 		//void DrawShapes();
@@ -26,6 +27,9 @@ namespace fzx
 
 		inline float GetDeltaTime() { return deltaTime; }
 		inline void SetDeltaTime(float newDeltaTime) { deltaTime = newDeltaTime; }
+
+		inline void SetCollisionCallback(CollisionCallback callback, void* infoPointer) { this->cCallback = callback; cCallbackPtr = infoPointer; };
+		inline CollisionCallback GetCollisionCallback() { return cCallback; };
 
 		//inline void SetPhysicsDrawer(PhysicsDrawer drawer) { this->drawer = drawer; };
 		//inline PhysicsDrawer& GetPhysicsDrawer() { return drawer; };
@@ -50,6 +54,10 @@ namespace fzx
 		Vector2 gravity;
 
 		static CollideFunction collisionFunctions[4][4];
+
+		//called when two objects are colliding. If this returns false, the collision will not be evaluated.
+		CollisionCallback cCallback = nullptr;
+		void* cCallbackPtr = nullptr;
 
 		//return true if collision occured
 		static bool CollideCircleCircle(CollisionData& data);

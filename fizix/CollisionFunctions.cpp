@@ -733,51 +733,49 @@ namespace fzx
 
 #pragma region Flipped Functions
 
-	bool CollisionManager::CollidePolygonCircle(CollisionData& data)
+	static void FlipData(CollisionData& data)
 	{
 		auto temp = data.a;
 		data.a = data.b;
 		data.b = temp;
+
+		auto temp2 = data.colliderIndexA;
+		data.colliderIndexA = data.colliderIndexB;
+		data.colliderIndexB = temp2;
+	}
+	bool CollisionManager::CollidePolygonCircle(CollisionData& data)
+	{
+		FlipData(data);
 		return CollideCirclePolygon(data);
 	}
 
 	bool CollisionManager::CollideCapsuleCircle(CollisionData& data)
 	{
-		auto temp = data.a;
-		data.a = data.b;
-		data.b = temp;
+		FlipData(data);
 		return CollideCircleCapsule(data);
 	}
 
 	bool CollisionManager::CollidePlaneCircle(CollisionData& data)
 	{
-		auto temp = data.a;
-		data.a = data.b;
-		data.b = temp;
+		FlipData(data);
 		return CollideCirclePlane(data);
 	}
 
 	bool CollisionManager::CollideCapsulePolygon(CollisionData& data)
 	{
-		auto temp = data.a;
-		data.a = data.b;
-		data.b = temp;
+		FlipData(data);
 		return CollidePolygonCapsule(data);
 	}
 
 	bool CollisionManager::CollidePlanePolygon(CollisionData& data)
 	{
-		auto temp = data.a;
-		data.a = data.b;
-		data.b = temp;
+		FlipData(data);
 		return CollidePolygonPlane(data);
 	}
 
 	bool CollisionManager::CollidePlaneCapsule(CollisionData& data)
 	{
-		auto temp = data.a;
-		data.a = data.b;
-		data.b = temp;
+		FlipData(data);
 		return CollideCapsulePlane(data);
 	}
 #pragma endregion

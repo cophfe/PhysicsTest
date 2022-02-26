@@ -170,7 +170,7 @@ void GameBase::Render()
 	simpleShader.UseShader();
 	glm::mat4 orthoMat = GetCameraTransform();
 	simpleShader.SetUniform("vpMatrix", orthoMat);
-	//grid.Draw();	//Grid lines don't change so we just draw them.
+	grid.Draw();	//Grid lines don't change so we just draw them.
 	lines.UpdateFrame();	//Other lines potentially change every frame, so we have to compile/draw/clear them.
 	
 	//change matrix for UI triangles

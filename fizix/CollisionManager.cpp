@@ -51,22 +51,23 @@ namespace fzx
 				{
 					//in this case we need to check if collision is valid, and if so, resolve it
 					//we add it to collisions for this frame
-					collisions.emplace_back(CollisionData(bodies[i], bodies[j]));
-				}
+					//collisions.emplace_back(CollisionData(bodies[i], bodies[j]));
 
-				//alternate collisionData
-				/*for (int u = 0; u < cc1; u++)
-				{
-					for (int v = 0; u < cc2; u++)
+					for (char u = 0; u < bodies[i]->GetColliderCount(); u++)
 					{
-						Collider& c1 = bodies[i]->GetCollider(u);
-						Collider& c2 = bodies[j]->GetCollider(v);
-						if (CheckAABBCollision(c1.aABB, c2.aABB))
+						for (char v = 0; v < bodies[j]->GetColliderCount(); v++)
 						{
-							collisions.emplace_back(CollisionData(bodies[i], bodies[j], cc1, cc2));
+							Collider& c1 = bodies[i]->GetCollider(u);
+							Collider& c2 = bodies[j]->GetCollider(v);
+
+							//if collision layers correctly match up and aabbs are intersecting
+							if ((c1.collisionLayer & c2.collisionMask) && (c2.collisionLayer & c1.collisionMask) && CheckAABBCollision(c1.aABB, c2.aABB))
+							{
+								collisions.emplace_back(CollisionData(bodies[i], bodies[j], u, v));
+							}
 						}
 					}
-				}*/
+				}
 			}
 		}
 
@@ -77,13 +78,13 @@ namespace fzx
 		}
 	}
 
-	PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic)
+	PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic, bool includeTriggers)
 	{
 		for (int i = 0; i < bodies.size(); i++)
 		{
 			for (int j = 0; j < bodies[i]->GetColliderCount(); j++)
 			{
-				if ((includeStatic || bodies[i]->iMass != 0) && bodies[i]->GetCollider(j).GetShape()->PointCast(point, bodies[i]->transform))
+				if ((includeTriggers || !bodies[i]->GetCollider(j).isTrigger) && (includeStatic || bodies[i]->isDynamic) && bodies[i]->GetCollider(j).GetShape()->PointCast(point, bodies[i]->transform))
 				{
 					return bodies[i];
 				}
@@ -157,14 +158,21 @@ namespace fzx
 		if ((data.a->iMass + data.b->iMass != 0) &&
 			EvaluateCollision(data))
 		{
-			if (data.pointCount == 2)
+			if ((cCallback && !cCallback(data, cCallbackPtr)) || data.a->GetCollider(data.colliderIndexA).GetIsTrigger() || data.b->GetCollider(data.colliderIndexB).GetIsTrigger())
 			{
-				data.collisionPoints[0] = 0.5f * (data.collisionPoints[0] + data.collisionPoints[1]);
+				//if the callback returns false, or one of the colliders is a trigger, the collision isn't evaluated
+				return;
 			}
 
+			Vector2 collisionPoint;
+			if (data.pointCount == 2)
+				collisionPoint = 0.5f * (data.collisionPoints[0] + data.collisionPoints[1]);
+			else
+				collisionPoint = data.collisionPoints[0];
+
 #ifdef COLLISIONROTATION
-			Vector2 radiusA = data.collisionPoints[0] - data.a->transform.position,
-				radiusB = data.collisionPoints[0] - data.b->transform.position;
+			Vector2 radiusA = collisionPoint - data.a->transform.position,
+				radiusB = collisionPoint - data.b->transform.position;
 			//explanation for this \/ in GetVelocityAtPoint
 			Vector2 angularVelocityA = data.a->GetAngularVelocity() * Vector2 { -radiusA.y, radiusA.x };
 			Vector2 angularVelocityB = data.b->GetAngularVelocity() * Vector2 { -radiusB.y, radiusB.x };
@@ -189,8 +197,8 @@ namespace fzx
 				Vector2 impulse = data.collisionNormal * impulseMagnitude;
 
 				//calculate impulse to add
-				data.a->AddImpulseAtPosition(-impulse, data.collisionPoints[0]);
-				data.b->AddImpulseAtPosition(impulse, data.collisionPoints[0]);
+				data.a->AddImpulseAtPosition(-impulse, collisionPoint);
+				data.b->AddImpulseAtPosition(impulse, collisionPoint);
 
 #ifdef FRICTION
 				//FRICTION
@@ -222,8 +230,8 @@ namespace fzx
 				if (frictionMagnitude <= staticFriction * impulseMagnitude)
 					frictionMagnitude = dynamicFriction * impulseMagnitude;
 
-				data.a->AddImpulseAtPosition(-frictionMagnitude * tangent, data.collisionPoints[0]);
-				data.b->AddImpulseAtPosition(frictionMagnitude * tangent, data.collisionPoints[0]);
+				data.a->AddImpulseAtPosition(-frictionMagnitude * tangent, collisionPoint);
+				data.b->AddImpulseAtPosition(frictionMagnitude * tangent, collisionPoint);
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 #endif
 #else
@@ -256,7 +264,7 @@ namespace fzx
 			data.b->SetPosition(data.b->GetPosition() + offsetB);
 
 			//[debug] add collision point for rendering
-			//program->collisionPoints.push_back(data.collisionPoints[0]);
+			//program->collisionPoints.push_back(collisionPoint);
 		}
 	}
 

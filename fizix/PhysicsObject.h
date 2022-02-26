@@ -40,8 +40,8 @@ namespace fzx
 		void GenerateAABB();
 
 		//getters
-		inline Collider& GetCollider(int index) { return colliders[index]; }
-		inline int			GetColliderCount() { return colliderCount; }
+		inline Collider& GetCollider(unsigned char index) { return colliders[index]; }
+		inline unsigned char	GetColliderCount() { return colliderCount; }
 		inline AABB& GetAABB() { return colliderAABB; }
 		inline Vector2		GetPosition() { return transform.position; }
 		inline float		GetRotation() { return transform.rotation; }
@@ -89,7 +89,7 @@ namespace fzx
 		void AddForceAtPosition(Vector2 force, Vector2 point);
 		void AddImpulseAtPosition(Vector2 force, Vector2 point);
 		void AddVelocityAtPosition(Vector2 impulse, Vector2 point);
-		void AddCollider(Shape* shape, float density = 1.0f, bool recalculateMass = true);
+		void AddCollider(Shape* shape, float density = 1.0f, bool recalculateMass = true, bool isTrigger = false);
 
 		//rule o' 5
 		PhysicsObject(const PhysicsObject& other); //copy constructor
@@ -102,15 +102,15 @@ namespace fzx
 		~PhysicsObject(); //destructor
 
 		//centres collider about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
-		//returns the applied offset (could be used to keep the collider's shapes in the same worldspace position
-		void CentreShapesAboutZero();
+		//if translateBody is true, it translates the physicsBody so that the shapes keep the same worldspace position
+		void CentreShapesAboutZero(bool translateBody = true);
 
 		friend CollisionManager;
 		friend Collider;
 
 		AABB colliderAABB;
 		Collider* colliders;
-		int colliderCount;
+		unsigned char colliderCount;
 
 		//position values
 		//should be no problem with vec2 scale since there are no child objects

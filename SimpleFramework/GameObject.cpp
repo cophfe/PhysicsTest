@@ -24,6 +24,12 @@ void GameObject::Render(PhysicsProgram* program)
 		int type = (int)shape->GetType();
 		(drawFunctions[type])(shape, body->GetTransform(), colour, program);
 	}
+
+	auto& lR = program->GetLineRenderer();
+	lR.DrawLineSegment(Vector2(body->GetAABB().max.x, body->GetAABB().min.y), body->GetAABB().max);
+	lR.DrawLineSegment(body->GetAABB().max, Vector2(body->GetAABB().min.x, body->GetAABB().max.y));
+	lR.DrawLineSegment(Vector2(body->GetAABB().min.x, body->GetAABB().max.y), body->GetAABB().min);
+	lR.DrawLineSegment(body->GetAABB().min, Vector2(body->GetAABB().max.x, body->GetAABB().min.y));
 }
 
 GameObject::~GameObject()

@@ -31,12 +31,14 @@ namespace fzx
 
 		PhysicsObject* a;
 		PhysicsObject* b;
-		char colliderIndexA;
-		char colliderIndexB;
+		unsigned char colliderIndexA;
+		unsigned char colliderIndexB;
 		Vector2 collisionPoints[MAX_COLLISION_POINTS];
 		char pointCount;//pointCount is 1 unless explicitly set to something else
 		Vector2 collisionNormal;
 		float penetration;
 		COLLISION_TYPE type;
 	};
+
+	typedef bool (*CollisionCallback)(CollisionData& data, void* infoPtr);
 }
