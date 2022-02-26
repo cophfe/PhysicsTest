@@ -47,15 +47,6 @@
     <ClCompile Include="PhysicsProgram.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="PhysicsObject.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Collider.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="Shape.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
     <ClCompile Include="TextRenderer.cpp">
       <Filter>Engine\MyAdditions</Filter>
     </ClCompile>
@@ -64,9 +55,6 @@
     </ClCompile>
     <ClCompile Include="TriangleRenderer.cpp">
       <Filter>Engine\MyAdditions</Filter>
-    </ClCompile>
-    <ClCompile Include="CollisionManager.cpp">
-      <Filter>Game\Physics</Filter>
     </ClCompile>
     <ClCompile Include="Button.cpp">
       <Filter>Game\UI</Filter>
@@ -77,28 +65,7 @@
     <ClCompile Include="Slider.cpp">
       <Filter>Game\UI</Filter>
     </ClCompile>
-    <ClCompile Include="Transform.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="CollisionFunctions.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="CircleShape.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="CapsuleShape.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="PolygonShape.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
-    <ClCompile Include="PlaneShape.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
     <ClCompile Include="GameObject.cpp" />
-    <ClCompile Include="ExtraMath.cpp">
-      <Filter>Game\Physics</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GLFWCallbacks.h">
@@ -164,15 +131,6 @@
     <ClInclude Include="PhysicsProgram.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="PhysicsObject.h">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Collider.h">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Shape.h">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="TextRenderer.h">
       <Filter>Engine\MyAdditions</Filter>
     </ClInclude>
@@ -181,9 +139,6 @@
     </ClInclude>
     <ClInclude Include="TriangleRenderer.h">
       <Filter>Engine\MyAdditions</Filter>
-    </ClInclude>
-    <ClInclude Include="CollisionManager.h">
-      <Filter>Game\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Button.h">
       <Filter>Game\UI</Filter>
@@ -194,16 +149,7 @@
     <ClInclude Include="Slider.h">
       <Filter>Game\UI</Filter>
     </ClInclude>
-    <ClInclude Include="Transform.h">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Collision.h">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="GameObject.h" />
-    <ClInclude Include="ExtraMath.hpp">
-      <Filter>Game\Physics</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Engine">

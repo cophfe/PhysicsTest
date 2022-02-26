@@ -1,5 +1,0 @@
-#include "Shape.h"
-#include "PhysicsObject.h"
-#include "PhysicsProgram.h"
-#include "CollisionManager.h"
-#include "ExtraMath.hpp"

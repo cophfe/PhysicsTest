@@ -14,6 +14,3 @@ typedef glm::ivec2 Vector2Int;
 typedef glm::mat2x2 Matrix2x2;
 typedef glm::mat4 Matrix4x4;
 typedef glm::mat3x3 Matrix3x3;
-
-
-//copied from glm 

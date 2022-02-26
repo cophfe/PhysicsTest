@@ -3,7 +3,7 @@
 
 std::vector<Vector2> PhysicsProgram::collisionPoints;
 
-PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(this, GetDeltaTime()), GameBase()
+PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(GetDeltaTime()), GameBase()
 {
 	//text.QueueText("The quick brown fox jumped over the lazy dog", Vector2(25.0f, 25.0f), 0.4f, Vector3(1.0f, 0.1f, 0.1f));
 	//text.Build();

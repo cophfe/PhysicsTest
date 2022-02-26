@@ -4,7 +4,8 @@ class PhysicsProgram;
 #include "Graphics.h"
 #include "TextRenderer.h"
 #include "LineRenderer.h"
-#include "Shape.h"
+#include "fzx.h"
+using namespace fzx;
 
 class UIObject
 {

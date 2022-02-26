@@ -2,6 +2,7 @@
 #include "Graphics.h"
 #include "Maths.h"
 #include <vector>
+
 static const Vector3 defaultTriangleColour = { 1.0f,1.0f,1.0f };
 
 //literally just the line renderer but with triangles

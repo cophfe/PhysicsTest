@@ -1,5 +1,7 @@
 #pragma once
 #include "UIObject.h"
+#include "fzx.h"
+using namespace fzx;
 
 class PhysicsProgram;
 

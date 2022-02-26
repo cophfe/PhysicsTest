@@ -1,6 +1,7 @@
 #pragma once
-#include "PhysicsObject.h"
-#include "CollisionManager.h"
+#include "fzx.h"
+using namespace fzx;
+
 class PhysicsProgram;
 
 struct GameObject

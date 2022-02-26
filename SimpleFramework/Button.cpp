@@ -1,5 +1,5 @@
 #include "Button.h"
-#include "PhysicsProgram.h";
+#include "PhysicsProgram.h"
 
 Button::Button(Vector2 size, Vector2 anchoredPosition, ANCHOR_POINT anchor, std::string text, Vector3 textColour, Vector3 colour, PhysicsProgram& program, float textScale, float padding, Vector3 edgeColour)
 	: text(text), textColour(textColour), colour(colour), edgeColour(edgeColour)

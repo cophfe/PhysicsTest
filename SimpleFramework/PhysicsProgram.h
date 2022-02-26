@@ -1,13 +1,15 @@
 #pragma once
 #include "GameBase.h"
 #include "GameObject.h"
-#include "CollisionManager.h"
 #include "PlayerInput.h"
 #include <forward_list>
 #include "UIObject.h"
+#include "fzx.h"
 
 #define FPS_OFFSET 1
 #define COLLISION_POINT_OFFSET 1
+
+using namespace fzx;
 
 class PhysicsProgram : public GameBase
 {
@@ -62,8 +64,6 @@ public:
 	PhysicsProgram& operator= (const PhysicsProgram& other) = delete;
 
 private:
-
-	friend CollisionManager;
 	static std::vector<Vector2> collisionPoints;
 
 	std::vector<GameObject*> gameObjects;
@@ -72,7 +72,7 @@ private:
 	bool uiEnabled = true;
 
 	PlayerInput playerInput;
-	CollisionManager collisionManager;
+	fzx::CollisionManager collisionManager;
 	double lastTime = 0;
 	float lastFPSUpdateTime = - FPS_OFFSET;
 	float collisionPointUpdateTime = 0;
