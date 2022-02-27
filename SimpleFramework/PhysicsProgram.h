@@ -68,6 +68,7 @@ public:
 
 private:
 	static std::deque<Vector2> collisionPoints;
+	static std::deque<Vector2> collisionNormals;
 	
 	std::vector<GameObject*> gameObjects;
 	std::vector<UIObject*> uiObjects;

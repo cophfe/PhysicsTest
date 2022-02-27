@@ -25,6 +25,9 @@ void PlayerInput::SwitchToPlane(Button& button, void* infoPointer) {
 void PlayerInput::SwitchToLineTool(Button& button, void* infoPointer){
 	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::LINE);
 }
+void PlayerInput::SwitchToCreatePolygonTool(Button& button, void* infoPointer){
+	SwitchShapeTool(button, infoPointer, PlayerInput::HELD_SHAPE_TOOL::CREATEPOLYGON);
+}
 #pragma endregion
 
 #pragma region MODIFIER TOOL BUTTON FUNCTIONS
@@ -66,6 +69,38 @@ void PlayerInput::ClearPhysicsObjects(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
 	program->ResetPhysics();
+}
+
+void PlayerInput::CancelCreatePolygon(Button& button, void* infoPointer)
+{
+	PlayerInput* p = (PlayerInput*)infoPointer;
+	p->isCreatingPolygon = false;
+	if (p->heldShape)
+	{
+		delete p->heldShape;
+		p->heldShape = nullptr;
+	}
+}
+
+void PlayerInput::FinishCreatePolygon(Button& button, void* infoPointer)
+{
+	PlayerInput* p = (PlayerInput*)infoPointer;
+	p->isCreatingPolygon = false;
+	if (p->heldShape)
+	{
+		if (p->heldShape->GetType() != SHAPE_TYPE::POLYGON || ((PolygonShape*)p->heldShape)->pointCount < 3)
+		{
+			delete p->heldShape;
+		}
+		else {
+			PhysicsData data = PhysicsData(Vector2(0, 0), 0);
+			p->program.CreateGameObject(data, p->afterCreatedColour)->GetPhysicsObject()
+				->AddCollider(p->heldShape);
+		}
+		p->heldShape = nullptr;
+	}
+	
+	p->customPolyPoints.clear();
 }
 
 //static bool updateCollision = false;
@@ -136,13 +171,21 @@ void PlayerInput::RadiusChanged(Slider& slider, void* infoPointer, float value)
 	PlayerInput* playerInput = (PlayerInput*)infoPointer;
 	playerInput->SetShapeRadius(value);
 }
+
+void PlayerInput::PolygonPointCountChanged(Slider& slider, void* infoPointer, float value)
+{
+	PlayerInput* playerInput = (PlayerInput*)infoPointer;
+	playerInput->SetPolygonPoints((int)value);
+}
+
+
 #pragma endregion
 
 PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 {
 	const Vector2 size = Vector2(70, 30);
 	Vector2 startPos = Vector2(45, 30);
-	const Vector2 offset = Vector2(0, 30);
+	Vector2 offset = Vector2(0, 30);
 	const Vector3 textColour(1,1,1);
 	const Vector3 backgroundColour(0, 0, 0);
 	Vector3 edgeColour(1, 1, 1);
@@ -181,19 +224,24 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Line", textColour, backgroundColour, program, 0, 8, edgeColour));
 	shapeButtons.push_back(newButton);
 	shapeButtons[i]->SetOnClick(SwitchToLineTool, this);
-	/*i++;
-	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Plane", textColour, backgroundColour, program, 0, 8, edgeColour));
-	buttons.push_back(newButton);
-	buttons[i]->SetOnClick(SwitchToPlane, this);*/
+	i++;
+	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Custom", textColour, backgroundColour, program, 0, 8, edgeColour));
+	shapeButtons.push_back(newButton);
+	shapeButtons[i]->SetOnClick(SwitchToCreatePolygonTool, this);
 
-	i++;
-	i++;
-	i++;
+	i += 2;
+
 	startPos.x -= size.x + 5;
-	Slider* radiusSlider = (Slider*)program.AddUIObject(
+	radiusSlider = (Slider*)program.AddUIObject(
 		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 5), 0.1f, 10.0f, 1.0f, textColour * 0.5f, backgroundColour, edgeColour, program
-			, 4, true, true, "Radius: ", edgeColour));
+			, 4, true, true, "Radius: ", edgeColour, 0));
 	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
+	i++;
+	polygonSlider = (Slider*)program.AddUIObject(
+		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 10), 3, 8.0f, polygonPointCount, textColour * 0.5f, backgroundColour, edgeColour, program
+			, 4, true, true, "Points: ", edgeColour, 0, 2.5f, false));
+	polygonSlider->SetOnValueChangedCallback(PolygonPointCountChanged, this);
+	polygonSlider->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::POLYGON);
 
 	edgeColour = Vector3(0, 0, 1);
 	// MODIFIER TOOL BUTTONS
@@ -222,6 +270,16 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	newButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos, anchor, "Delete", textColour, backgroundColour, program, 0, 8, edgeColour));
 	modifierButtons.push_back(newButton);
 	modifierButtons[i]->SetOnClick(SwitchToDeleteTool, this);
+
+	//poly buttons
+	i++;
+	createPolyButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos + Vector2(0,5), anchor, "Finish", textColour, backgroundColour, program, 0, 8, Vector3(0, 1, 0.5f)));
+	createPolyButton->SetOnClick(FinishCreatePolygon, this);
+	createPolyButton->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::CREATEPOLYGON);
+	i++;
+	cancelPolyButton = (Button*)program.AddUIObject(new Button(size, (float)i * offset + startPos + Vector2(0, 10), anchor, "Cancel", textColour, backgroundColour, program, 0, 8, Vector3(0.9f, 0.4f, 0.4f)));
+	cancelPolyButton->SetOnClick(CancelCreatePolygon, this);
+	cancelPolyButton->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::CREATEPOLYGON);
 }
 
 void PlayerInput::Update()
@@ -278,11 +336,19 @@ void PlayerInput::Render()
 				program.GetLineRenderer().DrawLineSegment(startingPosition, program.GetCursorPos(), heldColour);
 				break;
 			case HELD_SHAPE_TOOL::CAPSULE:
+			{
 				auto t = Transform(Vector2(0, 0), 0);
 				CapsuleShape shape = CapsuleShape(startingPosition, program.GetCursorPos(), shapeRadius);
 
 				PhysicsProgram::DrawShape(&shape, t, heldColour, &program);
 				break;
+			}
+			case HELD_SHAPE_TOOL::CREATEPOLYGON:
+			{
+				auto& lR = program.GetLineRenderer();
+				lR.DrawCross(program.GetCursorPos(), 0.14f, heldColour);				
+				break;
+			}
 			}
 		}
 		else
@@ -338,6 +404,17 @@ void PlayerInput::Render()
 		}
 		
 	}
+
+	if (isCreatingPolygon && heldShape)
+	{
+		PhysicsProgram::DrawShape(heldShape, Transform(Vector2(0, 0), 0), heldColour, &program);
+
+		auto& lR = program.GetLineRenderer();
+		for (size_t i = 0; i < customPolyPoints.size(); i++)
+		{
+			lR.DrawCross(customPolyPoints[i], 0.075f, heldColour);
+		}
+	}
 }
 
 void PlayerInput::OnMouseClick(int mouseButton)
@@ -359,7 +436,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					heldShape = new CircleShape(shapeRadius, Vector2(0, 0));
 					break;
 				case HELD_SHAPE_TOOL::POLYGON:
-					heldShape = PolygonShape::GetRegularPolygonCollider(shapeRadius, 4);
+					heldShape = PolygonShape::GetRegularPolygonCollider(shapeRadius, polygonPointCount);
 					break;
 				case HELD_SHAPE_TOOL::PLANE:
 					//it is at 0,0 because the shape position is relative to the transform position
@@ -383,7 +460,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 				switch (heldModifierTool)
 				{
 				case HELD_MODIFIER_TOOL::TRANSLATE:
-					heldObject = program.GetObjectUnderPoint(startingPosition, true);
+					heldObject = program.GetObjectUnderPoint(startingPosition, false, false);
 					if (heldObject == nullptr)
 					{
 						usingTool = false;
@@ -513,6 +590,19 @@ void PlayerInput::OnMouseRelease(int mouseButton)
 				program.CreateGameObject(data, afterCreatedColour)->GetPhysicsObject()->AddCollider(shape);
 			}
 			break;
+			case HELD_SHAPE_TOOL::CREATEPOLYGON:
+			{
+				if (!isCreatingPolygon)
+				{
+					isCreatingPolygon = true;
+				}
+				else if (heldShape)
+					delete heldShape;
+
+				customPolyPoints.push_back(program.GetCursorPos());
+				heldShape = new PolygonShape(&customPolyPoints[0], customPolyPoints.size());
+				break;
+			}
 			
 			}
 		}
@@ -642,6 +732,10 @@ void PlayerInput::SetHeldShapeTool(HELD_SHAPE_TOOL type)
 	{
 		shapeButtons[i]->EnableButton();
 	}
+	polygonSlider->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::POLYGON);
+	radiusSlider->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::POLYGON || heldShapeTool == HELD_SHAPE_TOOL::CIRCLE || heldShapeTool == HELD_SHAPE_TOOL::CAPSULE);
+	createPolyButton->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::CREATEPOLYGON);
+	cancelPolyButton->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::CREATEPOLYGON);
 }
 
 void PlayerInput::SetHeldModifierTool(HELD_MODIFIER_TOOL type)

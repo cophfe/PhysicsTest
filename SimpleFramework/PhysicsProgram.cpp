@@ -72,10 +72,11 @@ void PhysicsProgram::Render()
 		uiObjects[i]->Draw(*this);
 	}
 
-	//draw collision crosses
+	//draw collision points and normals
 	for (size_t i = 0; i < collisionPoints.size(); i++)
 	{
-		lines.DrawCross(collisionPoints[i], 0.1f, { 0.9f, 0.1f, 0.1f });
+		lines.DrawCross(collisionPoints[i], 0.05f, { 0.9f, 0.1f, 0.1f });
+		lines.DrawLineSegment(collisionPoints[i], collisionPoints[i] + collisionNormals[i] * 0.3f, {0.1f, 0.5f, 0.9f});
 	}
 
 	GameBase::Render();
@@ -281,6 +282,7 @@ void PhysicsProgram::DrawPlane(Shape* shape, Transform& shapeTransform, Vector3 
 }
 
 std::deque<Vector2> PhysicsProgram::collisionPoints;
+std::deque<Vector2> PhysicsProgram::collisionNormals;
 
 bool PhysicsProgram::OnCollision(CollisionData& data, void* infoPtr)
 {
@@ -288,9 +290,13 @@ bool PhysicsProgram::OnCollision(CollisionData& data, void* infoPtr)
 		collisionPoints.push_back(0.5f * (data.collisionPoints[0] + data.collisionPoints[1]));
 	else
 		collisionPoints.push_back(data.collisionPoints[0]);
+	collisionNormals.push_back(data.collisionNormal);
 
 	if (collisionPoints.size() > 300)
+	{
 		collisionPoints.pop_front();
+		collisionNormals.pop_front();
+	}
 
 	return true;
 }

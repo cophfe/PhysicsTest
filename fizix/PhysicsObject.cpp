@@ -98,18 +98,9 @@ namespace fzx
 		if (recalculateMass)
 		{
 			CalculateMass();
+			CentreShapesAboutZero();
 		}
 
-		CentreShapesAboutZero();
-	}
-
-	void PhysicsObject::SetPointer(PhysicsObject** ptr)
-	{
-		if (ptr)
-		{
-			*ptr = this;
-		}
-		pointer = ptr;
 	}
 
 	void PhysicsObject::AddForceAtPosition(Vector2 force, Vector2 point)
@@ -140,12 +131,13 @@ namespace fzx
 		if (colliders)
 			delete[] colliders;
 		colliders = nullptr;
-		if (pointer)
-			*pointer = nullptr;
 	}
 
 	void PhysicsObject::CentreShapesAboutZero(bool translateBody)
 	{
+		//this should centre the objects around the point where things should rotate around
+		// also should fix inertias so they are correct in this new context
+		
 		//this is useful for rotation reasons only, so if not rotatable or dynamic, return early
 		if (!isDynamic || !isRotatable)
 			return;
@@ -188,14 +180,14 @@ namespace fzx
 				return;
 			}
 
-			//now translate inertia by the length of the translation of the centrepoints
+			//now translate inertia by the length of the translation of the centrepoints 
 			if (iMass != 0)
 				colliders[i].iInertia -= em::SquareLength(centrePoint) / colliders[i].iMass;
 		}
 
 		if (translateBody)
 		{
-			transform.position += centrePoint;
+			transform.position = transform.TransformPoint(centrePoint);
 		}
 	}
 

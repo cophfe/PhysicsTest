@@ -59,6 +59,7 @@ namespace fzx
 		inline float		GetInverseMass() { return iMass; }
 		inline float		GetInverseInertia() { return iInertia; }
 		inline Transform& GetTransform() { return transform; }
+		void* GetInfoPointer() { return pointer; }
 
 		//setters
 		inline void	SetPosition(Vector2 pos) { transform.position = pos; }
@@ -76,7 +77,7 @@ namespace fzx
 		inline void	SetInertia(float mOI) { iInertia = 1.0f / mOI; }
 		inline void	SetInverseMass(float iMass) { this->iMass = iMass; }
 		inline void	SetInverseInertia(float iMOI) { iInertia = iMOI; }
-		void SetPointer(PhysicsObject** ptr);
+		void SetInfoPointer(void* ptr) { pointer = ptr;  };
 
 		//adders?
 		inline void AddPosition(Vector2 position) { transform.position += position; }
@@ -101,7 +102,7 @@ namespace fzx
 		PhysicsObject(PhysicsData& data);
 		~PhysicsObject(); //destructor
 
-		//centres collider about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
+		//centres the colliders about 0,0 (for rotation reasons, since object always rotates around local coord (0,0))
 		//if translateBody is true, it translates the physicsBody so that the shapes keep the same worldspace position
 		void CentreShapesAboutZero(bool translateBody = true);
 
@@ -138,8 +139,8 @@ namespace fzx
 		bool isDynamic;
 		bool isRotatable;
 
-		//pointer to this object
-		PhysicsObject** pointer;
+		//pointer, so you can 'attach' information to the physics object
+		void* pointer;
 
 		//(just in case something is not moving, so no movement calculations have to be done)
 		//bool 

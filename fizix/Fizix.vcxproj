@@ -38,6 +38,7 @@
     <ClCompile Include="ExtraMath.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PlaneShape.cpp" />
+    <ClCompile Include="PolygonCollisionFunctions.cpp" />
     <ClCompile Include="PolygonShape.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>

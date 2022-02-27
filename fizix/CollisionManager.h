@@ -7,14 +7,15 @@ namespace fzx
 	typedef bool (*CollideFunction)(fzx::CollisionData& data);
 
 	constexpr int DEFAULT_GRAVITY = 5;
-	constexpr int COLLISION_ITERATIONS = 10;
+	constexpr int COLLISION_ITERATIONS = 1;
 
 	class CollisionManager
 	{
 	public:
 		CollisionManager(float deltaTime, Vector2 gravity = Vector2{ 0, -DEFAULT_GRAVITY }) : deltaTime(deltaTime), gravity(gravity) {}
 		
-		PhysicsObject* PointCast(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
+		PhysicsObject* PointCast(Vector2 point, bool includeStatic = false, bool includeTriggers = false, short collisionMask = 0xFFFF);
+		std::vector<PhysicsObject*>&& PointCastMultiple(Vector2 point, bool includeStatic = false, bool includeTriggers = false, short collisionMask = 0xFFFF);
 
 		void Update();
 		//void DrawShapes();
@@ -79,5 +80,37 @@ namespace fzx
 		static bool CollidePlanePolygon(CollisionData& data);
 		static bool CollidePlaneCapsule(CollisionData& data);
 
+		//epa + gjk + other stuff
+		struct Simplex
+		{
+			Vector2 a, b, c;
+			Vector2 dir;
+		};
+		struct EPACollisionData
+		{
+			float depth;
+			Vector2 collisionNormal;
+		};
+		struct PolygonEdge {
+			Vector2 pA,
+				pB;
+
+			Vector2 maxProjectionVertex;
+		};
+		struct ClipInfo
+		{
+			Vector2 points[2];
+			int pointCount;
+		};
+
+
+		static Vector2 GetPerpendicularTowardOrigin(Vector2 a, Vector2 b);
+		static Vector2 GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction);
+		static Vector2 GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d);
+		static	Vector2 ClosestPointToOrigin(Vector2 a, Vector2 b);
+		static	bool GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex);
+		static	bool EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionData* data);
+		static	PolygonEdge FindPolygonCollisionEdge(PolygonShape* pS, Transform& t, Vector2 normal);
+		static	ClipInfo Clip(Vector2 pointToClip1, Vector2 pointToClip2, Vector2 clippingNormal, float clipDist);
 	};
 }

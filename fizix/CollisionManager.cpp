@@ -78,19 +78,40 @@ namespace fzx
 		}
 	}
 
-	PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic, bool includeTriggers)
+	PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
 	{
 		for (int i = 0; i < bodies.size(); i++)
 		{
 			for (int j = 0; j < bodies[i]->GetColliderCount(); j++)
 			{
-				if ((includeTriggers || !bodies[i]->GetCollider(j).isTrigger) && (includeStatic || bodies[i]->isDynamic) && bodies[i]->GetCollider(j).GetShape()->PointCast(point, bodies[i]->transform))
+				Collider& c = bodies[i]->GetCollider(j);
+				if ((c.GetCollisionLayer() & collisionMask) && (includeTriggers || !c.isTrigger) && (includeStatic || bodies[i]->isDynamic) && c.GetShape()->PointCast(point, bodies[i]->transform))
 				{
 					return bodies[i];
 				}
+				
 			}
 		}
 		return nullptr;
+	}
+
+	std::vector<PhysicsObject*>&& CollisionManager::PointCastMultiple(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
+	{
+		std::vector<PhysicsObject*> pC;
+
+		for (int i = 0; i < bodies.size(); i++)
+		{
+			for (int j = 0; j < bodies[i]->GetColliderCount(); j++)
+			{
+				Collider& c = bodies[i]->GetCollider(j);
+				if ((c.GetCollisionLayer() & collisionMask) && (includeTriggers || !c.isTrigger) && (includeStatic || bodies[i]->isDynamic) && c.GetShape()->PointCast(point, bodies[i]->transform))
+				{
+					pC.push_back(bodies[i]);
+				}
+			}
+		}
+
+		return std::move(pC);
 	}
 
 	void CollisionManager::Update()

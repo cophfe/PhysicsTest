@@ -13,7 +13,7 @@ GameObject::GameObject(PhysicsData object, CollisionManager* manager, Vector3 co
 	: colour(colour), manager(manager)
 {
 	body = manager->CreatePhysicsObject(object);
-	body->SetPointer(&body);
+	body->SetInfoPointer(this);
 }
 
 void GameObject::Render(PhysicsProgram* program)
@@ -26,10 +26,12 @@ void GameObject::Render(PhysicsProgram* program)
 	}
 
 	auto& lR = program->GetLineRenderer();
-	lR.DrawLineSegment(Vector2(body->GetAABB().max.x, body->GetAABB().min.y), body->GetAABB().max);
+	/*lR.DrawLineSegment(Vector2(body->GetAABB().max.x, body->GetAABB().min.y), body->GetAABB().max);
 	lR.DrawLineSegment(body->GetAABB().max, Vector2(body->GetAABB().min.x, body->GetAABB().max.y));
 	lR.DrawLineSegment(Vector2(body->GetAABB().min.x, body->GetAABB().max.y), body->GetAABB().min);
-	lR.DrawLineSegment(body->GetAABB().min, Vector2(body->GetAABB().max.x, body->GetAABB().min.y));
+	lR.DrawLineSegment(body->GetAABB().min, Vector2(body->GetAABB().max.x, body->GetAABB().min.y));*/
+
+	lR.DrawCross(body->GetTransform().position, 0.05f, Vector3(1,0,0));
 }
 
 GameObject::~GameObject()

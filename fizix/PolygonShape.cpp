@@ -1,4 +1,7 @@
 #include "fzx.h"
+#include <stdexcept>
+#include <format>
+#include <string>
 
 //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // POLYGON
@@ -18,7 +21,7 @@ namespace fzx
 		point = transform.InverseTransformPoint(point);
 		//draw a line. if it intersects once with the edges of the polygon, then it is inside the shape
 
-		int intersectCount = 0;
+		/*int intersectCount = 0;
 		Vector2 ray = Vector2(1000000, 0);
 		Vector2 lastPoint = points[pointCount - 1];
 		for (size_t i = 0; i < pointCount; i++)
@@ -26,9 +29,18 @@ namespace fzx
 			intersectCount += (int)em::DoLinesIntersect(point, point + ray, lastPoint, points[i]);
 			lastPoint = points[i];
 
-		}
+		}*/
 
-		return intersectCount == 1;
+		Vector2 lastPoint = points[pointCount - 1];
+		for (size_t i = 0; i < pointCount; i++)
+		{
+			if (em::CheckOrder(lastPoint, points[i], point) < 0)
+				return false;
+			lastPoint = points[i];
+		}
+		return true;
+
+		//return intersectCount == 1;
 
 	}
 
@@ -58,7 +70,7 @@ namespace fzx
 		//set final values
 		centrePoint = polyCentre / (area); //divide by total area to get the centrepoint
 		mass = area * density; //multiply by density
-		inertia = in; //- mass * em::SquareLength(centrePoint);//(translate mass moment of inertia to be relative to centrepoint)
+		inertia = in - mass * em::SquareLength(centrePoint);//(translate mass moment of inertia to be relative to centrepoint)
 	}
 
 	AABB PolygonShape::CalculateAABB(Transform& transform)
@@ -123,13 +135,14 @@ namespace fzx
 
 	PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
 	{
-		if (pointCount > max_vertices) {
+		if (pointCount > fzx_max_vertices) {
 
-			std::cout << "Error: Polygons have a max vertex count of " << max_vertices << std::endl;
-			pointCount = max_vertices;
+			const std::string s = std::to_string(fzx_max_vertices) + "\n";
+			throw std::runtime_error(std::string("Error: Polygons have a max vertex count of ") + s);
+			pointCount = fzx_max_vertices;
 		}
 
-		Vector2 points[max_vertices];
+		Vector2 points[fzx_max_vertices];
 
 		float iPointCount = glm::two_pi<float>() / pointCount;
 		for (size_t i = 0; i < pointCount; i++)
@@ -140,7 +153,7 @@ namespace fzx
 		return new PolygonShape(points, pointCount);
 	}
 
-	bool PolygonShape::OrganisePoints(Vector2* points, int pointCount)
+	bool PolygonShape::OrganisePoints(Vector2* points, int pointCount, bool clipPoints)
 	{
 		//first create convex hull using gift wrapping algorithm https://en.wikipedia.org/wiki/Gift_wrapping_algorithm
 		//this should both discard all points that make the shape concave, and organise the points in a counterclockwise manner
@@ -162,6 +175,17 @@ namespace fzx
 		int size = 0;
 		int endPoint = 0;
 		do {
+			if (size >= fzx_max_vertices)
+			{
+				if (!clipPoints)
+				{
+					const std::string s = std::to_string(fzx_max_vertices) + "\n";
+					throw std::runtime_error(std::string("Error: Polygons have a max vertex count of ") + s);
+				}
+				size = fzx_max_vertices - 1;
+				break;
+			}
+
 			this->points[size] = points[lastPointOnHull];
 			endPoint = 0;
 			for (int i = 0; i < pointCount; i++)
@@ -182,7 +206,7 @@ namespace fzx
 			}
 			size++;
 			lastPointOnHull = endPoint;
-		} while (endPoint != startPoint && size <= max_vertices);
+		} while (endPoint != startPoint);
 		//now set correct pointCount
 		this->pointCount = size;
 

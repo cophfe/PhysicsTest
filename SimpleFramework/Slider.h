@@ -8,7 +8,7 @@ class Slider :
 public:
 	Slider(Vector2 size, ANCHOR_POINT anchor, Vector2 anchoredPosition, float minFill, float maxFill,
 		float currentFill, Vector3 fillColour, Vector3 backgroundColour, Vector3 edgeColour, PhysicsProgram& program, float fillPadding = 0.0f,
-		bool fillDirectionIsLeft = true, bool useText = true, std::string label = "", Vector3 textColour = {0.0f,0.0f,0.0f}, float textScale = 0.4f, float textPadding = 1.0f);
+		bool fillDirectionIsLeft = true, bool useText = true, std::string label = "", Vector3 textColour = {0.0f,0.0f,0.0f}, float textScale = 0.4f, float textPadding = 1.0f, bool useDecimals = true);
 
 	void Update(PhysicsProgram& program);
 	void OnMouseClick(PhysicsProgram& program) ;
@@ -30,6 +30,10 @@ public:
 	virtual ~Slider() = default;
 
 private:
+
+	void AutoScaleText(PhysicsProgram& program, float padding, Vector2 boxScale);
+	std::string GetSliderText();
+
 	AABB fillAABB;
 	std::string label;
 	Vector3 currentFillColour;
@@ -41,5 +45,6 @@ private:
 	float fillAmount, fillMin, fillOffset;
 	float textScale;
 	bool useText;
+	bool useDecimals;
 };
 

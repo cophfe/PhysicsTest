@@ -157,7 +157,6 @@
     <ClCompile Include="..\imgui\imgui_widgets.cpp" />
     <ClCompile Include="Button.cpp" />
     <ClCompile Include="EntryPoint.cpp" />
-    <ClCompile Include="Example.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="glad.c" />
     <ClCompile Include="GLFWCallbacks.cpp" />
@@ -184,7 +183,6 @@
     <ClInclude Include="..\imgui\imstb_textedit.h" />
     <ClInclude Include="..\imgui\imstb_truetype.h" />
     <ClInclude Include="Button.h" />
-    <ClInclude Include="Example.h" />
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="glad.h" />
     <ClInclude Include="GLFWCallbacks.h" />

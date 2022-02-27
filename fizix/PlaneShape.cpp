@@ -24,7 +24,7 @@ namespace fzx
 
 	bool PlaneShape::PointCast(Vector2 point, Transform& transform)
 	{
-		return false;// glm::dot(transform.InverseTransformPoint(point), normal) < distance;
+		return glm::dot(transform.InverseTransformPoint(point), normal) < distance;
 	}
 
 	void PlaneShape::CalculateMass(float& mass, float& inertia, float density)

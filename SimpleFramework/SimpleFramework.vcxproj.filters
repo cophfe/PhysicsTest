@@ -41,9 +41,6 @@
       <Filter>ThirdParty\imgui</Filter>
     </ClCompile>
     <ClCompile Include="EntryPoint.cpp" />
-    <ClCompile Include="Example.cpp">
-      <Filter>Game\Examples</Filter>
-    </ClCompile>
     <ClCompile Include="PhysicsProgram.cpp">
       <Filter>Game</Filter>
     </ClCompile>
@@ -125,9 +122,6 @@
     <ClInclude Include="..\imgui\imstb_truetype.h">
       <Filter>ThirdParty\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="Example.h">
-      <Filter>Game\Examples</Filter>
-    </ClInclude>
     <ClInclude Include="PhysicsProgram.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -166,12 +160,6 @@
     </Filter>
     <Filter Include="ThirdParty\imgui">
       <UniqueIdentifier>{af08b8df-298e-486a-bd88-f49c10c0050b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Game\Examples">
-      <UniqueIdentifier>{777b1260-7118-49ab-b296-237fdabebca0}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Game\Physics">
-      <UniqueIdentifier>{7ea66624-1751-4ea2-8c2d-70353369fcf0}</UniqueIdentifier>
     </Filter>
     <Filter Include="Engine\MyAdditions">
       <UniqueIdentifier>{7b0df856-4bcc-49c5-b05b-1b3f99c46f87}</UniqueIdentifier>

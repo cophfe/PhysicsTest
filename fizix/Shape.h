@@ -1,7 +1,9 @@
 #pragma once
 #include "Maths.h"
-#define max_vertices 8
-#include <iostream>
+
+#ifndef fzx_max_vertices
+#define fzx_max_vertices 8
+#endif // !fzx_max_vertices
 
 namespace fzx
 {
@@ -70,7 +72,7 @@ namespace fzx
 		Vector2 Support(Vector2 v, Transform& transform);
 
 		static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
-		Vector2 points[max_vertices];
+		Vector2 points[fzx_max_vertices];
 		//Vector2 normals[max_vertices];
 		char pointCount;
 		Vector2 centrePoint;
@@ -81,7 +83,8 @@ namespace fzx
 		friend CollisionManager;
 		//void CalculateNormals();
 		void CalculateCentrePoint();
-		bool OrganisePoints(Vector2* points, int pointCount);
+		//clip points clips the points if they go over the max vertex count, instead of throwing an error
+		bool OrganisePoints(Vector2* points, int pointCount, bool clipPoints = true);
 
 
 	};
