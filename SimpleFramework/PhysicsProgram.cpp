@@ -215,7 +215,7 @@ void PhysicsProgram::DrawCircle(Shape* shape, Transform& shapeTransform, Vector3
 
 	Vector2 cP = shapeTransform.TransformPoint(circle->centrePoint);
 	program->GetLineRenderer().DrawCircle(cP, circle->radius, shapeColour);
-	//program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius)), shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius * 0.5f)), shapeColour);
+	program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius)), shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius * 0.5f)), shapeColour);
 }
 
 void PhysicsProgram::DrawPolygon(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram)

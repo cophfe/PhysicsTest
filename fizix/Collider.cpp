@@ -15,9 +15,7 @@ namespace fzx
 	void Collider::CalculateMass(float& massVar, float& inertiaVar)
 	{
 		shape->CalculateMass(massVar, inertiaVar, density);
-
-		iInertia = inertiaVar == 0 ? 0 : 1.0f / inertiaVar;
-		iMass = massVar == 0 ? 0 : 1.0f / massVar;
+		area = massVar / density;
 	}
 
 	AABB& Collider::CalculateAABB(Transform& transform)

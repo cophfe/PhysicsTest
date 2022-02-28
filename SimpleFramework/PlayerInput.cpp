@@ -496,7 +496,7 @@ void PlayerInput::OnMouseClick(int mouseButton)
 					startingPosition = heldObject->GetTransform().InverseTransformPoint(startingPosition);
 					break;
 				case HELD_MODIFIER_TOOL::DELETE:
-					GameObject* gO = program.GetGameObjectUnderPoint(startingPosition, true);
+					GameObject* gO = program.GetGameObjectUnderPoint(startingPosition, false);
 					if (gO)
 						program.DeleteGameObject(gO);
 					break;

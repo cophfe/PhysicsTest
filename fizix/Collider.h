@@ -17,15 +17,12 @@ namespace fzx
 		void CalculateMass(float& massVar, float& inertiaVar);
 		AABB& CalculateAABB(Transform& transform);
 
-		inline void SetCollisionLayer(short cLayer) { collisionLayer = cLayer; }
-		inline void SetCollisionMask(short cMask) { collisionMask = cMask; }
-		inline short GetCollisionLayer() { return collisionLayer; }
-		inline short GetCollisionMask() { return collisionMask; }
+		inline void SetCollisionLayer(unsigned short cLayer) { collisionLayer = cLayer; }
+		inline void SetCollisionMask(unsigned short cMask) { collisionMask = cMask; }
+		inline unsigned short GetCollisionLayer() { return collisionLayer; }
+		inline unsigned short GetCollisionMask() { return collisionMask; }
 
-		inline void SetIInertia(float iI) { iInertia = iI; }
-		inline void SetIMass(float iM) { iMass = iM; }
-		inline float GetIInertia() { return iInertia; }
-		inline float GetIMass() { return iMass; }
+		float GetArea() { return area; }
 
 		bool GetIsTrigger() { return isTrigger; }
 		float GetDensity() { return density; }
@@ -56,9 +53,8 @@ namespace fzx
 		AABB aABB;
 
 		Shape* shape;
-		float iInertia;
-		float iMass;
 
+		float area;
 		float density;
 		bool isStatic = false;
 	};

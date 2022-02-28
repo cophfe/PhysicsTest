@@ -144,14 +144,15 @@ namespace fzx
 
 		Vector2 centrePoint = Vector2(0,0);
 
+		float totalArea = 0;
 		for (unsigned char i = 0; i < colliderCount; i++)
 		{
-			float mass = colliders[i].iMass == 0 ? 0 : 1 / colliders[i].iMass;
-			centrePoint += colliders[i].GetShape()->GetCentrePoint() * mass;
+			float area = colliders[i].GetArea();
+			totalArea += area;
+			centrePoint += colliders[i].GetShape()->GetCentrePoint() * area;
 		}
 
-		//this should get the centrepoint (probably assuming uniform density, potential bug since uniform density isn't confirmed here)
-		centrePoint *= iMass;
+		centrePoint /= totalArea;
 
 		//if centrePoint is not zero then all shapes need to be translated until it is zero
 		for (unsigned char i = 0; i < colliderCount; i++)
@@ -187,7 +188,7 @@ namespace fzx
 
 		//do this to recalculate inertia in the new context
 		CalculateMass();
-		//std::cout << "Inertia: " << (1.0f / iInertia) << ", Mass: " << (1.0f/ iMass) << ", Centrepoint: (" << transform.position.x << ", " << transform.position.y << ")\n";
+		std::cout << "Inertia: " << (1.0f / iInertia) << ", Mass: " << (1.0f/ iMass) << ", Centrepoint: (" << transform.position.x << ", " << transform.position.y << ")\n";
 
 	}
 
@@ -200,12 +201,6 @@ namespace fzx
 		{
 			iMass = 0;
 			iInertia = 0;
-
-			for (size_t i = 0; i < colliderCount; i++)
-			{
-				colliders[i].iMass = 0;
-				colliders[i].iInertia = 0;
-			}
 			return;
 		}
 
@@ -230,10 +225,6 @@ namespace fzx
 		if (!isRotatable)
 		{
 			iInertia = 0;
-			for (size_t i = 0; i < colliderCount; i++)
-			{
-				colliders[i].iInertia = 0;
-			}
 		}
 	}
 
