@@ -53,17 +53,7 @@ namespace fzx
 		Vector2 NormalizeSafe(Vector2 v, Vector2 ifZero)
 		{
 			float len = glm::length(v);
-			return isnan(len) ? ifZero : v / len;
-		}
-
-		Vector2 normalize(Vector2 v)
-		{
-			float len = glm::length(v);
-			if (len == 0 || isnan(len))
-			{
-				std::cout << "iuyawgduaikwhdiuawhgeuabyduyawsoggyfriend\n";
-			}
-			return v / len;
+			return (isnan(len) || len == 0) ? ifZero : v / len;
 		}
 
 		float SquareLength(Vector2 v) {

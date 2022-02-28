@@ -152,7 +152,6 @@ namespace fzx
 
 		//this should get the centrepoint (probably assuming uniform density, potential bug since uniform density isn't confirmed here)
 		centrePoint *= iMass;
-		std::cout << "Centrepoint: (" << centrePoint.x << ", " << centrePoint.y << ")\n";
 
 		//if centrePoint is not zero then all shapes need to be translated until it is zero
 		for (unsigned char i = 0; i < colliderCount; i++)
@@ -179,16 +178,17 @@ namespace fzx
 			default:
 				return;
 			}
-
-			//now translate inertia by the length of the translation of the centrepoints 
-			if (iMass != 0)
-				colliders[i].iInertia -= em::SquareLength(centrePoint) / colliders[i].iMass;
 		}
-
+		
 		if (translateBody)
 		{
 			transform.position = transform.TransformPoint(centrePoint);
 		}
+
+		//do this to recalculate inertia in the new context
+		CalculateMass();
+		//std::cout << "Inertia: " << (1.0f / iInertia) << ", Mass: " << (1.0f/ iMass) << ", Centrepoint: (" << transform.position.x << ", " << transform.position.y << ")\n";
+
 	}
 
 	void PhysicsObject::CalculateMass()

@@ -1,15 +1,15 @@
 #include "fzx.h"
 
-#ifndef COLLISIONROTATION
-#define COLLISIONROTATION
+#ifndef FZX_COLLISIONROTATION
+#define FZX_COLLISIONROTATION
 #endif // !COLLISIONROTATION
-#ifndef FRICTION
-#define FRICTION
+#ifndef FZX_FRICTION
+#define FZX_FRICTION
 #endif // !FRICTION
 
 namespace fzx
 {
-	CollideFunction CollisionManager::collisionFunctions[4][4] =
+	CollideFunction PhysicsSystem::collisionFunctions[4][4] =
 	{
 		{ CollideCircleCircle,	CollideCirclePolygon,	CollideCircleCapsule,	CollideCirclePlane	},
 		{ CollidePolygonCircle,	CollidePolygonPolygon,	CollidePolygonCapsule,	CollidePolygonPlane	},
@@ -17,7 +17,7 @@ namespace fzx
 		{ CollidePlaneCircle,	CollidePlanePolygon,	CollidePlaneCapsule,	CollideInvalid		}
 	};
 
-	void CollisionManager::ResolveCollisions()
+	void PhysicsSystem::ResolveCollisions()
 	{
 		if (bodies.size() < 2)
 			return;
@@ -78,7 +78,7 @@ namespace fzx
 		}
 	}
 
-	PhysicsObject* CollisionManager::PointCast(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
+	PhysicsObject* PhysicsSystem::PointCast(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
 	{
 		for (int i = 0; i < bodies.size(); i++)
 		{
@@ -95,7 +95,7 @@ namespace fzx
 		return nullptr;
 	}
 
-	std::vector<PhysicsObject*>&& CollisionManager::PointCastMultiple(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
+	std::vector<PhysicsObject*>&& PhysicsSystem::PointCastMultiple(Vector2 point, bool includeStatic, bool includeTriggers, short collisionMask)
 	{
 		std::vector<PhysicsObject*> pC;
 
@@ -114,16 +114,16 @@ namespace fzx
 		return std::move(pC);
 	}
 
-	void CollisionManager::Update()
+	void PhysicsSystem::Update()
 	{
 		UpdatePhysics();
-		for (size_t i = 0; i < COLLISION_ITERATIONS; i++)
+		for (size_t i = 0; i < collisionIterations; i++)
 		{
 			ResolveCollisions();
 		}
 	}
 
-	void CollisionManager::UpdatePhysics()
+	void PhysicsSystem::UpdatePhysics()
 	{
 		//do physics
 		for (auto* body : bodies)
@@ -137,14 +137,14 @@ namespace fzx
 		}
 	}
 
-	PhysicsObject* CollisionManager::CreatePhysicsObject(PhysicsData& data)
+	PhysicsObject* PhysicsSystem::CreatePhysicsObject(PhysicsData& data)
 	{
 		PhysicsObject* body = new PhysicsObject(data);
 		bodies.push_back(body);
 		return bodies[bodies.size() - 1];
 	}
 
-	void CollisionManager::DeletePhysicsBody(PhysicsObject* body)
+	void PhysicsSystem::DeletePhysicsBody(PhysicsObject* body)
 	{
 		if (!body) return;
 
@@ -152,7 +152,7 @@ namespace fzx
 		delete body;
 	}
 
-	void CollisionManager::ClearPhysicsBodies()
+	void PhysicsSystem::ClearPhysicsBodies()
 	{
 		for (size_t i = 0; i < bodies.size(); i++)
 		{
@@ -173,7 +173,7 @@ namespace fzx
 	}
 
 
-	void CollisionManager::ResolveCollision(CollisionData& data)
+	void PhysicsSystem::ResolveCollision(CollisionData& data)
 	{
 		//if collision happened (data is added into manifold about collision)
 		if ((data.a->iMass + data.b->iMass != 0) &&
@@ -191,7 +191,7 @@ namespace fzx
 			else
 				collisionPoint = data.collisionPoints[0];
 
-#ifdef COLLISIONROTATION
+#ifdef FZX_COLLISIONROTATION
 			Vector2 radiusA = collisionPoint - data.a->transform.position,
 				radiusB = collisionPoint - data.b->transform.position;
 			//explanation for this \/ in GetVelocityAtPoint
@@ -221,7 +221,7 @@ namespace fzx
 				data.a->AddImpulseAtPosition(-impulse, collisionPoint);
 				data.b->AddImpulseAtPosition(impulse, collisionPoint);
 
-#ifdef FRICTION
+#ifdef FZX_FRICTION
 				//FRICTION
 				//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -257,24 +257,24 @@ namespace fzx
 #endif
 #else
 			//resolve collision
-			Vector2 rV = manifold.b->GetVelocity() - manifold.a->GetVelocity();
+			Vector2 rV = data.b->GetVelocity() - data.a->GetVelocity();
 
-			float projectedRV = glm::dot(manifold.collisionNormal, rV);
+			float projectedRV = glm::dot(data.collisionNormal, rV);
 
 			if (projectedRV > 0)
 			{
 				//bounciness is average of the two
-				float e = 0.5f * (manifold.a->bounciness + manifold.b->bounciness);
+				float e = 0.5f * (data.a->bounciness + data.b->bounciness);
 
 				//calculate impulse magnitude
 				float impulseMagnitude = -(1 + e) * projectedRV;
-				impulseMagnitude /= (manifold.a->GetInverseMass() + manifold.b->GetInverseMass());
+				impulseMagnitude /= (data.a->GetInverseMass() + data.b->GetInverseMass());
 
 				//turn into vector
-				Vector2 impulse = manifold.collisionNormal * impulseMagnitude;
+				Vector2 impulse = data.collisionNormal * impulseMagnitude;
 
-				manifold.a->AddImpulse(-impulse);
-				manifold.b->AddImpulse(impulse);
+				data.a->AddImpulse(-impulse);
+				data.b->AddImpulse(impulse);
 #endif
 			}
 
@@ -289,14 +289,14 @@ namespace fzx
 		}
 	}
 
-	bool CollisionManager::EvaluateCollision(CollisionData & data)
+	bool PhysicsSystem::EvaluateCollision(CollisionData & data)
 	{
 		int x = (int)data.a->GetCollider(data.colliderIndexA).GetShape()->GetType();
 		int y = (int)data.b->GetCollider(data.colliderIndexB).GetShape()->GetType();
 		return (collisionFunctions[x][y])(data);
 	}
 
-	void CollisionManager::Destroy()
+	PhysicsSystem::~PhysicsSystem()
 	{
 		for (size_t i = 0; i < bodies.size(); i++)
 		{
@@ -305,11 +305,7 @@ namespace fzx
 		}
 	}
 
-	CollisionManager::~CollisionManager()
-	{
-	}
-
-	bool CollisionManager::CheckAABBCollision(AABB & a, AABB & b)
+	bool PhysicsSystem::CheckAABBCollision(AABB & a, AABB & b)
 	{
 		return (a.min.x < b.max.x&& a.min.y < b.max.y
 			&& a.max.x > b.min.x&& a.max.y > b.min.y

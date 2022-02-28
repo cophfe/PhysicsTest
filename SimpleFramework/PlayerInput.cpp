@@ -103,8 +103,6 @@ void PlayerInput::FinishCreatePolygon(Button& button, void* infoPointer)
 	p->customPolyPoints.clear();
 }
 
-//static bool updateCollision = false;
-
 void PlayerInput::PauseUnpause(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
@@ -119,7 +117,6 @@ void PlayerInput::PauseUnpause(Button& button, void* infoPointer)
 		button.colourOnClick = Vector3(0.4f, 0.4f, 0.4f);
 	}
 	else {
-		//updateCollision = false;
 		button.colour = Vector3(1, 1, 1);
 		button.textColour = Vector3(0, 0, 0);
 		button.colourOnHover = Vector3(0.8f, 0.8f, 0.8f);
@@ -134,13 +131,7 @@ void PlayerInput::PauseUnpause(Button& button, void* infoPointer)
 void PlayerInput::StepOnce(Button& button, void* infoPointer)
 {
 	PhysicsProgram* program = (PhysicsProgram*)infoPointer;
-
-	//if (!updateCollision)
 	program->UpdatePhysics();
-	//else
-	program->ResolveCollisions();
-
-	//updateCollision = !updateCollision;
 }
 
 void PlayerInput::SpeedUnspeed(Button& button, void* infoPointer)
@@ -238,7 +229,7 @@ PlayerInput::PlayerInput(PhysicsProgram& program) : program(program)
 	radiusSlider->SetOnValueChangedCallback(RadiusChanged, this);
 	i++;
 	polygonSlider = (Slider*)program.AddUIObject(
-		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 10), 3, 8.0f, polygonPointCount, textColour * 0.5f, backgroundColour, edgeColour, program
+		new Slider(Vector2(145, 30), anchor, (float)i * offset + startPos + Vector2(36.25f + 2, 10), 3, FZX_MAX_VERTICES, polygonPointCount, textColour * 0.5f, backgroundColour, edgeColour, program
 			, 4, true, true, "Points: ", edgeColour, 0, 2.5f, false));
 	polygonSlider->SetOnValueChangedCallback(PolygonPointCountChanged, this);
 	polygonSlider->SetEnabled(heldShapeTool == HELD_SHAPE_TOOL::POLYGON);

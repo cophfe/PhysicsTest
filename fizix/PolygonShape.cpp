@@ -135,14 +135,14 @@ namespace fzx
 
 	PolygonShape* PolygonShape::GetRegularPolygonCollider(float radius, int pointCount)
 	{
-		if (pointCount > fzx_max_vertices) {
+		if (pointCount > FZX_MAX_VERTICES) {
 
-			const std::string s = std::to_string(fzx_max_vertices) + "\n";
+			const std::string s = std::to_string(FZX_MAX_VERTICES) + "\n";
 			throw std::runtime_error(std::string("Error: Polygons have a max vertex count of ") + s);
-			pointCount = fzx_max_vertices;
+			pointCount = FZX_MAX_VERTICES;
 		}
 
-		Vector2 points[fzx_max_vertices];
+		Vector2 points[FZX_MAX_VERTICES];
 
 		float iPointCount = glm::two_pi<float>() / pointCount;
 		for (size_t i = 0; i < pointCount; i++)
@@ -175,14 +175,14 @@ namespace fzx
 		int size = 0;
 		int endPoint = 0;
 		do {
-			if (size >= fzx_max_vertices)
+			if (size >= FZX_MAX_VERTICES)
 			{
 				if (!clipPoints)
 				{
-					const std::string s = std::to_string(fzx_max_vertices) + "\n";
+					const std::string s = std::to_string(FZX_MAX_VERTICES) + "\n";
 					throw std::runtime_error(std::string("Error: Polygons have a max vertex count of ") + s);
 				}
-				size = fzx_max_vertices - 1;
+				size = FZX_MAX_VERTICES - 1;
 				break;
 			}
 

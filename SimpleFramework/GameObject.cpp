@@ -9,7 +9,7 @@ GameObject::DrawFunction GameObject::drawFunctions[4] =
 	PhysicsProgram::DrawPlane
 };
 
-GameObject::GameObject(PhysicsData object, CollisionManager* manager, Vector3 colour)
+GameObject::GameObject(PhysicsData object, PhysicsSystem* manager, Vector3 colour)
 	: colour(colour), manager(manager)
 {
 	body = manager->CreatePhysicsObject(object);

@@ -2,10 +2,104 @@
 
 namespace fzx
 {
+#pragma region Circle
 
+	bool PhysicsSystem::CollideCircleCircle(CollisionData& data)
+	{
+		CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+		CircleShape* b = (CircleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+		Vector2 pA = data.a->GetTransform().TransformPoint(a->centrePoint), pB = data.b->GetTransform().TransformPoint(b->centrePoint);
+		Vector2 delta = pA - pB;
+		float deltaMagSq = delta.x * delta.x + delta.y * delta.y;
+		float radiusSum = (a->radius + b->radius);
+
+		if (deltaMagSq < radiusSum * radiusSum)
+		{
+			deltaMagSq = sqrtf(deltaMagSq);
+			data.penetration = radiusSum - deltaMagSq;
+			data.collisionNormal = delta / deltaMagSq;
+			data.collisionPoints[0] = pA - data.collisionNormal * a->radius;
+			return true;
+		}
+
+		return false;
+	}
+	
+	bool PhysicsSystem::CollideCirclePolygon(CollisionData& data)
+	{
+		CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+		PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+		EPACollisionData epaData;
+		if (EPA(a, b, data.a->transform, data.b->transform, &epaData))
+		{
+			data.collisionNormal = epaData.collisionNormal;
+			data.penetration = epaData.depth;
+			data.collisionPoints[0] = data.a->transform.TransformPoint(a->centrePoint) - a->radius * epaData.collisionNormal;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool PhysicsSystem::CollideCircleCapsule(CollisionData& data)
+	{
+		CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+		CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+		//transform to global
+		Vector2 pA = data.b->GetTransform().TransformPoint(b->pointA), pB = data.b->GetTransform().TransformPoint(b->pointB);
+		Vector2 circleCentre = data.a->GetTransform().TransformPoint(a->centrePoint);
+
+		//circle radius + capsule radius
+		float radius = a->radius + b->radius;
+
+		//this basically simplifies the problem to a circle-circle collision
+		Vector2 pointOnCapsuleLine = em::ClosestPointOnLine(pA, pB, circleCentre);
+
+		Vector2 delta = circleCentre - pointOnCapsuleLine;
+		if (delta.x * delta.x + delta.y * delta.y < radius * radius)
+		{
+			//is colliding
+			data.collisionNormal = glm::normalize(delta); //collision normal is always from b to a
+			data.penetration = radius - glm::dot(delta, data.collisionNormal); //p = a->radius + b->radius - distancebetweencentreandclosestpointonLine
+			data.collisionPoints[0] = pointOnCapsuleLine + data.collisionNormal * b->radius;
+			return true;
+		}
+
+		return false;
+	}
+
+	bool PhysicsSystem::CollideCirclePlane(CollisionData& data)
+	{
+		CircleShape* a = (CircleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
+		PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
+
+		//transform to global
+		Vector2 centre = data.a->GetTransform().TransformPoint(a->centrePoint);
+		Vector2 planeDirection = data.b->GetTransform().TransformDirection(b->normal);
+		float planeDistance = glm::dot(data.b->GetTransform().TransformPoint(b->distance * b->normal), planeDirection);
+
+		//calculate penetration
+		float centreDot = glm::dot(centre, planeDirection);
+		float penetration = centreDot - a->radius - planeDistance;
+
+		//if p < 0, is colliding
+		if (penetration < 0)
+		{
+			data.collisionNormal = planeDirection;
+			data.penetration = -penetration;
+			data.collisionPoints[0] = centre - planeDirection * (a->radius);
+			return true;
+		}
+
+		return false;
+	}
+#pragma endregion
 #pragma region Polygon
 
-	bool CollisionManager::CollidePolygonPolygon(CollisionData& data)
+	bool PhysicsSystem::CollidePolygonPolygon(CollisionData& data)
 	{
 		PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 		PolygonShape* b = (PolygonShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -76,7 +170,7 @@ namespace fzx
 		return false;
 	}
 
-	bool CollisionManager::CollidePolygonCapsule(CollisionData& data)
+	bool PhysicsSystem::CollidePolygonCapsule(CollisionData& data)
 	{
 		PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 		CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -121,7 +215,7 @@ namespace fzx
 		return false;
 	}
 
-	bool CollisionManager::CollidePolygonPlane(CollisionData& data)
+	bool PhysicsSystem::CollidePolygonPlane(CollisionData& data)
 	{
 		PolygonShape* a = (PolygonShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 		PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -176,7 +270,7 @@ namespace fzx
 #pragma endregion
 
 #pragma region Capsule
-	bool CollisionManager::CollideCapsuleCapsule(CollisionData& data)
+	bool PhysicsSystem::CollideCapsuleCapsule(CollisionData& data)
 	{
 		CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 		CapsuleShape* b = (CapsuleShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -287,7 +381,7 @@ namespace fzx
 		return false;
 	}
 
-	bool CollisionManager::CollideCapsulePlane(CollisionData& data)
+	bool PhysicsSystem::CollideCapsulePlane(CollisionData& data)
 	{
 		CapsuleShape* a = (CapsuleShape*)data.a->GetCollider(data.colliderIndexA).GetShape();
 		PlaneShape* b = (PlaneShape*)data.b->GetCollider(data.colliderIndexB).GetShape();
@@ -322,7 +416,7 @@ namespace fzx
 		return false;
 	}
 
-	bool CollisionManager::CollideInvalid(CollisionData& data)
+	bool PhysicsSystem::CollideInvalid(CollisionData& data)
 	{
 		return false;
 	}
@@ -340,37 +434,37 @@ namespace fzx
 		data.colliderIndexA = data.colliderIndexB;
 		data.colliderIndexB = temp2;
 	}
-	bool CollisionManager::CollidePolygonCircle(CollisionData& data)
+	bool PhysicsSystem::CollidePolygonCircle(CollisionData& data)
 	{
 		FlipData(data);
 		return CollideCirclePolygon(data);
 	}
 
-	bool CollisionManager::CollideCapsuleCircle(CollisionData& data)
+	bool PhysicsSystem::CollideCapsuleCircle(CollisionData& data)
 	{
 		FlipData(data);
 		return CollideCircleCapsule(data);
 	}
 
-	bool CollisionManager::CollidePlaneCircle(CollisionData& data)
+	bool PhysicsSystem::CollidePlaneCircle(CollisionData& data)
 	{
 		FlipData(data);
 		return CollideCirclePlane(data);
 	}
 
-	bool CollisionManager::CollideCapsulePolygon(CollisionData& data)
+	bool PhysicsSystem::CollideCapsulePolygon(CollisionData& data)
 	{
 		FlipData(data);
 		return CollidePolygonCapsule(data);
 	}
 
-	bool CollisionManager::CollidePlanePolygon(CollisionData& data)
+	bool PhysicsSystem::CollidePlanePolygon(CollisionData& data)
 	{
 		FlipData(data);
 		return CollidePolygonPlane(data);
 	}
 
-	bool CollisionManager::CollidePlaneCapsule(CollisionData& data)
+	bool PhysicsSystem::CollidePlaneCapsule(CollisionData& data)
 	{
 		FlipData(data);
 		return CollideCapsulePlane(data);

@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClInclude Include="Collider.h" />
     <ClInclude Include="Collision.h" />
-    <ClInclude Include="CollisionManager.h" />
+    <ClInclude Include="PhysicsSystem.h" />
     <ClInclude Include="ExtraMath.hpp" />
     <ClInclude Include="fzx.h" />
     <ClInclude Include="Maths.h" />
@@ -34,7 +34,7 @@
     <ClCompile Include="CircleShape.cpp" />
     <ClCompile Include="Collider.cpp" />
     <ClCompile Include="CollisionFunctions.cpp" />
-    <ClCompile Include="CollisionManager.cpp" />
+    <ClCompile Include="PhysicsSystem.cpp" />
     <ClCompile Include="ExtraMath.cpp" />
     <ClCompile Include="PhysicsObject.cpp" />
     <ClCompile Include="PlaneShape.cpp" />

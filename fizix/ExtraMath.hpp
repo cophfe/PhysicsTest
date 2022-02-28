@@ -17,7 +17,6 @@ namespace fzx
 		Vector2 GetPerpendicularCounterClockwise(Vector2 v);
 		Vector2 GetPerpendicularTowardsPoint(Vector2 a, Vector2 b, Vector2 point);
 		Vector2 NormalizeSafe(Vector2 v, Vector2 ifzero = Vector2(0, 1));
-		Vector2 normalize(Vector2 v);
 		Vector2 TripleCross(Vector2 a, Vector2 b, Vector2 c);
 		float Sq(float f);
 	};

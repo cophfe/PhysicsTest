@@ -5,7 +5,7 @@
 
 namespace fzx
 {
-	class CollisionManager;
+	class PhysicsSystem;
 
 	struct PhysicsData
 	{
@@ -106,7 +106,7 @@ namespace fzx
 		//if translateBody is true, it translates the physicsBody so that the shapes keep the same worldspace position
 		void CentreShapesAboutZero(bool translateBody = true);
 
-		friend CollisionManager;
+		friend PhysicsSystem;
 		friend Collider;
 
 		AABB colliderAABB;

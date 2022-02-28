@@ -6,7 +6,7 @@ namespace fzx
 	constexpr float CLIP_TOLERANCE = 0.001f;
 	constexpr int MAXMINKOWSKIPOINTS = 50;
 
-	Vector2 CollisionManager::GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
+	Vector2 PhysicsSystem::GetPerpendicularTowardOrigin(Vector2 a, Vector2 b)
 	{
 		//triple cross method in 2d, returns a vector perpendicular to line AB, orientated towards a point
 		// ((b-a) x ((0,0)-a)) x (b-a)
@@ -19,7 +19,7 @@ namespace fzx
 		//(a x b) x c == b * (c.a) - a * (c.b)
 	}
 
-	Vector2 CollisionManager::GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
+	Vector2 PhysicsSystem::GetPerpendicularFacingInDirection(Vector2 line, Vector2 direction)
 	{
 		//is perpendicular to line, facing in the direction of direction
 		// (direction x line) x line
@@ -40,20 +40,20 @@ namespace fzx
 	}
 
 
-	Vector2 CollisionManager::GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d)
+	Vector2 PhysicsSystem::GetSupport(Shape* a, Shape* b, Transform& tA, Transform& tB, Vector2 d)
 	{
 		return a->Support(d, tA) - b->Support(-d, tB);
 	}
 
 
-	Vector2 CollisionManager::ClosestPointToOrigin(Vector2 a, Vector2 b)
+	Vector2 PhysicsSystem::ClosestPointToOrigin(Vector2 a, Vector2 b)
 	{
 		return em::SquareLength(a) < em::SquareLength(b) ? a : b;
 	}
 
 	// GJK function
 	//the final version of this function is based on this video: https://youtu.be/ajv46BSqcK4
-	bool CollisionManager::GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
+	bool PhysicsSystem::GJK(Shape* a, Shape* b, Transform& tA, Transform& tB, Simplex* finalSimplex)
 	{
 		//GJK checks if the minkowski difference of two shapes encloses the origin or not.
 		//if the minkowski difference does enclose the origin it means the two shapes are intersecting, because it means at least one point in the area inclosed by shape a is in the same position as a point in the area inclosed by shape b.
@@ -61,12 +61,12 @@ namespace fzx
 		//the triangles chosen are composed of 3 points on the minkowski difference, and those three points are chosen intelligently to minimise the tri checks
 		Simplex tri;
 		//first direction can be anything, but is often the direction from shape a to b (it is probably more efficient on average then a random direction, idk)
-		tri.dir = em::normalize(tB.position - tA.position);
+		tri.dir = glm::normalize(tB.position - tA.position);
 
 		//get furthest point on the minkowski difference in the direction of tri.dir
 		tri.a = GetSupport(a, b, tA, tB, tri.dir);
 		//the best next direction to choose is towards the origin
-		tri.dir = em::normalize(-tri.a);
+		tri.dir = glm::normalize(-tri.a);
 		//get furthest point in the direction of the origin from point a
 		tri.b = GetSupport(a, b, tA, tB, tri.dir);
 
@@ -123,7 +123,7 @@ namespace fzx
 
 	//the final version of this function is based on this video: https://www.youtube.com/watch?v=0XQ2FSz3EK8 and this page: https://dyn4j.org/2010/04/gjk-distance-closest-points/
 
-	bool CollisionManager::EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionData* data)
+	bool PhysicsSystem::EPA(Shape* a, Shape* b, Transform& tA, Transform& tB, EPACollisionData* data)
 	{
 		Simplex gjkSimplex;
 		if (!GJK(a, b, tA, tB, &gjkSimplex))
@@ -215,7 +215,7 @@ namespace fzx
 
 	//returns index 
 
-	CollisionManager::PolygonEdge CollisionManager::FindPolygonCollisionEdge(PolygonShape* pS, Transform& t, Vector2 normal)
+	PhysicsSystem::PolygonEdge PhysicsSystem::FindPolygonCollisionEdge(PolygonShape* pS, Transform& t, Vector2 normal)
 	{
 		//Get the point furthest along the collision normal
 		Vector2 collisionNormal = t.InverseTransformDirection(normal);
@@ -252,7 +252,7 @@ namespace fzx
 
 
 	//clips 2 points so that they are more than or equal to clip distance along the clipping normal
-	CollisionManager::ClipInfo CollisionManager::Clip(Vector2 pointToClip1, Vector2 pointToClip2, Vector2 clippingNormal, float clipDist)
+	PhysicsSystem::ClipInfo PhysicsSystem::Clip(Vector2 pointToClip1, Vector2 pointToClip2, Vector2 clippingNormal, float clipDist)
 	{
 		ClipInfo c;
 		c.pointCount = 0;

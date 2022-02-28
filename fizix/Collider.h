@@ -5,7 +5,7 @@
 namespace fzx 
 {
 	class PhysicsObject;
-	class CollisionManager;
+	class PhysicsSystem;
 	class Transform;
 
 	class Collider
@@ -33,7 +33,7 @@ namespace fzx
 		Shape* GetShape() { return shape; }
 
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 		friend PhysicsObject;
 
 		Collider(Shape* shape, float density = 1, bool isTrigger = false);

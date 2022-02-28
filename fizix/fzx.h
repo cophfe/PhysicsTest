@@ -11,6 +11,6 @@
 #include "Collision.h"
 #include "Transform.h"
 #include "PhysicsObject.h"
-#include "CollisionManager.h"
+#include "PhysicsSystem.h"
 
 #endif

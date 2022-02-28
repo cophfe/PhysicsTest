@@ -1,5 +1,5 @@
 #include "PhysicsProgram.h"
-#include "CollisionManager.h"
+#include "PhysicsSystem.h"
 
 PhysicsProgram::PhysicsProgram() : playerInput(PlayerInput(*this)), collisionManager(GetDeltaTime()), GameBase()
 {
@@ -36,7 +36,6 @@ void PhysicsProgram::Update()
 	if (!paused)
 	{
 		UpdatePhysics();
-		collisionManager.ResolveCollisions();
 	}
 
 	playerInput.Update();
@@ -44,7 +43,7 @@ void PhysicsProgram::Update()
 
 void PhysicsProgram::UpdatePhysics()
 {
-	collisionManager.UpdatePhysics();
+	collisionManager.Update();
 }
 
 void PhysicsProgram::Render()
@@ -190,12 +189,6 @@ GameObject* PhysicsProgram::GetGameObjectUnderPoint(Vector2 point, bool includeS
 	return nullptr;
 }
 
-void PhysicsProgram::ResolveCollisions()
-{
-	collisionManager.ResolveCollisions();
-
-}
-
 void PhysicsProgram::DrawShape(Shape* shape, Transform shapeTransform, Vector3 shapeColour, void* physicsProgram)
 {
 	switch (shape->GetType())
@@ -222,7 +215,7 @@ void PhysicsProgram::DrawCircle(Shape* shape, Transform& shapeTransform, Vector3
 
 	Vector2 cP = shapeTransform.TransformPoint(circle->centrePoint);
 	program->GetLineRenderer().DrawCircle(cP, circle->radius, shapeColour);
-	program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius)), shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius * 0.5f)), shapeColour);
+	//program->GetLineRenderer().DrawLineSegment(shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius)), shapeTransform.TransformPoint(circle->centrePoint + Vector2(0, circle->radius * 0.5f)), shapeColour);
 }
 
 void PhysicsProgram::DrawPolygon(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram)
@@ -308,8 +301,6 @@ PhysicsProgram::~PhysicsProgram()
 		delete uiObjects[i];
 		uiObjects[i] = nullptr;
 	}
-
-	collisionManager.Destroy();
 
 	for (size_t i = 0; i < gameObjects.size(); i++)
 	{

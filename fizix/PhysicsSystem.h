@@ -6,22 +6,19 @@ namespace fzx
 {
 	typedef bool (*CollideFunction)(fzx::CollisionData& data);
 
-	constexpr int DEFAULT_GRAVITY = 5;
-	constexpr int COLLISION_ITERATIONS = 1;
+	constexpr int FZX_DEFAULT_GRAVITY = 5;
+	constexpr int FZX_DEFAULT_COLLISION_ITERATIONS = 1;
 
-	class CollisionManager
+	class PhysicsSystem
 	{
 	public:
-		CollisionManager(float deltaTime, Vector2 gravity = Vector2{ 0, -DEFAULT_GRAVITY }) : deltaTime(deltaTime), gravity(gravity) {}
+		PhysicsSystem(float deltaTime, Vector2 gravity = Vector2{ 0, -FZX_DEFAULT_GRAVITY }, int collisionIterations = FZX_DEFAULT_COLLISION_ITERATIONS) : deltaTime(deltaTime), gravity(gravity), collisionIterations(collisionIterations) {}
 		
 		PhysicsObject* PointCast(Vector2 point, bool includeStatic = false, bool includeTriggers = false, short collisionMask = 0xFFFF);
 		std::vector<PhysicsObject*>&& PointCastMultiple(Vector2 point, bool includeStatic = false, bool includeTriggers = false, short collisionMask = 0xFFFF);
 
 		void Update();
-		//void DrawShapes();
-
-		void ResolveCollisions();
-		void UpdatePhysics();
+		
 		PhysicsObject* CreatePhysicsObject(PhysicsData& data);
 		void DeletePhysicsBody(PhysicsObject* body);
 		void ClearPhysicsBodies();
@@ -32,16 +29,16 @@ namespace fzx
 		inline void SetCollisionCallback(CollisionCallback callback, void* infoPointer) { this->cCallback = callback; cCallbackPtr = infoPointer; };
 		inline CollisionCallback GetCollisionCallback() { return cCallback; };
 
-		//inline void SetPhysicsDrawer(PhysicsDrawer drawer) { this->drawer = drawer; };
-		//inline PhysicsDrawer& GetPhysicsDrawer() { return drawer; };
-
 		//seperate function from destructor just so it is clear what order things are destroyed in
-		void Destroy();
-		~CollisionManager();
-		CollisionManager(const CollisionManager& other) = delete;
-		CollisionManager& operator=(const CollisionManager& other) = delete;
+		~PhysicsSystem();
+		PhysicsSystem(const PhysicsSystem& other) = delete;
+		PhysicsSystem& operator=(const PhysicsSystem& other) = delete;
 
 	private:
+
+		void ResolveCollisions();
+		void UpdatePhysics();
+		
 		bool CheckAABBCollision(AABB& a, AABB& b);
 
 		void ResolveCollision(CollisionData& data);
@@ -53,6 +50,7 @@ namespace fzx
 
 		float deltaTime;
 		Vector2 gravity;
+		const int collisionIterations;
 
 		static CollideFunction collisionFunctions[4][4];
 

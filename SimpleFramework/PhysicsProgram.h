@@ -50,8 +50,6 @@ public:
 	PhysicsObject* GetObjectUnderPoint(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
 	GameObject* GetGameObjectUnderPoint(Vector2 point, bool includeStatic = false, bool includeTriggers = false);
 
-	void ResolveCollisions();
-
 	//shape render callbacks
 	static void DrawShape(Shape* shape, Transform shapeTransform, Vector3 shapeColour, void* physicsProgram);
 	static void DrawCircle(Shape* shape, Transform& shapeTransform, Vector3 shapeColour, void* physicsProgram);
@@ -76,7 +74,7 @@ private:
 	bool uiEnabled = true;
 
 	PlayerInput playerInput;
-	fzx::CollisionManager collisionManager;
+	fzx::PhysicsSystem collisionManager;
 	double lastTime = 0;
 	float lastFPSUpdateTime = - FPS_OFFSET;
 	std::string fpsText;

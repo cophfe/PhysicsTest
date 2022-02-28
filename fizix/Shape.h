@@ -1,14 +1,14 @@
 #pragma once
 #include "Maths.h"
 
-#ifndef fzx_max_vertices
-#define fzx_max_vertices 8
-#endif // !fzx_max_vertices
+#ifndef FZX_MAX_VERTICES
+#define FZX_MAX_VERTICES 8
+#endif // !FZX_MAX_VERTICES
 
 namespace fzx
 {
 	class Transform;
-	class CollisionManager;
+	class PhysicsSystem;
 
 	struct AABB 
 	{
@@ -49,7 +49,7 @@ namespace fzx
 
 		virtual ~Shape() = default;
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 
 	};
 
@@ -72,7 +72,7 @@ namespace fzx
 		Vector2 Support(Vector2 v, Transform& transform);
 
 		static PolygonShape* GetRegularPolygonCollider(float radius, int pointCount);
-		Vector2 points[fzx_max_vertices];
+		Vector2 points[FZX_MAX_VERTICES];
 		//Vector2 normals[max_vertices];
 		char pointCount;
 		Vector2 centrePoint;
@@ -80,7 +80,7 @@ namespace fzx
 		~PolygonShape() = default;
 
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 		//void CalculateNormals();
 		void CalculateCentrePoint();
 		//clip points clips the points if they go over the max vertex count, instead of throwing an error
@@ -112,7 +112,7 @@ namespace fzx
 		~CircleShape() = default;
 
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 
 	};
 
@@ -141,7 +141,7 @@ namespace fzx
 		~CapsuleShape() = default;
 
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 
 	};
 
@@ -169,6 +169,6 @@ namespace fzx
 
 		~PlaneShape() = default;
 	private:
-		friend CollisionManager;
+		friend PhysicsSystem;
 	};
 }
